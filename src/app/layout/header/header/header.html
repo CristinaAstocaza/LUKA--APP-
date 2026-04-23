@@ -1,0 +1,103 @@
+<header class="luka-header">
+
+  <!-- ── Izquierda: título + breadcrumb ── -->
+  <div class="header-left">
+    <div class="page-info">
+      <h1 class="page-title">{{ pageTitle }}</h1>
+      <nav class="breadcrumb" *ngIf="breadcrumbs.length > 0">
+        <ng-container *ngFor="let crumb of breadcrumbs; let last = last">
+          <a *ngIf="!last" [routerLink]="crumb.route" class="breadcrumb-link">{{ crumb.label }}</a>
+          <span *ngIf="last" class="breadcrumb-current">{{ crumb.label }}</span>
+          <i *ngIf="!last" class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+        </ng-container>
+      </nav>
+    </div>
+  </div>
+
+  <!-- ── Derecha: acciones ── -->
+  <div class="header-right">
+
+    <!-- Botón agregar rápido -->
+    <button class="btn-add-quick" (click)="openQuickAdd()">
+      <i class="fa-solid fa-plus"></i>
+      <span class="btn-label">Agregar</span>
+    </button>
+
+    <!-- Notificaciones -->
+    <div class="header-action" (click)="toggleNotifications(); $event.stopPropagation()">
+      <button class="action-btn" [class.has-badge]="notifCount > 0">
+        <i class="fa-solid fa-bell"></i>
+        <span class="action-badge" *ngIf="notifCount > 0">{{ notifCount }}</span>
+      </button>
+
+      <div class="notif-panel" *ngIf="showNotifications" (click)="$event.stopPropagation()">
+        <div class="notif-header">
+          <span>Notificaciones</span>
+          <button (click)="markAllRead()" class="notif-clear">
+            <i class="fa-solid fa-check-double"></i> Leer todo
+          </button>
+        </div>
+        <ul class="notif-list">
+          <li
+            *ngFor="let notif of notificaciones"
+            class="notif-item"
+            [class.unread]="!notif.read"
+          >
+            <span class="notif-icon" [style.background]="notif.color">
+              <i [className]="notif.icon"></i>
+            </span>
+            <div class="notif-content">
+              <p>{{ notif.text }}</p>
+              <small>{{ notif.time }}</small>
+            </div>
+          </li>
+          <li *ngIf="notificaciones.length === 0" class="notif-empty">
+            <i class="fa-solid fa-inbox"></i>
+            <span>Sin notificaciones</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Mes actual -->
+    <button class="action-btn secondary">
+      <i class="fa-solid fa-calendar-days"></i>
+      <span class="btn-label">{{ currentMonth }}</span>
+    </button>
+
+    <!-- Avatar usuario -->
+    
+
+      <!-- Menú usuario -->
+      <div class="user-menu" *ngIf="showUserMenu" (click)="$event.stopPropagation()">
+        <div class="user-menu-header">
+        
+        </div>
+        <ul>
+          <li>
+            <a routerLink="/perfil">
+              <i class="fa-solid fa-circle-user"></i> Mi Perfil
+            </a>
+          </li>
+          <li>
+            <a routerLink="/configuracion">
+              <i class="fa-solid fa-gear"></i> Configuración
+            </a>
+          </li>
+          <li>
+            <a routerLink="/ayuda">
+              <i class="fa-solid fa-circle-question"></i> Ayuda
+            </a>
+          </li>
+          <li class="divider"></li>
+          <li>
+            <a (click)="logout()" class="logout-link">
+              <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+ 
+</header>
