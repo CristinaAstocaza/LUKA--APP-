@@ -1,103 +1,245 @@
-<header class="luka-header">
+<header class="luka-header" (click)="closeAll()">
 
-  <!-- ── Izquierda: título + breadcrumb ── -->
+  <!-- ═══════════════════════════════
+   TITULO + BREADCRUMB
+  ═══════════════════════════════ -->
   <div class="header-left">
-    <div class="page-info">
-      <h1 class="page-title">{{ pageTitle }}</h1>
-      <nav class="breadcrumb" *ngIf="breadcrumbs.length > 0">
-        <ng-container *ngFor="let crumb of breadcrumbs; let last = last">
-          <a *ngIf="!last" [routerLink]="crumb.route" class="breadcrumb-link">{{ crumb.label }}</a>
-          <span *ngIf="last" class="breadcrumb-current">{{ crumb.label }}</span>
-          <i *ngIf="!last" class="fa-solid fa-chevron-right breadcrumb-sep"></i>
-        </ng-container>
-      </nav>
-    </div>
+
+    <h1 class="page-title">{{ pageTitle }}</h1>
+
+    <nav class="breadcrumb" *ngIf="breadcrumbs.length > 0">
+      <ng-container *ngFor="let crumb of breadcrumbs; let last = last">
+
+        <a *ngIf="!last" [routerLink]="crumb.route" class="breadcrumb-link">
+          {{ crumb.label }}
+        </a>
+
+        <span *ngIf="last" class="breadcrumb-current">
+          {{ crumb.label }}
+        </span>
+
+        <span *ngIf="!last" class="breadcrumb-sep">/</span>
+
+      </ng-container>
+    </nav>
+
   </div>
 
-  <!-- ── Derecha: acciones ── -->
-  <div class="header-right">
 
-    <!-- Botón agregar rápido -->
-    <button class="btn-add-quick" (click)="openQuickAdd()">
-      <i class="fa-solid fa-plus"></i>
-      <span class="btn-label">Agregar</span>
-    </button>
+  <!-- ═══════════════════════════════
+       DERECHA — ACCIONES (GRUPOS)
+  ═══════════════════════════════ -->
+  <div class="header-right" (click)="$event.stopPropagation()">
 
-    <!-- Notificaciones -->
-    <div class="header-action" (click)="toggleNotifications(); $event.stopPropagation()">
-      <button class="action-btn" [class.has-badge]="notifCount > 0">
-        <i class="fa-solid fa-bell"></i>
-        <span class="action-badge" *ngIf="notifCount > 0">{{ notifCount }}</span>
+
+    <!-- ═════ TEMA ═════ -->
+    <div class="header-action">
+
+      <button class="icon-btn" (click)="toggleThemePicker()" title="Tema">
+        <i class="fa-solid fa-palette"></i>
       </button>
 
-      <div class="notif-panel" *ngIf="showNotifications" (click)="$event.stopPropagation()">
-        <div class="notif-header">
-          <span>Notificaciones</span>
-          <button (click)="markAllRead()" class="notif-clear">
-            <i class="fa-solid fa-check-double"></i> Leer todo
+      <div class="dropdown-panel theme-panel" *ngIf="showThemePicker">
+
+        <p class="dropdown-title">Tema</p>
+
+        <div class="theme-swatches">
+          <button
+            *ngFor="let t of temas"
+            class="swatch"
+            [class.active]="temaActual === t.id"
+            [style.background]="t.color"
+            (click)="setTema(t)">
           </button>
         </div>
-        <ul class="notif-list">
-          <li
-            *ngFor="let notif of notificaciones"
-            class="notif-item"
-            [class.unread]="!notif.read"
-          >
-            <span class="notif-icon" [style.background]="notif.color">
-              <i [className]="notif.icon"></i>
-            </span>
-            <div class="notif-content">
-              <p>{{ notif.text }}</p>
-              <small>{{ notif.time }}</small>
-            </div>
-          </li>
-          <li *ngIf="notificaciones.length === 0" class="notif-empty">
-            <i class="fa-solid fa-inbox"></i>
-            <span>Sin notificaciones</span>
-          </li>
-        </ul>
+
       </div>
+
     </div>
 
-    <!-- Mes actual -->
-    <button class="action-btn secondary">
-      <i class="fa-solid fa-calendar-days"></i>
-      <span class="btn-label">{{ currentMonth }}</span>
-    </button>
 
-    <!-- Avatar usuario -->
-    
+    <!-- ═════ NOTIFICACIONES CAMBIAR EN BASE AL USUARIO ═════ -->
+    <div class="header-action">
 
-      <!-- Menú usuario -->
-      <div class="user-menu" *ngIf="showUserMenu" (click)="$event.stopPropagation()">
-        <div class="user-menu-header">
-        
+      <button class="icon-btn" (click)="toggleNotifications()" title="Notificaciones">
+
+        <i class="fa-solid fa-bell"></i>
+
+        <span class="badge-dot" *ngIf="notifCount > 0">
+          {{ notifCount }}
+        </span>
+
+      </button>
+
+      <div class="dropdown-panel notif-panel" *ngIf="showNotifications">
+
+        <div class="dropdown-header">
+          <span class="dropdown-title">Notificaciones</span>
+
+          <button class="btn-link" (click)="markAllRead()">
+            <i class="fa-solid fa-check-double"></i>
+            Leer todo
+          </button>
         </div>
-        <ul>
-          <li>
-            <a routerLink="/perfil">
-              <i class="fa-solid fa-circle-user"></i> Mi Perfil
-            </a>
+
+        <ul class="notif-list">
+
+          <li *ngFor="let n of notificaciones"
+              class="notif-item"
+              [class.unread]="!n.read">
+
+            <span class="notif-icon" [style.background]="n.color">
+              <i [className]="n.icon"></i>
+            </span>
+
+            <div class="notif-body">
+              <p>{{ n.text }}</p>
+              <small>{{ n.time }}</small>
+            </div>
+
           </li>
-          <li>
-            <a routerLink="/configuracion">
-              <i class="fa-solid fa-gear"></i> Configuración
-            </a>
+
+          <li *ngIf="notificaciones.length === 0" class="notif-empty">
+            Sin notificaciones nuevas
           </li>
-          <li>
-            <a routerLink="/ayuda">
-              <i class="fa-solid fa-circle-question"></i> Ayuda
-            </a>
-          </li>
-          <li class="divider"></li>
-          <li>
-            <a (click)="logout()" class="logout-link">
-              <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
-            </a>
-          </li>
+
         </ul>
+
       </div>
+
     </div>
 
- 
+
+    <!-- ═════ PERFIL ═════ -->
+    <div class="header-action">
+
+      <button class="avatar-btn" (click)="toggleUserMenu()">
+
+        <div class="avatar-letter">
+          {{ auth.usuario()?.nombreUsuario?.charAt(0)?.toUpperCase() ?? 'U' }}
+        </div>
+
+        <div class="avatar-meta">
+          <span class="avatar-name">
+            {{ auth.usuario()?.nombreUsuario ?? 'Usuario' }}
+          </span>
+
+          <span class="avatar-plan">
+            <i class="fa-solid fa-leaf"></i>
+            {{ auth.esPremium() ? 'Premium' : 'Estudiante' }}
+          </span>
+        </div>
+
+        <i class="fa-solid fa-chevron-down avatar-chevron"></i>
+
+      </button>
+
+
+      <div class="dropdown-panel user-panel" *ngIf="showUserMenu">
+
+
+        <!-- HERO -->
+        <div class="user-panel-hero">
+
+          <div class="hero-avatar">
+            {{ auth.usuario()?.nombreUsuario?.charAt(0)?.toUpperCase() ?? 'U' }}
+          </div>
+
+          <div class="hero-info">
+
+            <p class="hero-name">
+              {{ auth.usuario()?.nombreUsuario ?? 'Usuario' }}
+            </p>
+
+            <span class="plan-badge">
+              <i class="fa-solid fa-leaf"></i>
+              {{ auth.esPremium() ? 'Premium' : 'Estudiante' }}
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- MENU -->
+        <ul class="user-panel-menu">
+
+          <li>
+            <a routerLink="/perfil" class="menu-item">
+              <i class="fa-solid fa-circle-user menu-item-icon"></i>
+              <div>
+                <p>Mi Perfil</p>
+                <small>Editar datos personales</small>
+              </div>
+            </a>
+          </li>
+
+          <li>
+            <a routerLink="/configuracion" class="menu-item">
+              <i class="fa-solid fa-gear menu-item-icon"></i>
+              <div>
+                <p>Configuración</p>
+                <small>Preferencias y seguridad</small>
+              </div>
+            </a>
+          </li>
+
+          <li>
+            <a routerLink="/ayuda" class="menu-item">
+              <i class="fa-solid fa-circle-question menu-item-icon"></i>
+              <div>
+                <p>Ayuda</p>
+                <small>Tutoriales y soporte</small>
+              </div>
+            </a>
+          </li>
+
+          <li class="menu-divider"></li>
+
+          <li>
+            <button class="menu-item menu-item--danger" (click)="logout()">
+              <i class="fa-solid fa-right-from-bracket menu-item-icon"></i>
+              <div>
+                <p>Cerrar sesión</p>
+                <small>{{ auth.usuario()?.nombreUsuario }}</small>
+              </div>
+            </button>
+          </li>
+
+        </ul>
+
+      </div>
+
+    </div>
+
+
+  </div>
+
 </header>
+
+
+<!-- ═══════════════════════════════
+     MASCOTA
+═══════════════════════════════ -->
+<div class="float-mascot" [class.active]="showFloatMsg">
+
+  <div class="float-bubble" *ngIf="showFloatMsg">
+    <p>{{ floatMascotMsg }}</p>
+    <button class="float-bubble-close" (click)="closeFloatMsg()">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+
+  <button class="float-mascot-btn"
+          [class.bounce]="floatBounce"
+          (click)="toggleFloatMsg()">
+
+    <img src="assets/panda.png" class="float-mascot-img" />
+
+    <span class="float-badge" *ngIf="floatBadgeCount > 0">
+      {{ floatBadgeCount }}
+    </span>
+
+  </button>
+
+</div>

@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 @Component({
-  selector: 'app-metas-page',
+  selector: 'app-presupuestos-page',
   standalone:true,
   imports: [CommonModule],
-  templateUrl: './metas-page.html',
-  styleUrl: './metas-page.scss',
+  templateUrl: './presupuestos-page.html',
+  styleUrls: ['./presupuestos-page.scss'],
 })
-export class MetasPage {
+export class PresupuestosPage {
 
 }

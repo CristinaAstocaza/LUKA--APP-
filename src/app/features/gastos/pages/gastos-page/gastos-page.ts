@@ -1,8 +1,10 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-gastos-page',
-  imports: [],
+  standalone:true,
+  imports: [CommonModule],
   templateUrl: './gastos-page.html',
   styleUrl: './gastos-page.scss',
 })

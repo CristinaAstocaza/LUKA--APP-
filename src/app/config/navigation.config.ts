@@ -12,7 +12,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   {
     label: 'Resumen',
-    route: '/resumen',
+    route: '/dashboard',
     icon:  'fa-solid fa-chart-pie',
     exact: true
   },
@@ -27,7 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon:  'fa-solid fa-money-bill-trend-up'
   },
   {
-    label: 'Metas de Ahorro',
+    label: 'Metas',
     route: '/metas',
     icon:  'fa-solid fa-piggy-bank'
   },
@@ -36,11 +36,6 @@ export const NAV_ITEMS: NavItem[] = [
     route: '/presupuestos',
     icon:  'fa-solid fa-wallet'
   },
-  {
-    label: 'Estadísticas',
-    route: '/estadisticas',
-    icon:  'fa-solid fa-chart-line'
-  }
 ];
 
 // ── Navegación de cuenta (parte inferior) ──
