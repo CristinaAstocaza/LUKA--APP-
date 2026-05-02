@@ -55,14 +55,7 @@ export const routes: Routes = [
           import('./features/perfil/perfil.routes')
             .then(m => m.PERFIL_ROUTES)
       },
-      //  configuracion ──
-      {
-        path: 'configuracion',
-        loadChildren: () =>
-          import('./features/configuracion/configuracion.routes')
-            .then(m => m.CONFIGURACION_ROUTES)
-      },
-
+      
       // -- Ayuda --
       {
         path: 'ayuda',
