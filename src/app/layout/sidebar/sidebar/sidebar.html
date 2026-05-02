@@ -1,11 +1,10 @@
-
 <nav class="sidebar" [class.collapsed]="sidebarState.collapsed()">
 
   <!-- ── LOGO  ── -->
   <div class="sidebar-header">
 
     <div class="logo-wrap">
-      <img src="assets/panda.png" alt="Luka" class="logo-img" />
+      <img src="assets/assets/panda.png" alt="Luka" class="logo-img" />
     </div>
 
     <div class="brand" *ngIf="sidebarState.expanded()">
@@ -13,7 +12,6 @@
       <span class="brand-sub">Finanzas personales</span>
     </div>
 
-    <!-- Botón colapsar / expandir -->
     <button
       class="toggle-btn"
       (click)="toggle()"
@@ -28,15 +26,9 @@
   </div>
 
 
-  <!-- ── PERFIL RÁPIDO ──
-       TODO: conectar a AuthService / UsuarioService
-       - nombreUsuario  → auth.usuario()?.nombreUsuario
-       - plan           → auth.usuario()?.plan  (ej: 'premium' | 'estudiante')
-       - avatar URL     → auth.usuario()?.avatarUrl 
-  ── -->
+  <!-- ── PERFIL RÁPIDO ── -->
   <div class="sidebar-profile" *ngIf="sidebarState.expanded()">
     <div class="avatar">
-
       {{ auth.usuario()?.nombreUsuario?.charAt(0)?.toUpperCase() ?? 'U' }}
     </div>
     <div class="profile-info">
@@ -47,13 +39,9 @@
       </p>
     </div>
   </div>
+<!-- ══ NAVEGACIÓN PRINCIPAL ══ -->
+<ng-container *ngIf="!isPerfilSection">
 
-
-  <!-- ══════════════════════════════════════
-       NAVEGACIÓN PRINCIPAL
-       TODO: navItems viene de navigation.config.ts (hardcoded por ahora)
-             Reemplazar con MenuService.getNavItems(usuarioRol) cuando esté listo
-  ══════════════════════════════════════ -->
   <p class="nav-section-label" *ngIf="sidebarState.expanded()">Principal</p>
 
   <ul class="nav-list">
@@ -67,8 +55,6 @@
       >
         <i [className]="item.icon" class="nav-icon"></i>
         <span class="nav-text" *ngIf="sidebarState.expanded()">{{ item.label }}</span>
-
-        <!-- TODO: badge dinámico desde NotificacionService (ej: transacciones pendientes) -->
         <span class="nav-badge" *ngIf="item.badge && sidebarState.expanded()">
           {{ item.badge }}
         </span>
@@ -76,15 +62,24 @@
     </li>
   </ul>
 
+</ng-container>
 
-  <!-- ══════════════════════════════════════
-       NAVEGACIÓN CUENTA
-       reemplazar con MenuService
-  ══════════════════════════════════════ -->
-  <p class="nav-section-label" *ngIf="sidebarState.expanded()">Cuenta</p>
+
+<!-- ══ NAVEGACIÓN MI CUENTA ══ -->
+<ng-container *ngIf="isPerfilSection">
+  <a
+
+    routerLink="/dashboard"
+    class="nav-link back-link"
+  >
+    <i class="fa-solid fa-arrow-left nav-icon"></i>
+    <span class="nav-text" *ngIf="sidebarState.expanded()">Volver</span>
+  </a>
+
+  <p class="nav-section-label" *ngIf="sidebarState.expanded()">Mi cuenta</p>
 
   <ul class="nav-list">
-    <li *ngFor="let item of bottomNavItems">
+    <li *ngFor="let item of perfilNavItems">
       <a
         [routerLink]="item.route"
         routerLinkActive="active"
@@ -97,14 +92,10 @@
     </li>
   </ul>
 
+</ng-container>
 
-
-  <!-- ── MASCOTA LUKA ──
-       TODO: los mensajes son mock (MASCOT_MSGS en sidebar.ts)
-             Reemplazar con MascotaService.getMensajeDiario() desde backend
-             que devuelva mensajes personalizados según comportamiento del usuario
-  ── -->
-    <div class="sidebar-spacer"></div>
+  <!-- ── MASCOTA LUKA ── -->
+  <div class="sidebar-spacer"></div>
 
   <div class="sidebar-mascot" *ngIf="sidebarState.expanded()" (click)="toggleMascotMsg()">
 
@@ -113,12 +104,10 @@
     </div>
 
     <div class="mascot-row">
-      <img src="../../assets/panda.png" alt="Luka" class="mascot-img" />
+      <img src="assets/assets/panda.png" alt="Luka" class="mascot-img" />
       <span class="mascot-hint" *ngIf="!showMascotMsg()">¡Toca a Luka!</span>
     </div>
 
   </div>
-
-
 
 </nav>
