@@ -51,6 +51,7 @@
         routerLinkActive="active"
         [routerLinkActiveOptions]="{ exact: !!item.exact }"
         [title]="sidebarState.collapsed() ? item.label : ''"
+        [title]="sidebarState.collapsed() ? item.label : ''"
         class="nav-link"
       >
         <i [className]="item.icon" class="nav-icon"></i>

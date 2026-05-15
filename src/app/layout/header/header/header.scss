@@ -315,10 +315,10 @@ $transition: all 0.2s ease-in-out;
 }
 
 .float-mascot-img {
-  width: 80px;      // Ajusta el tamaño a tu gusto
-  height: 80px;     // Mantén el mismo ancho para que sea cuadrada
-  object-fit: contain; // Esto evita que el panda se estire feo
-  display: block;    // Evita espacios extraños abajo
+  width: 80px;      
+  height: 80px;     
+  object-fit: contain; 
+  display: block;   
 }
 
 .float-mascot-btn {
@@ -329,7 +329,7 @@ $transition: all 0.2s ease-in-out;
   outline: none;
   
   &:hover {
-    transform: scale(1.1); // Un pequeño efecto para que parezca vivo
+    transform: scale(1.1); 
     transition: transform 0.2s ease;
   }
 }

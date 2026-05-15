@@ -38,7 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-// ── Navegación de cuenta (parte inferior) ──
+// ── Navegación de cuenta  ──
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   {
     label: 'Mi Perfil',
