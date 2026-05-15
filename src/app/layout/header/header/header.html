@@ -1,8 +1,6 @@
 <header class="luka-header" (click)="closeAll()">
 
-  <!-- ═══════════════════════════════
-   TITULO + BREADCRUMB
-  ═══════════════════════════════ -->
+  <!-- TITULO + BREADCRUMB -->
   <div class="header-left">
 
     <h1 class="page-title">{{ pageTitle }}</h1>
@@ -26,9 +24,7 @@
   </div>
 
 
-  <!-- ═══════════════════════════════
-       DERECHA — ACCIONES (GRUPOS)
-  ═══════════════════════════════ -->
+  <!-- DERECHA — ACCIONES (GRUPOS)-->
   <div class="header-right" (click)="$event.stopPropagation()">
 
 
@@ -216,30 +212,3 @@
   </div>
 
 </header>
-
-
-<!-- ═══════════════════════════════
-     MASCOTA
-═══════════════════════════════ -->
-<div class="float-mascot" [class.active]="showFloatMsg">
-
-  <div class="float-bubble" *ngIf="showFloatMsg">
-    <p>{{ floatMascotMsg }}</p>
-    <button class="float-bubble-close" (click)="closeFloatMsg()">
-      <i class="fa-solid fa-xmark"></i>
-    </button>
-  </div>
-
-  <button class="float-mascot-btn"
-          [class.bounce]="floatBounce"
-          (click)="toggleFloatMsg()">
-
-    <img src="assets/panda.png" class="float-mascot-img" />
-
-    <span class="float-badge" *ngIf="floatBadgeCount > 0">
-      {{ floatBadgeCount }}
-    </span>
-
-  </button>
-
-</div>
