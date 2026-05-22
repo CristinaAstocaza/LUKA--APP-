@@ -1,7 +1,3 @@
-// =============================================
-// microservicio-usuarios  → puerto 8081
-// microservicio-nucleo-financiero → puerto 8085
-// =============================================
 
 // ── Auth (microservicio-usuarios) ──
 export interface SolicitudLogin {
