@@ -146,33 +146,42 @@
     </article>
   </div>
 
-  @if (modalAbierto()) {
-    <div class="perfil-cliente__modal-backdrop" (click)="cerrarModalAvatar()">
-      <div class="perfil-cliente__modal" (click)="$event.stopPropagation()">
-        <div class="perfil-cliente__modal-header">
-          <h2>Editar Avatar</h2>
-          <button type="button" class="perfil-cliente__close" (click)="cerrarModalAvatar()">×</button>
-        </div>
+  @if (mensajeExito()) {
+    <p class="perfil-cliente__success" role="status">{{ mensajeExito() }}</p>
+  }
+</section>
 
+@if (modalAbierto()) {
+  <div class="perfil-cliente__modal-backdrop avatar-modal-overlay" (click)="cerrarModalAvatar()">
+    <div class="perfil-cliente__modal avatar-modal" (click)="$event.stopPropagation()">
+      <div class="perfil-cliente__modal-header avatar-modal-header">
+        <h2>Editar Avatar</h2>
+        <button type="button" class="perfil-cliente__close" (click)="cerrarModalAvatar()">×</button>
+      </div>
+
+      <div class="perfil-cliente__modal-body avatar-modal-body">
         <div class="perfil-cliente__modal-layout">
           <section class="perfil-cliente__modal-preview">
             <h3>Vista previa</h3>
-            <app-avatar-display [avatarConfig]="avatarConfig()" [loading]="false" [size]="300" />
+            <app-avatar-display [avatarConfig]="avatarPreview()" [loading]="false" [size]="300" />
           </section>
 
           <section class="perfil-cliente__modal-selector">
             <app-avatar-selector
               [avatarConfig]="avatarConfig()"
               [loading]="loading()"
+              (previewChange)="actualizarPreviewAvatar($event)"
               (save)="guardarAvatar($event)"
             />
           </section>
         </div>
       </div>
-    </div>
-  }
 
-  @if (mensajeExito()) {
-    <p class="perfil-cliente__success" role="status">{{ mensajeExito() }}</p>
-  }
-</section>
+      <div class="perfil-cliente__modal-footer avatar-modal-footer">
+        <button type="button" class="perfil-cliente__action-btn" (click)="cerrarModalAvatar()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+}

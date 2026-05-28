@@ -545,30 +545,59 @@
   }
 
   &__modal-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    display: grid;
-    place-items: center;
-    padding: 16px;
-    z-index: 1000;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(15, 23, 42, 0.65);
+    z-index: 99999 !important;
+    padding: 48px 24px 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto;
   }
 
   &__modal {
-    width: min(980px, 100%);
-    max-height: 92vh;
-    overflow: auto;
+    position: relative;
+    width: min(1200px, 95vw);
+    max-height: calc(100vh - 72px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     background: var(--bg-card);
-    padding: 24px;
+    box-shadow: var(--shadow-lg);
   }
 
   &__modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin: 0;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-surface-soft));
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  &__modal-body {
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    padding: 16px 18px;
+  }
+
+  &__modal-footer {
+    padding: 12px 18px 16px;
+    border-top: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--bg-card) 86%, var(--bg-surface-soft));
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
   }
 
   &__close {
@@ -670,7 +699,7 @@ body.theme-dark .perfil-cliente {
   }
 }
 
-@media (max-width: 900px) {
+  @media (max-width: 900px) {
   .perfil-cliente {
     padding: 16px;
 
@@ -708,6 +737,25 @@ body.theme-dark .perfil-cliente {
 
     &__right-column {
       grid-template-columns: 1fr;
+    }
+
+    &__modal {
+      width: min(96vw, 680px);
+      max-height: 94vh;
+    }
+
+    &__modal-backdrop {
+      padding: 16px 10px;
+    }
+
+    &__modal-body {
+      padding: 12px;
+    }
+
+    &__modal-header,
+    &__modal-footer {
+      padding-left: 12px;
+      padding-right: 12px;
     }
   }
 }

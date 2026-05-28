@@ -10,16 +10,16 @@
 
   &__tab {
     min-height: 44px;
-    border: 1px solid #c9d7e6;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    background: #ffffff;
-    color: #0f2a43;
+    background: var(--bg-card);
+    color: var(--text-primary);
     font-weight: 600;
     transition: all 0.3s ease;
 
     &--active {
-      background: #0f2a43;
-      border-color: #0f2a43;
+      background: var(--color-primary);
+      border-color: var(--color-primary);
       color: #ffffff;
     }
   }
@@ -32,21 +32,22 @@
 
   &__item {
     min-height: 96px;
-    border: 1px solid #d7e1eb;
+    border: 1px solid var(--border-color);
     border-radius: 12px;
-    background: #ffffff;
+    background: var(--bg-card);
     display: grid;
     justify-items: center;
     align-content: center;
     gap: 8px;
     padding: 8px;
-    color: #0f2a43;
+    color: var(--text-primary);
     transition: all 0.3s ease;
+    position: relative;
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px #0f2a431a;
-      border-color: #b7c9dc;
+      box-shadow: var(--shadow-sm);
+      border-color: color-mix(in srgb, var(--color-primary) 35%, var(--border-color));
     }
 
     img {
@@ -62,9 +63,30 @@
     }
 
     &--selected {
-      border-color: #2f855a;
-      box-shadow: 0 0 0 2px #2f855a22;
+      border: 2px solid var(--color-primary);
+      background: color-mix(in srgb, var(--color-primary-soft) 50%, var(--bg-card));
+      box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent),
+        0 8px 22px color-mix(in srgb, var(--color-primary) 22%, transparent);
+
+      span {
+        color: var(--text-primary);
+        font-weight: 700;
+      }
     }
+  }
+
+  &__selected-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    letter-spacing: .02em;
   }
 
   &__skeleton-grid {
@@ -76,14 +98,14 @@
   &__skeleton-item {
     min-height: 96px;
     border-radius: 12px;
-    background: linear-gradient(90deg, #e4ebf3 25%, #f3f7fb 37%, #e4ebf3 63%);
+    background: linear-gradient(90deg, var(--bg-surface-soft) 25%, var(--bg-card) 37%, var(--bg-surface-soft) 63%);
     background-size: 400% 100%;
     animation: avatar-skeleton 1.2s ease-in-out infinite;
   }
 
   &__error {
     margin: 0;
-    color: #b42318;
+    color: var(--color-danger);
     font-size: 14px;
   }
 
@@ -91,15 +113,24 @@
     min-height: 44px;
     border: none;
     border-radius: 8px;
-    background: #2f855a;
+    background: var(--color-primary);
     color: #ffffff;
     font-weight: 700;
     padding: 0 16px;
     transition: all 0.3s ease;
 
     &:hover {
-      background: #276749;
+      background: var(--color-primary-dark);
     }
+  }
+}
+
+body.theme-dark .avatar-selector {
+  &__item--selected {
+    border-color: var(--color-primary-light);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--color-primary-light) 28%, transparent),
+      0 0 22px color-mix(in srgb, var(--color-primary-light) 34%, transparent);
   }
 }
 
