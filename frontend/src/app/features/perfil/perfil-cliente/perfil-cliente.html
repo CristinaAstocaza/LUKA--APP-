@@ -1,78 +1,148 @@
 
 <section class="perfil-cliente">
-  <div class="perfil-cliente__layout">
-    <article class="perfil-cliente__card perfil-cliente__card--principal">
+  <header class="perfil-cliente__page-head card">
+    <p>Gestiona tu identidad, seguridad y preferencias de cuenta desde un solo lugar.</p>
+  </header>
+
+  <div class="perfil-cliente__layout-fintech">
+    <article class="perfil-cliente__hero card">
       @if (loading()) {
-        <div class="perfil-cliente__skeleton perfil-cliente__skeleton--avatar"></div>
-        <div class="perfil-cliente__skeleton-grid">
-          @for (item of [1, 2, 3, 4, 5]; track item) {
-            <div class="perfil-cliente__skeleton"></div>
-          }
-        </div>
+        <div class="perfil-cliente__skeleton perfil-cliente__skeleton--hero"></div>
       } @else {
-        <section class="perfil-cliente__avatar-col">
-          <app-avatar-display [avatarConfig]="avatarConfig()" [loading]="false" [size]="300" />
-          <button type="button" class="perfil-cliente__edit-avatar" (click)="abrirModalAvatar()">
-            Editar Avatar
-          </button>
-        </section>
-
-        <section class="perfil-cliente__info-col">
-          <header class="perfil-cliente__header">
-            <h1 class="perfil-cliente__title">Información básica</h1>
-          </header>
-
-          <div class="perfil-cliente__info-grid perfil-cliente__info-grid--single">
-            @for (campo of informacionBasica(); track campo.label) {
-              <div class="perfil-cliente__field">
-                <span class="perfil-cliente__label">{{ campo.label }}</span>
-                <span class="perfil-cliente__value">{{ campo.value }}</span>
-              </div>
-            }
+        <div class="perfil-cliente__hero-left">
+          <app-avatar-display [avatarConfig]="avatarConfig()" [loading]="false" [size]="180" />
+          <button type="button" class="perfil-cliente__edit-avatar" (click)="abrirModalAvatar()">Cambiar avatar</button>
+        </div>
+        <div class="perfil-cliente__hero-main">
+          <h2>{{ nombreMostrado() }}</h2>
+          <p>{{ usuarioSesion()?.nombreUsuario || 'Sin correo' }}</p>
+          <div class="perfil-cliente__badges">
+            <span class="badge badge-success">{{ estadoVerificacion() }}</span>
           </div>
+          <div class="perfil-cliente__hero-summary">
+            <div class="perfil-cliente__quick-stat">
+              <span>Estado de perfil</span>
+              <strong>{{ resumenCuenta().estadoPerfil }}</strong>
+            </div>
+            <div class="perfil-cliente__quick-progress">
+              <small>Última actualización: {{ resumenCuenta().ultimaActualizacion }}</small>
+              <div class="perfil-cliente__meter-track">
+                <div class="perfil-cliente__meter-fill" [style.width.%]="perfil()?.datosCompletos ? 100 : 55"></div>
+              </div>
+            </div>
+          </div>
+          <blockquote class="perfil-cliente__quote">"Cada decisión financiera inteligente construye tu libertad futura."</blockquote>
+        </div>
 
-          @if (mensajeExito()) {
-            <p class="perfil-cliente__success" role="status">{{ mensajeExito() }}</p>
-          }
-        </section>
+        <div class="perfil-cliente__hero-status">
+          <div class="perfil-cliente__status-item">
+            <span class="perfil-cliente__status-label">Contraseña</span>
+            <strong class="perfil-cliente__status-value">••••••••</strong>
+          </div>
+          <div class="perfil-cliente__status-item">
+            <span class="perfil-cliente__status-label">Miembro desde</span>
+            <strong class="perfil-cliente__status-value">{{ miembroDesde() }}</strong>
+          </div>
+          <div class="perfil-cliente__status-item">
+            <span class="perfil-cliente__status-label">Actividad</span>
+            <strong class="perfil-cliente__status-value">{{ estadoActividad() }}</strong>
+          </div>
+        </div>
       }
     </article>
 
-    <article class="perfil-cliente__card perfil-cliente__card--insignias">
-      <header class="perfil-cliente__header">
-        <h2 class="perfil-cliente__title-seccion">Insignias Conseguidas</h2>
-      </header>
-
-      <div class="perfil-cliente__filtros" role="tablist" aria-label="Filtros de insignias">
-        @for (filtro of filtrosInsignias; track filtro) {
-          <button
-            type="button"
-            class="perfil-cliente__filtro-pill"
-            [class.perfil-cliente__filtro-pill--active]="filtroActivo() === filtro"
-            (click)="cambiarFiltroInsignias(filtro)"
-          >
-            {{ filtro }}
-          </button>
-        }
-      </div>
-
-      <div class="perfil-cliente__insignias-grid">
-        @for (insignia of insigniasFiltradas(); track insignia.titulo) {
-          <article class="perfil-cliente__insignia-item">
-            <div class="perfil-cliente__insignia-icono-wrap">
-              <img [src]="insignia.imagen" [alt]="insignia.titulo" class="perfil-cliente__insignia-icono" />
+    <div class="perfil-cliente__grid-main">
+      <article class="perfil-cliente__section perfil-cliente__section--info card">
+        <div class="perfil-cliente__section-head">
+          <h2>Información personal</h2>
+        </div>
+        @if (loading()) {
+          <div class="perfil-cliente__skeleton-grid">
+            @for (item of [1,2,3,4,5,6,7]; track item) { <div class="perfil-cliente__skeleton"></div> }
+          </div>
+        } @else {
+          <div class="perfil-cliente__grid-2">
+            @for (campo of informacionBasica(); track campo.label) {
+              <div class="perfil-cliente__field-group">
+                <span class="perfil-cliente__label">{{ campo.label }}</span>
+                <div class="perfil-cliente__field perfil-cliente__field--readonly">
+                  <span class="perfil-cliente__value">{{ campo.value }}</span>
+                </div>
+              </div>
+            }
+            <div class="perfil-cliente__field-group">
+              <label class="perfil-cliente__label" for="genero">Género</label>
+              <div class="perfil-cliente__field">
+                <input id="genero" class="perfil-cliente__input" type="text" [value]="camposEditables().genero" (input)="actualizarCampoEditable('genero', $any($event.target).value)"/>
+              </div>
             </div>
-            <h3 class="perfil-cliente__insignia-titulo">{{ insignia.titulo }}</h3>
-            <p class="perfil-cliente__insignia-descripcion">{{ insignia.descripcion }}</p>
-            <span
-              class="perfil-cliente__insignia-estado"
-              [class.perfil-cliente__insignia-estado--completado]="insignia.completado"
-            >
-              {{ insignia.completado ? 'COMPLETADO' : 'NO COMPLETADO' }}
-            </span>
-          </article>
+            <div class="perfil-cliente__field-group">
+              <label class="perfil-cliente__label" for="telefono">Teléfono</label>
+              <div class="perfil-cliente__field">
+                <input id="telefono" class="perfil-cliente__input" type="text" [value]="camposEditables().telefono" (input)="actualizarCampoEditable('telefono', $any($event.target).value)"/>
+              </div>
+            </div>
+            <div class="perfil-cliente__field-group perfil-cliente__field-group--full">
+              <label class="perfil-cliente__label" for="ciudad">Ciudad</label>
+              <div class="perfil-cliente__field perfil-cliente__field--full">
+                <input id="ciudad" class="perfil-cliente__input" type="text" [value]="camposEditables().ciudad" (input)="actualizarCampoEditable('ciudad', $any($event.target).value)"/>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="perfil-cliente__action-btn" [disabled]="guardandoPerfil()" (click)="guardarDatosPerfil()">{{ guardandoPerfil() ? 'Guardando...' : 'Guardar información personal' }}</button>
+        }
+      </article>
+
+      <div class="perfil-cliente__right-column">
+      <article class="perfil-cliente__section perfil-cliente__section--security card">
+        <h2>Seguridad de la cuenta</h2>
+        <div class="perfil-cliente__grid-1">
+          <div class="perfil-cliente__field">
+            <label class="perfil-cliente__label" for="passwordActual">Contraseña actual</label>
+            <input id="passwordActual" class="perfil-cliente__input" type="password" [value]="cambioPassword().passwordActual" (input)="actualizarCampoPassword('passwordActual', $any($event.target).value)"/>
+          </div>
+          <div class="perfil-cliente__field">
+            <label class="perfil-cliente__label" for="nuevoPassword">Nueva contraseña</label>
+            <input id="nuevoPassword" class="perfil-cliente__input" type="password" [value]="cambioPassword().nuevoPassword" (input)="actualizarCampoPassword('nuevoPassword', $any($event.target).value)"/>
+          </div>
+          <div class="perfil-cliente__security-meter">
+            <span>Seguridad: {{ fortalezaPassword().label }}</span>
+            <div class="perfil-cliente__meter-track">
+              <div class="perfil-cliente__meter-fill" [style.width.%]="fortalezaPassword().percent"></div>
+            </div>
+          </div>
+          <div class="perfil-cliente__field">
+            <label class="perfil-cliente__label" for="confirmarPassword">Confirmar nueva contraseña</label>
+            <input id="confirmarPassword" class="perfil-cliente__input" type="password" [value]="cambioPassword().confirmarPassword" (input)="actualizarCampoPassword('confirmarPassword', $any($event.target).value)"/>
+          </div>
+        </div>
+        <button type="button" class="perfil-cliente__action-btn" [disabled]="guardandoPassword()" (click)="guardarPassword()">{{ guardandoPassword() ? 'Guardando...' : 'Actualizar contraseña' }}</button>
+      </article>
+
+      <article class="perfil-cliente__section perfil-cliente__section--timeline card">
+      <div class="perfil-cliente__section-head">
+        <h2>Actividad reciente</h2>
+      </div>
+      <div class="perfil-cliente__timeline">
+        @for (item of actividadesRecientes(); track item.titulo) {
+          <div class="perfil-cliente__timeline-item">
+            <strong>{{ item.titulo }}</strong>
+            <span>{{ item.detalle }}</span>
+            <small>{{ item.fecha }}</small>
+          </div>
         }
       </div>
+    </article>
+      </div>
+    </div>
+
+    <article class="perfil-cliente__section perfil-cliente__section--danger card">
+      <div class="perfil-cliente__section-head">
+        <h2>Zona de cuenta</h2>
+      </div>
+      <button type="button" class="perfil-cliente__danger-btn" (click)="ejecutarOpcionRapida('eliminar')">
+        Eliminar cuenta
+      </button>
     </article>
   </div>
 
@@ -100,5 +170,9 @@
         </div>
       </div>
     </div>
+  }
+
+  @if (mensajeExito()) {
+    <p class="perfil-cliente__success" role="status">{{ mensajeExito() }}</p>
   }
 </section>
