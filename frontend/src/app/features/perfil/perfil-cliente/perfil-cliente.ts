@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { AvatarConfig, AvatarService } from '../../../core/services/avatar.service';
 import { AvatarDisplay } from './components/avatar-display/avatar-display';
 import { AvatarSelector } from './components/avatar-selector/avatar-selector';
@@ -25,7 +25,7 @@ interface ActividadReciente {
   templateUrl: './perfil-cliente.html',
   styleUrl: './perfil-cliente.scss',
 })
-export class PerfilCliente {
+export class PerfilCliente implements OnDestroy {
 
 
   // Servicios principales 
@@ -55,6 +55,7 @@ export class PerfilCliente {
   });
 
   readonly avatarConfig = computed(() => this.avatarService.avatarConfig());
+  readonly avatarPreview = signal<AvatarConfig>({ figura: 'GATO ANDINO', accesorio: 'LENTES' });
   readonly usuarioSesion = computed(() => this.authService.usuario());
 
   readonly actividadesRecientes = computed<ActividadReciente[]>(() => {
@@ -170,6 +171,7 @@ export class PerfilCliente {
     this.clientePerfilService.actualizarPerfil(usuarioId, payload).subscribe({
       next: (perfilActualizado) => {
         this.avatarService.setAvatar(config);
+        this.avatarPreview.set(config);
         this.perfil.set(perfilActualizado);
         this.cerrarModalAvatar();
         this.mensajeExito.set('Avatar guardado en backend correctamente.');
@@ -183,11 +185,18 @@ export class PerfilCliente {
   }
 
   abrirModalAvatar(): void {
+    this.avatarPreview.set(this.avatarService.getAvatar());
     this.modalAbierto.set(true);
+    document.body.style.overflow = 'hidden';
   }
 
   cerrarModalAvatar(): void {
     this.modalAbierto.set(false);
+    document.body.style.overflow = '';
+  }
+
+  ngOnDestroy(): void {
+    document.body.style.overflow = '';
   }
 
   actualizarCampoEditable(campo: 'genero' | 'telefono' | 'ciudad', valor: string): void {
@@ -196,6 +205,10 @@ export class PerfilCliente {
 
   actualizarCampoPassword(campo: keyof SolicitudCambioPassword, valor: string): void {
     this.cambioPassword.update((prev) => ({ ...prev, [campo]: valor }));
+  }
+
+  actualizarPreviewAvatar(config: AvatarConfig): void {
+    this.avatarPreview.set(config);
   }
 
   guardarDatosPerfil(): void {
@@ -292,6 +305,7 @@ export class PerfilCliente {
         const avatarBackend = this.extraerAvatarDesdeFotoPerfilUrl(perfil.fotoPerfilUrl);
         if (avatarBackend) {
           this.avatarService.setAvatar(avatarBackend);
+          this.avatarPreview.set(avatarBackend);
         }
         this.loading.set(false);
       },
