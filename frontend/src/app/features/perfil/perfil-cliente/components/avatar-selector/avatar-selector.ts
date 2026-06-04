@@ -41,6 +41,14 @@ export class AvatarSelector {
       const current = this.avatarConfig();
       this.figuraSeleccionada.set(current.figura);
       this.accesorioSeleccionado.set(current.accesorio ?? '');
+      this.previewChange.emit({
+        figura: current.figura,
+        accesorio: current.accesorio ?? '',
+      });
+    });
+
+    effect(() => {
+      this.previewChange.emit(this.configPreview());
     });
   }
 

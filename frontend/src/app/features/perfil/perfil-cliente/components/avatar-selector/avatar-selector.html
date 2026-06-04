@@ -37,6 +37,9 @@
           >
             <img [src]="getFiguraSrc(figura)" [alt]="figura" />
             <span>{{ figura }}</span>
+            @if (figuraSeleccionada() === figura) {
+              <small class="avatar-selector__selected-badge">Seleccionado</small>
+            }
           </button>
         }
       </div>
@@ -51,6 +54,9 @@
           >
             <img [src]="getAccesorioSrc(accesorio)" [alt]="accesorio" />
             <span>{{ accesorio }}</span>
+            @if (accesorioSeleccionado() === accesorio) {
+              <small class="avatar-selector__selected-badge">Seleccionado</small>
+            }
           </button>
         }
       </div>
