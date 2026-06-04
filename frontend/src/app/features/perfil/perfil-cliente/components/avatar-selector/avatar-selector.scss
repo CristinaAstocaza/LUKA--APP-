@@ -17,6 +17,11 @@
     font-weight: 600;
     transition: all 0.3s ease;
 
+    &:hover {
+      border-color: #9bb3cc;
+      box-shadow: 0 0 0 2px #0f2a4310;
+    }
+
     &--active {
       background: #0f2a43;
       border-color: #0f2a43;
@@ -62,8 +67,9 @@
     }
 
     &--selected {
-      border-color: #2f855a;
-      box-shadow: 0 0 0 2px #2f855a22;
+      border-color: #1f6f4a;
+      box-shadow: 0 0 0 3px #2f855a44;
+      background: #f3fbf7;
     }
   }
 
@@ -99,6 +105,52 @@
 
     &:hover {
       background: #276749;
+    }
+  }
+}
+
+body.theme-dark .avatar-selector {
+  &__tab {
+    background: #17273a;
+    border-color: #3a4d63;
+    color: #dbe7f3;
+
+    &:hover {
+      border-color: #5d7793;
+      box-shadow: 0 0 0 2px #7bb3ff2b;
+    }
+
+    &--active {
+      background: #5aa0ff;
+      border-color: #5aa0ff;
+      color: #081521;
+      box-shadow: 0 0 0 3px #5aa0ff55;
+    }
+  }
+
+  &__item {
+    background: #162435;
+    border-color: #33485f;
+    color: #deebf7;
+
+    &:hover {
+      border-color: #5d7793;
+      box-shadow: 0 6px 14px #00000055;
+    }
+
+    &--selected {
+      background: #1c3347;
+      border-color: #7dd3a6;
+      box-shadow: 0 0 0 3px #7dd3a666;
+      color: #eafff2;
+    }
+  }
+
+  &__save {
+    background: #2f855a;
+
+    &:hover {
+      background: #3aa56f;
     }
   }
 }

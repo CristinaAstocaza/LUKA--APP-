@@ -97,18 +97,18 @@ export class VerificarCodigo {
     this.errorMensaje = '';
 
     // Guardar código verificado
-    console.log('Código OTP:', this.codigoCompleto);
     sessionStorage.setItem('codigo-otp', this.codigoCompleto);
 
-    // TODO: Validar el código con el backend
+    if (this.codigoVerificado.observed) {
+      this.cargando = false;
+      this.codigoVerificado.emit(this.codigoCompleto);
+      return;
+    }
+
+    // Flujo standalone de recuperación: conserva la navegación existente.
     setTimeout(() => {
       this.cargando = false;
-      // Si tiene listeners, emitir evento; si no, navegar
-      if (this.codigoVerificado.observed) {
-        this.codigoVerificado.emit(this.codigoCompleto);
-      } else {
-        this.router.navigate([this.rutaSiguiente]);
-      }
+      this.router.navigate([this.rutaSiguiente]);
     }, 1000);
   }
 

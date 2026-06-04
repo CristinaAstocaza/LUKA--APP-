@@ -39,6 +39,7 @@ export class PerfilCliente {
   modalAbierto = signal(false);
   mensajeExito = signal('');
   perfil = signal<RespuestaDatosPersonales | null>(null);
+  avatarPreview = signal<AvatarConfig | null>(null);
   guardandoPerfil = signal(false);
   guardandoPassword = signal(false);
 
@@ -55,6 +56,7 @@ export class PerfilCliente {
   });
 
   readonly avatarConfig = computed(() => this.avatarService.avatarConfig());
+  readonly avatarConfigActual = computed(() => this.avatarPreview() ?? this.avatarConfig());
   readonly usuarioSesion = computed(() => this.authService.usuario());
 
   readonly actividadesRecientes = computed<ActividadReciente[]>(() => {
@@ -171,6 +173,7 @@ export class PerfilCliente {
       next: (perfilActualizado) => {
         this.avatarService.setAvatar(config);
         this.perfil.set(perfilActualizado);
+        this.avatarPreview.set(null);
         this.cerrarModalAvatar();
         this.mensajeExito.set('Avatar guardado en backend correctamente.');
         setTimeout(() => this.mensajeExito.set(''), 2500);
@@ -183,11 +186,17 @@ export class PerfilCliente {
   }
 
   abrirModalAvatar(): void {
+    this.avatarPreview.set(this.avatarConfig());
     this.modalAbierto.set(true);
   }
 
   cerrarModalAvatar(): void {
+    this.avatarPreview.set(null);
     this.modalAbierto.set(false);
+  }
+
+  actualizarPreviewAvatar(config: AvatarConfig): void {
+    this.avatarPreview.set(config);
   }
 
   actualizarCampoEditable(campo: 'genero' | 'telefono' | 'ciudad', valor: string): void {

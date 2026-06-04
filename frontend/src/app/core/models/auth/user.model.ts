@@ -1,3 +1,7 @@
+// =============================================
+// microservicio-usuarios  → puerto 8081
+// microservicio-nucleo-financiero → puerto 8085
+// =============================================
 
 // ── Auth (microservicio-usuarios) ──
 export interface SolicitudLogin {
@@ -14,11 +18,25 @@ export interface SolicitudRegistro {
 
 export interface RespuestaAutenticacion {
   tokenAcceso:   string;
+  refreshToken:  string;
   tipoToken:     string;   
   expiraEn:      number;
+  refreshExpiraEn: number;
   idUsuario:     string;   
   nombreUsuario: string;
   roles:         string[];
+}
+
+export interface SolicitudRefreshToken {
+  refreshToken: string;
+}
+
+export type TipoVerificacionOtp = 'EMAIL' | 'SMS' | 'WHATSAPP';
+
+export interface SolicitudReenvioOtp {
+  email: string;
+  telefono?: string;
+  tipo: TipoVerificacionOtp;
 }
 
 // ── Usuario en sesión ──
@@ -27,7 +45,9 @@ export interface UsuarioSesion {
   nombreUsuario: string;
   roles:        string[];
   token:        string;
+  refreshToken?: string;
   expiraEn:     number;
+  refreshExpiraEn?: number;
 }
 
 // ── Recuperación de contraseña ──
@@ -41,13 +61,13 @@ export interface SolicitudCambioPassword {
   confirmarPassword: string;
 }
 
-export interface SolicitudRestablecerPassword {
-  nuevoPassword: string;
-  confirmarPassword: string;
+export interface ResultadoApi<T> {
+  exito:   boolean;
+  estado:  number;
+  error?:  string;
+  mensaje: string;
+  datos:   T;
+  detalles?: string[];
+  pagina?: any;
 }
 
-export interface SolicitudResetPassword {
-  registroId: string;
-  codigoOtp: string;
-  payload: SolicitudRestablecerPassword;
-}
