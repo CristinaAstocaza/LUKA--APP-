@@ -1,22 +1,39 @@
-import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
-import { AvatarConfig, AvatarService } from '../../../core/services/avatar.service';
+import { Component, computed, inject, signal } from '@angular/core';
+import { AvatarConfig, AvatarService, AuthService, ClientePerfilService } from '../../../core/services';
 import { AvatarDisplay } from './components/avatar-display/avatar-display';
 import { AvatarSelector } from './components/avatar-selector/avatar-selector';
-import { ClientePerfilService } from '../../../core/services';
-import { AuthService } from '../../../core/services';
 import { RespuestaDatosPersonales } from '../../../core/models';
 import { SolicitudCambioPassword } from '../../../core/models/auth/user.model';
-
-interface CampoBasico {
-  label: string;
-  value: string;
-}
 
 interface ActividadReciente {
   titulo: string;
   detalle: string;
   fecha: string;
 }
+
+interface PaisCatalogo {
+  codigo: string;
+  nombre: string;
+  banderaClase: string;
+  prefijo: string;
+  ciudades: string[];
+}
+
+interface PerfilForm {
+  nombres: string;
+  apellidos: string;
+  fechaNacimiento: string;
+  dni: string;
+  edad: string;
+  correo: string;
+  telefonoCodigoPais: string;
+  telefonoNumero: string;
+  pais: string;
+  ciudad: string;
+  genero: string;
+}
+
+type PerfilFormKey = keyof PerfilForm;
 
 @Component({
   selector: 'app-perfil-cliente',
@@ -25,247 +42,265 @@ interface ActividadReciente {
   templateUrl: './perfil-cliente.html',
   styleUrl: './perfil-cliente.scss',
 })
-export class PerfilCliente implements OnDestroy {
-
-
-  // Servicios principales 
+export class PerfilCliente {
   private readonly avatarService = inject(AvatarService);
   private readonly clientePerfilService = inject(ClientePerfilService);
   private readonly authService = inject(AuthService);
 
+  readonly paisesCatalogo: PaisCatalogo[] = [
+    { codigo: 'PE', nombre: 'Perú', banderaClase: 'flag flag--pe', prefijo: '+51', ciudades: ['Lima', 'Ica', 'Arequipa', 'Cusco', 'Trujillo', 'Piura'] },
+    { codigo: 'CL', nombre: 'Chile', banderaClase: 'flag flag--cl', prefijo: '+56', ciudades: ['Santiago', 'Valparaíso', 'Concepción'] },
+    { codigo: 'CO', nombre: 'Colombia', banderaClase: 'flag flag--co', prefijo: '+57', ciudades: ['Bogotá', 'Medellín', 'Cali'] },
+    { codigo: 'AR', nombre: 'Argentina', banderaClase: 'flag flag--ar', prefijo: '+54', ciudades: ['Buenos Aires', 'Córdoba', 'Rosario'] },
+    { codigo: 'MX', nombre: 'México', banderaClase: 'flag flag--mx', prefijo: '+52', ciudades: ['CDMX', 'Guadalajara', 'Monterrey'] },
+    { codigo: 'US', nombre: 'Estados Unidos', banderaClase: 'flag flag--us', prefijo: '+1', ciudades: ['Miami', 'New York', 'Los Angeles'] },
+  ];
 
-  //Componentes temporales 
+  readonly generosCatalogo = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decirlo'];
+  readonly mesesCatalogo = [
+    { value: 0, label: 'Enero' },
+    { value: 1, label: 'Febrero' },
+    { value: 2, label: 'Marzo' },
+    { value: 3, label: 'Abril' },
+    { value: 4, label: 'Mayo' },
+    { value: 5, label: 'Junio' },
+    { value: 6, label: 'Julio' },
+    { value: 7, label: 'Agosto' },
+    { value: 8, label: 'Septiembre' },
+    { value: 9, label: 'Octubre' },
+    { value: 10, label: 'Noviembre' },
+    { value: 11, label: 'Diciembre' }
+  ];
+
   loading = signal(true);
   modalAbierto = signal(false);
   mensajeExito = signal('');
+  mensajeError = signal('');
   perfil = signal<RespuestaDatosPersonales | null>(null);
-  avatarPreview = signal<AvatarConfig | null>(null);
   guardandoPerfil = signal(false);
   guardandoPassword = signal(false);
+  mostrarPasswordActual = signal(false);
+  mostrarPasswordNueva = signal(false);
+  mostrarPasswordConfirmar = signal(false);
 
-  readonly camposEditables = signal({
-    genero: '',
-    telefono: '',
+  form = signal<PerfilForm>({
+    nombres: '',
+    apellidos: '',
+    fechaNacimiento: '',
+    dni: '',
+    edad: '',
+    correo: '',
+    telefonoCodigoPais: '+51',
+    telefonoNumero: '',
+    pais: 'PE',
     ciudad: '',
+    genero: ''
   });
 
-  readonly cambioPassword = signal<SolicitudCambioPassword>({
+  formOriginal = signal<PerfilForm | null>(null);
+  errores = signal<Partial<Record<PerfilFormKey, string>>>({});
+
+  cambioPassword = signal<SolicitudCambioPassword>({
     passwordActual: '',
     nuevoPassword: '',
-    confirmarPassword: '',
+    confirmarPassword: ''
   });
 
-  readonly avatarConfig = computed(() => this.avatarService.avatarConfig());
-  readonly avatarConfigActual = computed(() => this.avatarPreview() ?? this.avatarConfig());
-  readonly usuarioSesion = computed(() => this.authService.usuario());
+  avatarConfig = computed(() => this.avatarService.avatarConfig());
+  avatarConfigActual = signal<AvatarConfig>(this.avatarService.avatarConfig());
+  usuarioSesion = computed(() => this.authService.usuario());
 
-  readonly actividadesRecientes = computed<ActividadReciente[]>(() => {
-    const perfil = this.perfil();
-    const actividades: ActividadReciente[] = [];
-
-    if (perfil?.fechaActualizacion) {
-      actividades.push({
-        titulo: 'Actualización de perfil',
-        detalle: 'Se registró una actualización en tus datos personales.',
-        fecha: this.formatearFecha(perfil.fechaActualizacion),
-      });
-    }
-
-    if (perfil?.fechaCreacion) {
-      actividades.push({
-        titulo: 'Registro de cuenta',
-        detalle: 'Tu cuenta fue creada correctamente en la plataforma.',
-        fecha: this.formatearFecha(perfil.fechaCreacion),
-      });
-    }
-
-    if (this.usuarioSesion()) {
-      actividades.push({
-        titulo: 'Sesión activa',
-        detalle: 'Tu sesión está activa en este dispositivo.',
-        fecha: 'Ahora',
-      });
-    }
-
-    return actividades;
-  });
-
-
-  // Combinación de datos del perfil backend + correo de sesión.
-  readonly informacionBasica = computed<CampoBasico[]>(() => {
-    const perfil = this.perfil();
-    const usuario = this.usuarioSesion();
-
-    const miembroDesde = this.formatearFecha(perfil?.fechaCreacion);
-
-    return [
-      { label: 'Nombres', value: this.formatearValor(perfil?.nombres) },
-      { label: 'DNI', value: this.formatearValor(perfil?.dni) },
-      { label: 'Edad', value: this.formatearValor(perfil?.edad) },
-      { label: 'Correo', value: this.formatearValor(usuario?.nombreUsuario) },
-      {
-        label: 'Miembro desde',
-        value: this.formatearValor(miembroDesde),
-      },
-    ];
-  });
+  actividadesRecientes = signal<ActividadReciente[]>([
+    { titulo: 'Actualización de perfil', detalle: 'Se editaron datos personales', fecha: 'Hace 2 días' },
+    { titulo: 'Cambio de avatar', detalle: 'Avatar personalizado actualizado', fecha: 'Hace 5 días' },
+    { titulo: 'Inicio de sesión', detalle: 'Acceso desde navegador web', fecha: 'Hoy' }
+  ]);
 
   readonly nombreMostrado = computed(() => {
-    const perfil = this.perfil();
-    return `${perfil?.nombres ?? ''} ${perfil?.apellidos ?? ''}`.trim() || 'Usuario Luka';
+    const f = this.form();
+    const full = `${f.nombres} ${f.apellidos}`.trim();
+    return full || 'Usuario Luka';
   });
 
-  readonly estadoVerificacion = computed(() => this.perfil()?.datosCompletos ? 'Cuenta verificada' : 'Verificación pendiente');
-
-  readonly miembroDesde = computed(() => this.formatearFecha(this.perfil()?.fechaCreacion));
-
-  readonly estadoActividad = computed(() => this.usuarioSesion() ? 'Activo ahora' : 'Sin sesión');
+  readonly estadoVerificacion = computed(() => this.form().correo ? 'Verificación pendiente' : 'Sin verificar');
 
   readonly resumenCuenta = computed(() => {
-    const perfil = this.perfil();
+    const p = this.perfil();
     return {
-      estadoPerfil: perfil?.datosCompletos ? 'Perfil completo' : 'Perfil pendiente',
-      ultimaActualizacion: this.formatearFecha(perfil?.fechaActualizacion),
+      estadoPerfil: p?.datosCompletos ? 'Perfil completo' : 'Perfil pendiente',
+      ultimaActualizacion: this.formatearFecha(p?.fechaActualizacion)
     };
   });
 
-  readonly fortalezaPassword = computed(() => {
-    const value = this.cambioPassword().nuevoPassword;
-    let score = 0;
-    if (value.length >= 8) score++;
-    if (/[A-Z]/.test(value)) score++;
-    if (/[0-9]/.test(value)) score++;
-    if (/[^A-Za-z0-9]/.test(value)) score++;
+  readonly miembroDesde = computed(() => this.formatearFecha(this.perfil()?.fechaCreacion));
+  readonly estadoActividad = computed(() => this.usuarioSesion() ? 'En sesión' : 'Sin sesión');
 
-    if (score <= 1) return { label: 'Débil', percent: 25 };
-    if (score === 2) return { label: 'Media', percent: 50 };
-    if (score === 3) return { label: 'Buena', percent: 75 };
-    return { label: 'Fuerte', percent: 100 };
+  readonly ciudadesDisponibles = computed(() => {
+    const pais = this.paisesCatalogo.find(p => p.codigo === this.form().pais);
+    return pais?.ciudades ?? [];
+  });
+
+  readonly selectedPais = computed(() => this.paisesCatalogo.find(p => p.codigo === this.form().pais) ?? this.paisesCatalogo[0]);
+
+  readonly fortalezaPassword = computed(() => {
+    const value = this.cambioPassword().nuevoPassword ?? '';
+    let percent = 10;
+    let label = 'Débil';
+    if (value.length >= 8) percent = 45;
+    if (/[A-Z]/.test(value) && /\d/.test(value)) percent = 70;
+    if (value.length >= 10 && /[^A-Za-z0-9]/.test(value)) {
+      percent = 100;
+      label = 'Fuerte';
+    } else if (percent >= 70) {
+      label = 'Media';
+    }
+    return { percent, label };
+  });
+
+  readonly fechaPartes = computed(() => {
+    const raw = this.form().fechaNacimiento;
+    if (!raw) return { dia: '', mes: '', anio: '' };
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return { dia: '', mes: '', anio: '' };
+    return {
+      dia: String(parsed.getDate()),
+      mes: String(parsed.getMonth()),
+      anio: String(parsed.getFullYear())
+    };
+  });
+
+  readonly aniosNacimiento = computed(() => {
+    const current = new Date().getFullYear();
+    return Array.from({ length: 100 }, (_, i) => String(current - i));
   });
 
   constructor() {
     this.cargarDatosPerfil();
   }
 
-  guardarAvatar(config: AvatarConfig): void {
-    const perfilActual = this.perfil();
-    const usuarioId = this.authService.usuario()?.id;
-
-    if (!perfilActual || !usuarioId) {
-      return;
-    }
-
-    const fotoPerfilUrl = this.construirAvatarPersistible(config);
-
-    const payload = {
-      dni: perfilActual.dni,
-      nombres: perfilActual.nombres,
-      apellidos: perfilActual.apellidos,
-      genero: perfilActual.genero,
-      edad: perfilActual.edad,
-      telefono: perfilActual.telefono,
-      fotoPerfilUrl,
-      direccion: perfilActual.direccion,
-      ciudad: perfilActual.ciudad,
-    };
-
-    this.clientePerfilService.actualizarPerfil(usuarioId, payload).subscribe({
-      next: (perfilActualizado) => {
-        this.avatarService.setAvatar(config);
-        this.avatarPreview.set(config);
-        this.perfil.set(perfilActualizado);
-        this.avatarPreview.set(null);
-        this.cerrarModalAvatar();
-        this.mensajeExito.set('Avatar guardado en backend correctamente.');
-        setTimeout(() => this.mensajeExito.set(''), 2500);
-      },
-      error: () => {
-        this.mensajeExito.set('No se pudo guardar el avatar en backend.');
-        setTimeout(() => this.mensajeExito.set(''), 2500);
-      },
-    });
-  }
-
   abrirModalAvatar(): void {
-    this.avatarPreview.set(this.avatarConfig());
+    this.avatarConfigActual.set(this.avatarConfig());
     this.modalAbierto.set(true);
-    document.body.style.overflow = 'hidden';
   }
 
   cerrarModalAvatar(): void {
-    this.avatarPreview.set(null);
     this.modalAbierto.set(false);
-    document.body.style.overflow = '';
   }
 
-  ngOnDestroy(): void {
-    document.body.style.overflow = '';
+  guardarAvatar(config: AvatarConfig): void {
+    this.avatarService.setAvatar(config);
+    this.avatarConfigActual.set(config);
+    this.cerrarModalAvatar();
+    this.mensajeExito.set('Cambios guardados correctamente.');
+    setTimeout(() => this.mensajeExito.set(''), 2500);
   }
 
   actualizarPreviewAvatar(config: AvatarConfig): void {
-    this.avatarPreview.set(config);
+    this.avatarConfigActual.set(config);
   }
 
-  actualizarCampoEditable(campo: 'genero' | 'telefono' | 'ciudad', valor: string): void {
-    this.camposEditables.update((prev) => ({ ...prev, [campo]: valor }));
+  actualizarCampo(campo: PerfilFormKey, valor: string): void {
+    this.form.update(state => ({ ...state, [campo]: valor }));
+    this.errores.update(e => ({ ...e, [campo]: undefined }));
+
+    if (campo === 'pais') {
+      const pais = this.paisesCatalogo.find(p => p.codigo === valor);
+      this.form.update(state => ({
+        ...state,
+        telefonoCodigoPais: pais?.prefijo ?? state.telefonoCodigoPais,
+        ciudad: ''
+      }));
+    }
   }
 
   actualizarCampoPassword(campo: keyof SolicitudCambioPassword, valor: string): void {
-    this.cambioPassword.update((prev) => ({ ...prev, [campo]: valor }));
+    this.cambioPassword.update(state => ({ ...state, [campo]: valor }));
   }
 
-  actualizarPreviewAvatar(config: AvatarConfig): void {
-    this.avatarPreview.set(config);
+  togglePassword(campo: 'actual' | 'nueva' | 'confirmar'): void {
+    if (campo === 'actual') this.mostrarPasswordActual.update(v => !v);
+    if (campo === 'nueva') this.mostrarPasswordNueva.update(v => !v);
+    if (campo === 'confirmar') this.mostrarPasswordConfirmar.update(v => !v);
+  }
+
+  actualizarFechaNacimientoParte(parte: 'dia' | 'mes' | 'anio', valor: string): void {
+    const partes = this.fechaPartes();
+    const dia = parte === 'dia' ? valor : partes.dia;
+    const mes = parte === 'mes' ? valor : partes.mes;
+    const anio = parte === 'anio' ? valor : partes.anio;
+
+    if (!dia || !mes || !anio) return;
+
+    const d = Number(dia);
+    const m = Number(mes);
+    const y = Number(anio);
+    const fecha = new Date(y, m, d);
+    if (Number.isNaN(fecha.getTime())) return;
+
+    const edad = this.calcularEdadDesdeFecha(fecha);
+    const iso = `${String(y).padStart(4, '0')}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+    this.form.update(state => ({ ...state, fechaNacimiento: iso, edad: String(edad) }));
+  }
+
+  cancelarCambiosPerfil(): void {
+    const original = this.formOriginal();
+    if (!original) return;
+    this.form.set({ ...original });
+    this.errores.set({});
+    this.mensajeError.set('');
   }
 
   guardarDatosPerfil(): void {
-    const perfilActual = this.perfil();
     const usuarioId = this.authService.usuario()?.id;
-    if (!perfilActual || !usuarioId) return;
+    const p = this.perfil();
+    if (!usuarioId || !p) return;
 
-    const editables = this.camposEditables();
+    if (!this.validarFormulario()) {
+      this.mensajeError.set('Corrige los campos marcados antes de guardar.');
+      return;
+    }
+
+    this.mensajeError.set('');
     this.guardandoPerfil.set(true);
 
+    const f = this.form();
+    const telefonoCompleto = `${f.telefonoCodigoPais}${f.telefonoNumero}`.trim();
+
     this.clientePerfilService.actualizarPerfil(usuarioId, {
-      dni: perfilActual.dni,
-      nombres: perfilActual.nombres,
-      apellidos: perfilActual.apellidos,
-      genero: editables.genero,
-      edad: perfilActual.edad,
-      telefono: editables.telefono,
-      fotoPerfilUrl: perfilActual.fotoPerfilUrl,
-      direccion: perfilActual.direccion,
-      ciudad: editables.ciudad,
+      dni: f.dni || p.dni,
+      nombres: f.nombres,
+      apellidos: f.apellidos,
+      genero: f.genero,
+      edad: Number(f.edad || p.edad || 0),
+      telefono: telefonoCompleto,
+      fotoPerfilUrl: p.fotoPerfilUrl,
+      direccion: p.direccion,
+      ciudad: f.ciudad,
     }).subscribe({
       next: (perfilActualizado) => {
         this.perfil.set(perfilActualizado);
-        this.camposEditables.set({
-          genero: perfilActualizado.genero ?? '',
-          telefono: perfilActualizado.telefono ?? '',
-          ciudad: perfilActualizado.ciudad ?? '',
-        });
+        this.hidratarFormularioDesdePerfil(perfilActualizado);
         this.guardandoPerfil.set(false);
-        this.mensajeExito.set('Perfil actualizado correctamente.');
+        this.mensajeExito.set('Datos personales actualizados correctamente.');
         setTimeout(() => this.mensajeExito.set(''), 2500);
       },
       error: () => {
         this.guardandoPerfil.set(false);
-        this.mensajeExito.set('No se pudo actualizar el perfil.');
-        setTimeout(() => this.mensajeExito.set(''), 2500);
-      },
+        this.mensajeError.set('No se pudo guardar. Inténtalo nuevamente.');
+      }
     });
   }
 
   guardarPassword(): void {
-    const payload = this.cambioPassword();
-    if (!payload.passwordActual || !payload.nuevoPassword || !payload.confirmarPassword) {
-      this.mensajeExito.set('Completa todos los campos de contraseña.');
-      setTimeout(() => this.mensajeExito.set(''), 2500);
+    if (this.cambioPassword().nuevoPassword !== this.cambioPassword().confirmarPassword) {
+      this.mensajeError.set('La confirmación de contraseña no coincide.');
       return;
     }
 
+    this.mensajeError.set('');
     this.guardandoPassword.set(true);
-    this.authService.cambiarPassword(payload).subscribe({
+    this.authService.cambiarPassword(this.cambioPassword()).subscribe({
       next: () => {
         this.guardandoPassword.set(false);
         this.cambioPassword.set({ passwordActual: '', nuevoPassword: '', confirmarPassword: '' });
@@ -274,27 +309,20 @@ export class PerfilCliente implements OnDestroy {
       },
       error: () => {
         this.guardandoPassword.set(false);
-        this.mensajeExito.set('No se pudo actualizar la contraseña.');
-        setTimeout(() => this.mensajeExito.set(''), 2500);
-      },
+        this.mensajeError.set('No se pudo actualizar la contraseña.');
+      }
     });
   }
 
-  ejecutarOpcionRapida(accion: 'correo' | 'dos-pasos' | 'eliminar'): void {
-    const mensajes = {
-      correo: 'Próximamente: flujo para cambio de correo.',
-      'dos-pasos': 'Próximamente: activación de verificación en 2 pasos.',
-      eliminar: 'Próximamente: flujo seguro de eliminación de cuenta.',
-    } as const;
-
-    this.mensajeExito.set(mensajes[accion]);
-    setTimeout(() => this.mensajeExito.set(''), 2500);
+  ejecutarOpcionRapida(opcion: 'eliminar'): void {
+    if (opcion === 'eliminar') {
+      this.mensajeExito.set('Solicitud de eliminación registrada. Contacta soporte para completar el proceso.');
+      setTimeout(() => this.mensajeExito.set(''), 3500);
+    }
   }
 
   private cargarDatosPerfil(): void {
-    // Si no hay sesión válida, no intenta consultar backend.
     const usuarioId = this.authService.usuario()?.id;
-
     if (!usuarioId) {
       this.loading.set(false);
       return;
@@ -304,16 +332,7 @@ export class PerfilCliente implements OnDestroy {
     this.clientePerfilService.obtenerPerfil(usuarioId).subscribe({
       next: (perfil) => {
         this.perfil.set(perfil);
-        this.camposEditables.set({
-          genero: perfil.genero ?? '',
-          telefono: perfil.telefono ?? '',
-          ciudad: perfil.ciudad ?? '',
-        });
-        const avatarBackend = this.extraerAvatarDesdeFotoPerfilUrl(perfil.fotoPerfilUrl);
-        if (avatarBackend) {
-          this.avatarService.setAvatar(avatarBackend);
-          this.avatarPreview.set(avatarBackend);
-        }
+        this.hidratarFormularioDesdePerfil(perfil);
         this.loading.set(false);
       },
       error: () => {
@@ -323,52 +342,79 @@ export class PerfilCliente implements OnDestroy {
     });
   }
 
-  private construirAvatarPersistible(config: AvatarConfig): string {
-    return `avatar-config:${encodeURIComponent(config.figura)}|${encodeURIComponent(config.accesorio ?? '')}`;
-  }
+  private hidratarFormularioDesdePerfil(perfil: RespuestaDatosPersonales): void {
+    const correo = this.usuarioSesion()?.nombreUsuario ?? '';
+    const pais = this.paisDesdeTelefono(perfil.telefono) ?? 'PE';
+    const prefijo = this.paisesCatalogo.find(x => x.codigo === pais)?.prefijo ?? '+51';
+    const numero = this.numeroSinPrefijo(perfil.telefono, prefijo);
 
-  private extraerAvatarDesdeFotoPerfilUrl(fotoPerfilUrl?: string): AvatarConfig | null {
-    if (!fotoPerfilUrl || !fotoPerfilUrl.startsWith('avatar-config:')) {
-      return null;
-    }
-
-    const raw = fotoPerfilUrl.replace('avatar-config:', '');
-    const [figuraRaw, accesorioRaw] = raw.split('|');
-    const figura = decodeURIComponent(figuraRaw ?? '');
-    const accesorio = decodeURIComponent(accesorioRaw ?? '');
-
-    if (!figura) {
-      return null;
-    }
-
-    return {
-      figura,
-      accesorio,
+    const nextForm: PerfilForm = {
+      nombres: perfil.nombres ?? '',
+      apellidos: perfil.apellidos ?? '',
+      fechaNacimiento: '',
+      dni: perfil.dni ?? '',
+      edad: String(perfil.edad ?? ''),
+      correo,
+      telefonoCodigoPais: prefijo,
+      telefonoNumero: numero,
+      pais,
+      ciudad: perfil.ciudad ?? '',
+      genero: perfil.genero ?? ''
     };
+
+    this.form.set(nextForm);
+    this.formOriginal.set({ ...nextForm });
   }
 
-  private formatearValor(value: unknown): string {
-    if (value === null || value === undefined || value === '') {
-      return 'No especificado';
+  private validarFormulario(): boolean {
+    const f = this.form();
+    const errores: Partial<Record<PerfilFormKey, string>> = {};
+
+    if (!f.nombres.trim()) errores.nombres = 'Nombres es obligatorio.';
+    if (!f.apellidos.trim()) errores.apellidos = 'Apellidos es obligatorio.';
+    if (!/^\d+$/.test(f.dni.trim())) errores.dni = 'DNI debe contener solo números.';
+    if (!/^\S+@\S+\.\S+$/.test(f.correo.trim())) errores.correo = 'Correo no tiene formato válido.';
+
+    if (f.telefonoNumero.trim()) {
+      if (!/^\d{6,12}$/.test(f.telefonoNumero.trim())) {
+        errores.telefonoNumero = 'Teléfono inválido para el país seleccionado.';
+      }
     }
-    return String(value);
+
+    if (f.pais && !f.ciudad) errores.ciudad = 'Ciudad es obligatoria si seleccionas país.';
+    if (!f.genero) errores.genero = 'Selecciona un género.';
+
+    this.errores.set(errores);
+    return Object.keys(errores).length === 0;
+  }
+
+  private paisDesdeTelefono(telefono?: string): string | null {
+    if (!telefono) return null;
+    const pref = this.paisesCatalogo.find(p => telefono.startsWith(p.prefijo));
+    return pref?.codigo ?? null;
+  }
+
+  private numeroSinPrefijo(telefono: string | undefined, prefijo: string): string {
+    if (!telefono) return '';
+    return telefono.startsWith(prefijo) ? telefono.slice(prefijo.length).trim() : telefono;
+  }
+
+  private calcularEdadDesdeFecha(fecha: Date): number {
+    const hoy = new Date();
+    let edad = hoy.getFullYear() - fecha.getFullYear();
+    const m = hoy.getMonth() - fecha.getMonth();
+    if (m < 0 || (m === 0 && hoy.getDate() < fecha.getDate())) edad--;
+    return Math.max(edad, 0);
   }
 
   private formatearFecha(fecha?: string): string {
-    // Formato amigable para UI en locale es-PE.
-    if (!fecha) {
-      return 'No especificado';
-    }
-
-    const fechaParseada = new Date(fecha);
-    if (Number.isNaN(fechaParseada.getTime())) {
-      return fecha;
-    }
-
+    if (!fecha) return 'No especificado';
+    const parsed = new Date(fecha);
+    if (Number.isNaN(parsed.getTime())) return fecha;
     return new Intl.DateTimeFormat('es-PE', {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
-    }).format(fechaParseada);
+    }).format(parsed);
   }
 }
