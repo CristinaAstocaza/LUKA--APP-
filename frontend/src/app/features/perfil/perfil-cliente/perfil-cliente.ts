@@ -39,6 +39,7 @@ export class PerfilCliente implements OnDestroy {
   modalAbierto = signal(false);
   mensajeExito = signal('');
   perfil = signal<RespuestaDatosPersonales | null>(null);
+  avatarPreview = signal<AvatarConfig | null>(null);
   guardandoPerfil = signal(false);
   guardandoPassword = signal(false);
 
@@ -55,7 +56,7 @@ export class PerfilCliente implements OnDestroy {
   });
 
   readonly avatarConfig = computed(() => this.avatarService.avatarConfig());
-  readonly avatarPreview = signal<AvatarConfig>({ figura: 'GATO ANDINO', accesorio: 'LENTES' });
+  readonly avatarConfigActual = computed(() => this.avatarPreview() ?? this.avatarConfig());
   readonly usuarioSesion = computed(() => this.authService.usuario());
 
   readonly actividadesRecientes = computed<ActividadReciente[]>(() => {
@@ -173,6 +174,7 @@ export class PerfilCliente implements OnDestroy {
         this.avatarService.setAvatar(config);
         this.avatarPreview.set(config);
         this.perfil.set(perfilActualizado);
+        this.avatarPreview.set(null);
         this.cerrarModalAvatar();
         this.mensajeExito.set('Avatar guardado en backend correctamente.');
         setTimeout(() => this.mensajeExito.set(''), 2500);
@@ -185,18 +187,23 @@ export class PerfilCliente implements OnDestroy {
   }
 
   abrirModalAvatar(): void {
-    this.avatarPreview.set(this.avatarService.getAvatar());
+    this.avatarPreview.set(this.avatarConfig());
     this.modalAbierto.set(true);
     document.body.style.overflow = 'hidden';
   }
 
   cerrarModalAvatar(): void {
+    this.avatarPreview.set(null);
     this.modalAbierto.set(false);
     document.body.style.overflow = '';
   }
 
   ngOnDestroy(): void {
     document.body.style.overflow = '';
+  }
+
+  actualizarPreviewAvatar(config: AvatarConfig): void {
+    this.avatarPreview.set(config);
   }
 
   actualizarCampoEditable(campo: 'genero' | 'telefono' | 'ciudad', valor: string): void {

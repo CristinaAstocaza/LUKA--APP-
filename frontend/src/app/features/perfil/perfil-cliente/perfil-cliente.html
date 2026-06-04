@@ -163,14 +163,14 @@
         <div class="perfil-cliente__modal-layout">
           <section class="perfil-cliente__modal-preview">
             <h3>Vista previa</h3>
-            <app-avatar-display [avatarConfig]="avatarPreview()" [loading]="false" [size]="300" />
+            <app-avatar-display [avatarConfig]="avatarConfigActual()" [loading]="false" [size]="300" />
           </section>
 
           <section class="perfil-cliente__modal-selector">
             <app-avatar-selector
               [avatarConfig]="avatarConfig()"
               [loading]="loading()"
-              (previewChange)="actualizarPreviewAvatar($event)"
+              (preview)="actualizarPreviewAvatar($event)"
               (save)="guardarAvatar($event)"
             />
           </section>

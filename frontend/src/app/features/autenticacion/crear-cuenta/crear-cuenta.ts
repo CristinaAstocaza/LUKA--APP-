@@ -2,6 +2,15 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+
+export interface RegistroExitosoPayload {
+  usuarioId: string;
+  correo: string;
+  telefono: string | null;
+  medio: 'correo' | 'celular';
+  destino: string;
+}
 
 @Component({
   selector: 'app-crear-cuenta',
@@ -12,7 +21,7 @@ import { Router } from '@angular/router';
 })
 export class CrearCuenta {
   /** Emite cuando el registro es exitoso para pasar al paso de verificación */
-  @Output() registroExitoso = new EventEmitter<{ medio: 'correo' | 'celular'; destino: string }>();
+  @Output() registroExitoso = new EventEmitter<RegistroExitosoPayload>();
 
   formulario: FormGroup;
   mostrarPassword = false;
@@ -21,7 +30,7 @@ export class CrearCuenta {
   cargando = false;
   errorMensaje = '';
 
-  constructor(private fb: FormBuilder, private router: Router) {
+  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
     this.formulario = this.fb.group({
       nombreUsuario: ['', [Validators.required, Validators.minLength(4), Validators.maxLength(100)]],
       correo: ['', [Validators.required, Validators.email]],
@@ -65,25 +74,29 @@ export class CrearCuenta {
     this.cargando = true;
     this.errorMensaje = '';
 
-    // Objeto que coincide exactamente con SolicitudRegistro del backend
     const solicitudRegistro = {
       nombreUsuario: this.formulario.value.nombreUsuario,
       correo: this.formulario.value.correo,
-      celular: this.usarCelular ? this.formulario.value.celular : null,
       password: this.formulario.value.password,
-      confirmarPassword: this.formulario.value.confirmarPassword,
-      verificacionPor: this.usarCelular ? 'celular' : 'correo'
+      confirmarPassword: this.formulario.value.confirmarPassword
     };
+    const telefono = this.usarCelular ? this.formulario.value.celular : null;
 
-    console.log('SolicitudRegistro:', solicitudRegistro);
-    // TODO: Conectar con servicio de autenticación del backend
-    setTimeout(() => {
-      this.cargando = false;
-      // Emitir evento para mostrar verificación de código
-      this.registroExitoso.emit({
-        medio: this.usarCelular ? 'celular' : 'correo',
-        destino: this.usarCelular ? this.formulario.value.celular : this.formulario.value.correo
-      });
-    }, 1500);
+    this.authService.registrar(solicitudRegistro).subscribe({
+      next: (usuarioId) => {
+        this.cargando = false;
+        this.registroExitoso.emit({
+          usuarioId,
+          correo: this.formulario.value.correo,
+          telefono,
+          medio: this.usarCelular ? 'celular' : 'correo',
+          destino: telefono ?? this.formulario.value.correo
+        });
+      },
+      error: (err) => {
+        this.cargando = false;
+        this.errorMensaje = err.error?.mensaje ?? err.error?.error ?? 'No se pudo completar el registro.';
+      }
+    });
   }
 }

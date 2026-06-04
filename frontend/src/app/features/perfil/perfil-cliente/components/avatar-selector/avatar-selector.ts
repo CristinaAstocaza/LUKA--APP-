@@ -16,7 +16,7 @@ export class AvatarSelector {
   readonly loading = input<boolean>(false);
 
   readonly save = output<AvatarConfig>();
-  readonly previewChange = output<AvatarConfig>();
+  readonly preview = output<AvatarConfig>();
 
   readonly tabActiva = signal<AvatarTab>('figura');
   readonly figuraSeleccionada = signal<string>('');
@@ -64,13 +64,13 @@ export class AvatarSelector {
 
   seleccionarFigura(nombre: string): void {
     this.figuraSeleccionada.set(nombre);
-    this.previewChange.emit(this.configPreview());
+    this.emitirPreview();
   }
 
   seleccionarAccesorio(nombre: string): void {
     this.accesorioSeleccionado.set(nombre);
     this.mensajeError.set('');
-    this.previewChange.emit(this.configPreview());
+    this.emitirPreview();
   }
 
   getFiguraSrc(nombre: string): string {
@@ -93,6 +93,10 @@ export class AvatarSelector {
       figura: this.figuraSeleccionada(),
       accesorio: this.accesorioSeleccionado(),
     });
+  }
+
+  private emitirPreview(): void {
+    this.preview.emit(this.configPreview());
   }
 }
 
