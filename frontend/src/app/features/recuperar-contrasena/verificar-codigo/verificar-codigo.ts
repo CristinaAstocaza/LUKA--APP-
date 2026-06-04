@@ -2,6 +2,7 @@ import { Component, ViewChildren, QueryList, ElementRef, Input, Output, EventEmi
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-verificar-codigo',
@@ -13,6 +14,10 @@ import { RouterLink, Router } from '@angular/router';
 export class VerificarCodigo {
   @ViewChildren('digitoInput') digitoInputs!: QueryList<ElementRef>;
 
+  /** ID del usuario para activación (opcional si es para recuperación) */
+  @Input() usuarioId = '';
+  /** Correo del usuario para activar cuenta con OTP */
+  @Input() correoActivacion = '';
   /** Medio de verificación: 'correo' o 'celular' */
   @Input() medioVerificacion: 'correo' | 'celular' = 'correo';
   /** Destino al que se envió el código (email o teléfono) */
@@ -30,9 +35,13 @@ export class VerificarCodigo {
   digitos: string[] = ['', '', '', '', '', ''];
   cargando = false;
   errorMensaje = '';
+  infoMensaje = '';
   correoRecuperacion = '';
 
-  constructor(private router: Router) {
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {
     // Intenta cargar el correo si viene del flujo de recuperar contraseña
     this.correoRecuperacion = sessionStorage.getItem('correo-recuperacion') || '';
   }
@@ -95,25 +104,69 @@ export class VerificarCodigo {
     if (!this.codigoValido) return;
     this.cargando = true;
     this.errorMensaje = '';
+    this.infoMensaje = '';
 
-    // Guardar código verificado
-    sessionStorage.setItem('codigo-otp', this.codigoCompleto);
+    const codigo = this.codigoCompleto;
+    sessionStorage.setItem('codigo-otp', codigo);
 
-    if (this.codigoVerificado.observed) {
-      this.cargando = false;
-      this.codigoVerificado.emit(this.codigoCompleto);
-      return;
+    // Si tenemos usuarioId, es flujo de activación de cuenta
+    if (this.usuarioId) {
+      const telefono = this.medioVerificacion === 'celular' ? this.destinoVerificacion : undefined;
+      
+      this.authService.activarCuenta(this.correoActivacion || this.destinoVerificacion, codigo, telefono).subscribe({
+        next: (resp) => {
+          this.cargando = false;
+          if (resp.exito) {
+            this.emitirYRedirigir(codigo);
+          } else {
+            this.errorMensaje = resp.mensaje || 'Código inválido';
+          }
+        },
+        error: (err) => {
+          this.cargando = false;
+          this.errorMensaje = err.error?.mensaje || 'Error al validar código';
+        }
+      });
+    } else {
+      // Flujo de recuperación de contraseña u otros (sin validación directa aquí por ahora)
+      setTimeout(() => {
+        this.cargando = false;
+        this.emitirYRedirigir(codigo);
+      }, 1000);
     }
+  }
 
-    // Flujo standalone de recuperación: conserva la navegación existente.
-    setTimeout(() => {
-      this.cargando = false;
+  private emitirYRedirigir(codigo: string): void {
+    if (this.codigoVerificado.observed) {
+      this.codigoVerificado.emit(codigo);
+    } else {
       this.router.navigate([this.rutaSiguiente]);
-    }, 1000);
+    }
   }
 
   reenviarCodigo(): void {
-    // TODO: Conectar con POST /api/v1/auth/recuperar-password o /verificar-registro
-    console.log('Reenviar código a:', this.destinoMostrado);
+    if (!this.usuarioId && this.destinoMostrado) {
+      this.cargando = true;
+      this.errorMensaje = '';
+      this.infoMensaje = '';
+      this.authService.solicitarRecuperacion({ correo: this.destinoMostrado }).subscribe({
+        next: (resp) => {
+          this.cargando = false;
+          if (resp.exito) {
+            sessionStorage.setItem('registro-id', resp.datos);
+            this.infoMensaje = 'Código reenviado con éxito';
+            setTimeout(() => this.infoMensaje = '', 4000);
+          } else {
+            this.errorMensaje = resp.mensaje || 'Error al reenviar el código';
+          }
+        },
+        error: (err) => {
+          this.cargando = false;
+          this.errorMensaje = err.error?.mensaje || 'Error al reenviar el código';
+        }
+      });
+    } else {
+      console.log('Reenviar código de activación a:', this.destinoMostrado);
+    }
   }
 }

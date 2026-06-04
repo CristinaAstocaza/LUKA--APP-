@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
@@ -12,14 +12,16 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrl: './iniciar-sesion.scss',
 })
 export class IniciarSesion {
-  @Output() cuentaNoActivada = new EventEmitter<{ correo: string }>();
-
   formulario: FormGroup;
   mostrarPassword = false;
   cargando = false;
   errorMensaje = '';
 
-  constructor(private fb: FormBuilder, private router: Router, private authService: AuthService) {
+  constructor(
+    private fb: FormBuilder,
+    private router: Router,
+    private authService: AuthService
+  ) {
     this.formulario = this.fb.group({
       correo: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required]]
@@ -44,17 +46,21 @@ export class IniciarSesion {
     };
 
     this.authService.login(solicitudLogin).subscribe({
-      next: () => {
+      next: (resp) => {
         this.cargando = false;
-        this.router.navigate(['/dashboard']);
+        if (resp.exito) {
+          this.router.navigate(['/dashboard']);
+        } else {
+          this.errorMensaje = resp.mensaje || 'Error al iniciar sesión';
+        }
       },
       error: (err) => {
         this.cargando = false;
-        this.errorMensaje = err.error?.mensaje ?? err.error?.error ?? 'No se pudo iniciar sesión.';
-
         if (err.status === 403) {
-          this.cuentaNoActivada.emit({ correo: solicitudLogin.correo });
+          this.errorMensaje = err.error?.mensaje || 'Tu cuenta aún no está activada. Crea la cuenta nuevamente o solicita un nuevo OTP.';
+          return;
         }
+        this.errorMensaje = err.error?.mensaje || 'Error de conexión con el servidor';
       }
     });
   }
