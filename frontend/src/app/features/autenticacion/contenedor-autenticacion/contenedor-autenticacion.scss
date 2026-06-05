@@ -1,27 +1,6 @@
 @use '../autenticacion-compartido' as *;
 
-.auth__contenedor-maestro {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 900px;
-  min-height: 600px;
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid $borde-sutil;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  background: $bg-tarjeta;
-  display: flex;
-}
 
-// ── Contenedores Deslizantes ──
-.auth__formulario-contenedor {
-  width: 50%;
-  position: relative;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  background: $bg-tarjeta;
-  z-index: 2;
-}
 
 .auth__lateral-contenedor {
   width: 50%;
