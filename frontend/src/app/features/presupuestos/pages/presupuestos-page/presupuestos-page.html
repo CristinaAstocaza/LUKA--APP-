@@ -1,1 +1,271 @@
-<p>presupuestos-page works!</p>
+<section class="presupuesto-page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+
+    <div>
+      <h1>🛡️ Presupuestos</h1>
+
+      <p>
+        Define tu presupuesto mensual y controla tus gastos por categoría.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- KPIS -->
+  <div class="stats-grid">
+
+    <div class="stat-card">
+
+      <span>💰 Presupuesto Total</span>
+
+      <h2>
+        S/. {{ presupuestoTotal | number:'1.2-2' }}
+      </h2>
+
+      <small>
+        Monto disponible para el mes
+      </small>
+
+    </div>
+
+    <div class="stat-card">
+
+      <span>📊 Asignado</span>
+
+      <h2>
+        S/. {{ totalAsignado | number:'1.2-2' }}
+      </h2>
+
+      <small>
+        Distribuido en categorías
+      </small>
+
+    </div>
+
+    <div class="stat-card">
+
+      <span>💵 Disponible</span>
+
+      <h2>
+        S/. {{ disponible | number:'1.2-2' }}
+      </h2>
+
+      <small>
+        Aún sin asignar
+      </small>
+
+    </div>
+
+  </div>
+
+  <!-- CONTENIDO -->
+  <div class="content-grid">
+
+    <!-- IZQUIERDA -->
+    <div class="left-panel">
+
+      <!-- PRESUPUESTO -->
+      <div class="card">
+
+        <h3>
+          1. Define tu presupuesto total
+        </h3>
+
+        <label>
+          Presupuesto mensual (S/)
+        </label>
+
+        <input
+          type="number"
+          [(ngModel)]="presupuestoTotal">
+
+        <button
+          class="btn-primary"
+          (click)="guardarPresupuesto()">
+
+          💾 Guardar Presupuesto
+
+        </button>
+
+      </div>
+
+      <!-- CONSEJOS -->
+      <div class="card">
+
+        <h3>
+          💡 Consejos para tu presupuesto
+        </h3>
+
+        <ul>
+
+          <li>
+            Prioriza alimentación y transporte.
+          </li>
+
+          <li>
+            Reserva dinero para emergencias.
+          </li>
+
+          <li>
+            Evita asignar el 100% de tu presupuesto.
+          </li>
+
+          <li>
+            Revisa tus gastos semanalmente.
+          </li>
+
+        </ul>
+
+      </div>
+
+    </div>
+
+    <!-- DERECHA -->
+    <div class="right-panel">
+
+      <!-- GRAFICO -->
+      <div class="card progress-card">
+
+        <div
+          class="circle-progress"
+          [style.background]="
+            'conic-gradient(#22c55e 0% ' +
+            porcentajeConsumido +
+            '%, #e5e7eb ' +
+            porcentajeConsumido +
+            '% 100%)'
+          ">
+
+          <div class="circle-inner">
+
+            <h2>
+              {{ porcentajeConsumido }}%
+            </h2>
+
+            <span>
+              CONSUMIDO
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- CATEGORIAS -->
+      <div class="card">
+
+        <h3>
+          2. Distribuye tu presupuesto por categorías
+        </h3>
+
+        <div class="categoria-form">
+
+          <input
+            type="text"
+            placeholder="Nombre de categoría"
+            [(ngModel)]="nuevaCategoria">
+
+          <input
+            type="number"
+            placeholder="Monto asignado"
+            [(ngModel)]="nuevoMonto">
+
+          <button
+            class="btn-primary"
+            (click)="agregarCategoria()">
+
+            ➕ Agregar
+
+          </button>
+
+        </div>
+
+      </div>
+
+      <!-- TABLA -->
+      <div class="card">
+
+        <h3>
+          Desglose por categorías
+        </h3>
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>Categoría</th>
+
+              <th>Asignado</th>
+
+              <th>Gastado</th>
+
+              <th>Progreso</th>
+
+              <th></th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            <tr
+              *ngFor="let cat of categorias; let i=index">
+
+              <td>
+                {{ cat.nombre }}
+              </td>
+
+              <td>
+                S/. {{ cat.asignado }}
+              </td>
+
+              <td>
+                S/. {{ cat.gastado }}
+              </td>
+
+              <td>
+
+                <div class="progress">
+
+                  <div
+                    class="progress-fill"
+                    [style.width.%]="
+                      calcularPorcentaje(cat)
+                    ">
+                  </div>
+
+                </div>
+
+              </td>
+
+              <td>
+
+                <button
+                  class="btn-delete"
+                  (click)="eliminarCategoria(i)">
+
+                  🗑
+
+                </button>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>

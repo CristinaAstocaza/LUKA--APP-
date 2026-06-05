@@ -13,6 +13,7 @@
   <!-- Contenedor Maestro -->
   <div class="auth__contenedor-maestro"
        [class.mostrar-registro]="vistaActual === 'registro'"
+       [class.mostrar-canal]="vistaActual === 'canal'"
        [class.mostrar-verificar]="vistaActual === 'verificar'"
        [class.mostrar-exito]="vistaActual === 'exito'">
     
@@ -20,11 +21,59 @@
     <div class="auth__formulario-contenedor">
       <!-- Login -->
       <div class="auth__formulario-interior" [class.activo]="vistaActual === 'login'">
-        <app-iniciar-sesion></app-iniciar-sesion>
+        <app-iniciar-sesion (cuentaNoActivada)="onCuentaNoActivada($event)"></app-iniciar-sesion>
       </div>
       <!-- Registro -->
       <div class="auth__formulario-interior" [class.activo]="vistaActual === 'registro'">
         <app-crear-cuenta (registroExitoso)="onRegistroExitoso($event)"></app-crear-cuenta>
+      </div>
+      <!-- Selección de canal OTP -->
+      <div class="auth__formulario-interior" [class.activo]="vistaActual === 'canal'" style="text-align: center;">
+        <div class="auth__encabezado">
+          <div class="auth__icono-titulo">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <h1>Verifica tu cuenta</h1>
+          <p>Selecciona dónde quieres recibir tu código de activación.</p>
+        </div>
+
+        <div class="auth__formulario">
+          <div class="auth__campo">
+            <label class="auth__label">CANAL DE VERIFICACIÓN</label>
+            <div class="auth__opciones" style="display: grid; gap: 10px;">
+              <label class="auth__checkbox">
+                <input type="radio" name="canalOtp" value="EMAIL" [(ngModel)]="canalSeleccionado">
+                <span class="auth__checkbox-marca"></span>
+                Correo electrónico
+              </label>
+              <label class="auth__checkbox" [class.auth__input-grupo--error]="!registroPendiente?.telefono">
+                <input type="radio" name="canalOtp" value="SMS" [(ngModel)]="canalSeleccionado" [disabled]="!registroPendiente?.telefono">
+                <span class="auth__checkbox-marca"></span>
+                SMS
+              </label>
+              <label class="auth__checkbox" [class.auth__input-grupo--error]="!registroPendiente?.telefono">
+                <input type="radio" name="canalOtp" value="WHATSAPP" [(ngModel)]="canalSeleccionado" [disabled]="!registroPendiente?.telefono">
+                <span class="auth__checkbox-marca"></span>
+                WhatsApp
+              </label>
+            </div>
+            <span class="auth__error" *ngIf="!registroPendiente?.telefono">
+              SMS y WhatsApp requieren un celular registrado; puedes usar correo.
+            </span>
+          </div>
+
+          <div class="auth__error-general" *ngIf="errorOtp">
+            <i class="fas fa-exclamation-circle"></i> {{ errorOtp }}
+          </div>
+          <div class="auth__error-general" *ngIf="mensajeOtp && !errorOtp">
+            <i class="fas fa-info-circle"></i> {{ mensajeOtp }}
+          </div>
+
+          <button type="button" class="auth__btn-submit" [disabled]="cargandoOtp" (click)="solicitarCodigoActivacion()" id="btn-enviar-otp-activacion">
+            <span *ngIf="!cargandoOtp">Enviar código de verificación <i class="fas fa-paper-plane"></i></span>
+            <span *ngIf="cargandoOtp" class="auth__spinner"></span>
+          </button>
+        </div>
       </div>
       <!-- Verificar Código (post-registro) -->
       <div class="auth__formulario-interior" [class.activo]="vistaActual === 'verificar'">
@@ -69,9 +118,9 @@
       </div>
 
       <!-- Lateral para Verificación y Éxito -->
-      <div class="auth__lateral-interior" [class.activo]="vistaActual === 'verificar' || vistaActual === 'exito'">
+      <div class="auth__lateral-interior" [class.activo]="vistaActual === 'canal' || vistaActual === 'verificar' || vistaActual === 'exito'">
         <h2>{{ vistaActual === 'exito' ? '¡Todo listo!' : '¡Casi listo!' }}</h2>
-        <p>{{ vistaActual === 'exito' ? 'Bienvenido a la plataforma. Tu viaje hacia la libertad financiera comienza ahora.' : 'Solo falta verificar tu cuenta para empezar a dominar tus finanzas con inteligencia artificial.' }}</p>
+        <p>{{ vistaActual === 'exito' ? 'Bienvenido a la plataforma. Tu viaje hacia la libertad financiera comienza ahora.' : 'Solicita y valida tu código para activar la cuenta con seguridad.' }}</p>
         <button class="auth__btn-lateral" (click)="cambiarVista('login')" id="btn-ir-login-desde-lateral" *ngIf="vistaActual !== 'exito'">
           Ya tengo cuenta
         </button>

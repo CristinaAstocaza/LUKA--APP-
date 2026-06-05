@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, input, output, signal } from '@angular/core';
-import { AvatarConfig } from '../../../../../core/services/avatar.service';
+import { AvatarConfig } from '../../../../../core/services';
 
 type AvatarTab = 'figura' | 'accesorio';
 
@@ -41,14 +41,6 @@ export class AvatarSelector {
       const current = this.avatarConfig();
       this.figuraSeleccionada.set(current.figura);
       this.accesorioSeleccionado.set(current.accesorio ?? '');
-      this.previewChange.emit({
-        figura: current.figura,
-        accesorio: current.accesorio ?? '',
-      });
-    });
-
-    effect(() => {
-      this.previewChange.emit(this.configPreview());
     });
   }
 
@@ -64,13 +56,13 @@ export class AvatarSelector {
 
   seleccionarFigura(nombre: string): void {
     this.figuraSeleccionada.set(nombre);
-    this.previewChange.emit(this.configPreview());
+    this.emitirPreview();
   }
 
   seleccionarAccesorio(nombre: string): void {
     this.accesorioSeleccionado.set(nombre);
     this.mensajeError.set('');
-    this.previewChange.emit(this.configPreview());
+    this.emitirPreview();
   }
 
   getFiguraSrc(nombre: string): string {
@@ -93,6 +85,10 @@ export class AvatarSelector {
       figura: this.figuraSeleccionada(),
       accesorio: this.accesorioSeleccionado(),
     });
+  }
+
+  private emitirPreview(): void {
+    this.previewChange.emit(this.configPreview());
   }
 }
 

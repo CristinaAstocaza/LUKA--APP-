@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
-import { AvatarConfig } from '../../../../../core/services/avatar.service';
+import { AvatarConfig } from '../../../../../core/services';
 
 @Component({
   selector: 'app-avatar-display',
