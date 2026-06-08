@@ -1,40 +1,98 @@
 server:
-  port: 8090
+  port: 8080
 
 spring:
   config:
     import: optional:file:../../.env[.properties]
   application:
     name: api-gateway
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      connect-timeout: 2s
-      timeout: 1s
 
   cloud:
     gateway:
       httpclient:
         connect-timeout: 30000
-        response-timeout: ${GATEWAY_RESPONSE_TIMEOUT:60s}
+        response-timeout: 60s
       discovery:
         locator:
-          enabled: true
-          lower-case-service-id: true
+          enabled: false
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
 
       routes:
         - id: servicio-usuario-docs
-          uri: lb://MICROSERVICIO-USUARIO
+          uri: http://localhost:8081
           predicates:
-            - Path=/microservicio-usuario/v3/api-docs/**
+            - Path=/microservicio-usuario/v3/api-docs/**, /microservicio-usuario/swagger-ui/**, /microservicio-usuario/swagger-ui.html
           filters:
             - RewritePath=/microservicio-usuario/(?<remaining>.*), /${remaining}
           metadata:
             requiere-autenticacion: false
 
+        - id: servicio-cliente-docs
+          uri: http://localhost:8083
+          predicates:
+            - Path=/microservicio-cliente/v3/api-docs/**, /microservicio-cliente/swagger-ui/**, /microservicio-cliente/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-cliente/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-auditoria-docs
+          uri: http://localhost:8082
+          predicates:
+            - Path=/microservicio-auditoria/v3/api-docs/**, /microservicio-auditoria/swagger-ui/**, /microservicio-auditoria/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-auditoria/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-mensajeria-docs
+          uri: http://localhost:8084
+          predicates:
+            - Path=/microservicio-mensajeria/v3/api-docs/**, /microservicio-mensajeria/swagger-ui/**, /microservicio-mensajeria/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-mensajeria/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-financiero-docs
+          uri: http://localhost:8085
+          predicates:
+            - Path=/microservicio-financiero/v3/api-docs/**, /microservicio-financiero/swagger-ui/**, /microservicio-financiero/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-financiero/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-ia-docs
+          uri: http://localhost:8086
+          predicates:
+            - Path=/microservicio-ia/v3/api-docs/**, /microservicio-ia/swagger-ui/**, /microservicio-ia/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-ia/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-pagos-docs
+          uri: http://localhost:8087
+          predicates:
+            - Path=/microservicio-pagos/v3/api-docs/**, /microservicio-pagos/swagger-ui/**, /microservicio-pagos/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-pagos/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-suscripciones-docs
+          uri: http://localhost:8088
+          predicates:
+            - Path=/microservicio-suscripciones/v3/api-docs/**, /microservicio-suscripciones/swagger-ui/**, /microservicio-suscripciones/swagger-ui.html
+          filters:
+            - RewritePath=/microservicio-suscripciones/(?<remaining>.*), /${remaining}
+          metadata:
+            requiere-autenticacion: false
+
         - id: servicio-usuario-auth
-          uri: lb://MICROSERVICIO-USUARIO
+          uri: http://localhost:8081
           predicates:
             - Path=/api/v1/auth/**
           filters:
@@ -44,16 +102,11 @@ spring:
               args:
                 name: usuarioCB
                 fallbackUri: forward:/fallback
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 3
-                redis-rate-limiter.burstCapacity: 5
-                key-resolver: "#{@userKeyResolver}"
           metadata:
             requiere-autenticacion: false
 
         - id: usuario-protegido
-          uri: lb://MICROSERVICIO-USUARIO
+          uri: http://localhost:8081
           predicates:
             - Path=/api/v1/auth/cambiar-password
             - Path=/api/v1/auth/mi-cuenta
@@ -68,43 +121,22 @@ spring:
           metadata:
             requiere-autenticacion: true
 
-        - id: servicio-cliente-interno
-          uri: lb://MICROSERVICIO-CLIENTE
+        - id: servicio-suscripciones
+          uri: http://localhost:8088
           predicates:
-            - Path=/api/v1/clientes/perfil/inicial
-            - Path=/api/v1/clientes/interno/**
+            - Path=/api/v1/suscripciones/**
           filters:
             - StripPrefix=0
             - AddRequestHeader=X-Gateway-Source, api-gateway
             - name: CircuitBreaker
               args:
-                name: clienteCB
-                fallbackUri: forward:/fallback
-          metadata:
-            requiere-autenticacion: false
-
-        - id: servicio-cliente
-          uri: lb://MICROSERVICIO-CLIENTE
-          predicates:
-            - Path=/api/v1/clientes/**
-          filters:
-            - StripPrefix=0
-            - AddRequestHeader=X-Gateway-Source, api-gateway
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 20
-                redis-rate-limiter.burstCapacity: 40
-                redis-rate-limiter.requestedTokens: 1
-                key-resolver: "#{@userKeyResolver}"
-            - name: CircuitBreaker
-              args:
-                name: clienteCB
+                name: suscripcionCB
                 fallbackUri: forward:/fallback
           metadata:
             requiere-autenticacion: true
 
         - id: servicio-auditoria
-          uri: lb://MICROSERVICIO-AUDITORIA
+          uri: http://localhost:8082
           predicates:
             - Path=/api/v1/auditoria/**
           filters:
@@ -119,7 +151,7 @@ spring:
             rol-requerido: ROLE_ADMIN
 
         - id: servicio-mensajeria-otp
-          uri: lb://MICROSERVICIO-MENSAJERIA
+          uri: http://localhost:8084
           predicates:
             - Path=/api/v1/mensajeria/otp/**
           filters:
@@ -132,47 +164,8 @@ spring:
           metadata:
             requiere-autenticacion: false
 
-        - id: servicio-nucleo-financiero
-          uri: lb://MICROSERVICIO-NUCLEO-FINANCIERO
-          predicates:
-            - Path=/api/v1/financiero/**
-          filters:
-            - StripPrefix=0
-            - AddRequestHeader=X-Gateway-Source, api-gateway
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 10
-                redis-rate-limiter.burstCapacity: 20
-                redis-rate-limiter.requestedTokens: 1
-                key-resolver: "#{@userKeyResolver}"
-            - name: CircuitBreaker
-              args:
-                name: financieroCB
-                fallbackUri: forward:/fallback
-          metadata:
-            requiere-autenticacion: true
-
-        - id: servicio-ia
-          uri: lb://MICROSERVICIO-IA
-          predicates:
-            - Path=/api/v1/ia/**
-          filters:
-            - StripPrefix=0
-            - AddRequestHeader=X-Gateway-Source, api-gateway
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 1
-                key-resolver: "#{@userKeyResolver}"
-            - name: CircuitBreaker
-              args:
-                name: iaCB
-                fallbackUri: forward:/fallback
-          metadata:
-            requiere-autenticacion: true
-
         - id: servicio-pagos
-          uri: lb://MICROSERVICIO-PAGO
+          uri: http://localhost:8087
           predicates:
             - Path=/api/v1/pagos/**
           filters:
@@ -185,11 +178,69 @@ spring:
           metadata:
             requiere-autenticacion: true
 
+        - id: servicio-nucleo-financiero
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/financiero/**
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-Gateway-Source, api-gateway
+            - name: CircuitBreaker
+              args:
+                name: financieroCB
+                fallbackUri: forward:/fallback
+          metadata:
+            requiere-autenticacion: true
+
+        - id: servicio-cliente-interno
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/clientes/perfil/inicial
+            - Path=/api/v1/clientes/interno/**
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-Gateway-Source, api-gateway
+            - name: CircuitBreaker
+              args:
+                name: clienteCB
+                fallbackUri: forward:/fallback
+          metadata:
+            requiere-autenticacion: false
+
+        - id: servicio-cliente
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/clientes/**
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-Gateway-Source, api-gateway
+            - name: CircuitBreaker
+              args:
+                name: clienteCB
+                fallbackUri: forward:/fallback
+          metadata:
+            requiere-autenticacion: true
+
+        - id: servicio-ia
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/ia/**
+          filters:
+            - StripPrefix=0
+            - AddRequestHeader=X-Gateway-Source, api-gateway
+            - name: CircuitBreaker
+              args:
+                name: iaCB
+                fallbackUri: forward:/fallback
+          metadata:
+            requiere-autenticacion: true
+
       globalcors:
         corsConfigurations:
           '[/**]':
             allowedOrigins:
               - "http://localhost:3000"
+              - "http://localhost:4200"
               - "http://localhost:5173"
               - ${FRONTEND_URL:http://localhost:3000}
             allowedMethods:
@@ -206,15 +257,7 @@ spring:
 
 eureka:
   client:
-    service-url:
-      defaultZone: http://${EUREKA_USER:admin}:${EUREKA_PASSWORD:admin123}@${EUREKA_HOST:localhost}:8761/eureka/
-    fetch-registry: true
-    register-with-eureka: true
-    registry-fetch-interval-seconds: 5
-  instance:
-    prefer-ip-address: true
-    lease-expiration-duration-in-seconds: 20
-    lease-renewal-interval-in-seconds: 10
+    enabled: false
 
 app:
   security:
@@ -226,7 +269,6 @@ logging:
   level:
     org.springframework.cloud.gateway: INFO
     org.springframework.security: WARN
-    com.financiero.saas.gateway: DEBUG
     root: INFO
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -254,15 +296,17 @@ resilience4j:
     instances:
       usuarioCB:
         base-config: default
+      suscripcionCB:
+        base-config: default
+      financieroCB:
+        base-config: default
       clienteCB:
+        base-config: default
+      iaCB:
         base-config: default
       auditoriaCB:
         base-config: default
       mensajeriaCB:
-        base-config: default
-      financieroCB:
-        base-config: default
-      iaCB:
         base-config: default
       pagoCB:
         base-config: default
@@ -273,15 +317,17 @@ resilience4j:
     instances:
       usuarioCB:
         base-config: default
+      suscripcionCB:
+        base-config: default
+      financieroCB:
+        base-config: default
       clienteCB:
+        base-config: default
+      iaCB:
         base-config: default
       auditoriaCB:
         base-config: default
       mensajeriaCB:
-        base-config: default
-      financieroCB:
-        base-config: default
-      iaCB:
         base-config: default
       pagoCB:
         base-config: default
