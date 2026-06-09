@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
  * Evita la mezcla de responsabilidades entre la presentación y el modelo.
  * </p>
  *
- * @author Luka-Dev-Backend
  * @version 1.0.0
  */
 @Component

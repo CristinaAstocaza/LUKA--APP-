@@ -31,7 +31,6 @@ import java.util.UUID;
  * integrando repositorios de dominio y publicadores de eventos.
  * </p>
  *
- * @author Luka-Dev-Backend
  * @version 1.3.0
  */
 @Service
