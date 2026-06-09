@@ -1,4 +1,4 @@
-package com.auditoria.dominio.entidades;
+﻿package com.auditoria.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,16 +10,15 @@ import java.util.UUID;
  * Entidad de persistencia encargada de la trazabilidad detallada de cambios en
  * el negocio.
  * <p>
- * Proporciona un registro histórico de las modificaciones realizadas sobre
- * entidades críticas.
- * Almacena instantáneas del estado anterior y posterior en formato JSON,
+ * Proporciona un registro histÃ³rico de las modificaciones realizadas sobre
+ * entidades crÃ­ticas.
+ * Almacena instantÃ¡neas del estado anterior y posterior en formato JSON,
  * permitiendo la
- * reconstrucción de estados previos y cumpliendo con estándares internacionales
- * de auditoría y cumplimiento (como PCIDSS y SOX) requeridos en el sector
+ * reconstrucciÃ³n de estados previos y cumpliendo con estÃ¡ndares internacionales
+ * de auditorÃ­a y cumplimiento (como PCIDSS y SOX) requeridos en el sector
  * financiero.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.1.0
  * @since 2026-05-10
  */
@@ -38,7 +37,7 @@ import java.util.UUID;
 public class AuditoriaTransaccional {
 
     /**
-     * Identificador único universal (UUID) del registro transaccional.
+     * Identificador Ãºnico universal (UUID) del registro transaccional.
      */
     @Id
     @GeneratedValue
@@ -46,64 +45,64 @@ public class AuditoriaTransaccional {
     private UUID id;
 
     /**
-     * Identificador único (UUID) del usuario responsable de la modificación.
+     * Identificador Ãºnico (UUID) del usuario responsable de la modificaciÃ³n.
      */
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
     /**
-     * Identificador único (UUID) de la entidad de negocio que fue afectada en su
+     * Identificador Ãºnico (UUID) de la entidad de negocio que fue afectada en su
      * microservicio de origen.
      */
     @Column(name = "entidad_id", nullable = false)
     private UUID entidadId;
 
     /**
-     * Nombre del microservicio que generó el evento (ej:
+     * Nombre del microservicio que generÃ³ el evento (ej:
      * "MICROSERVICIO-FINANCIERO").
      */
     @Column(name = "servicio_origen", nullable = false, length = 100)
     private String servicioOrigen;
 
     /**
-     * Nombre técnico de la entidad de negocio modificada (ej: "Transaccion",
+     * Nombre tÃ©cnico de la entidad de negocio modificada (ej: "Transaccion",
      * "Cliente").
      */
     @Column(name = "entidad_afectada", nullable = false, length = 100)
     private String entidadAfectada;
 
     /**
-     * Descripción textual de la acción ejecutada sobre la entidad.
+     * DescripciÃ³n textual de la acciÃ³n ejecutada sobre la entidad.
      */
     @Column(name = "descripcion", nullable = false, length = 255)
     private String descripcion;
 
     /**
-     * Representación serializada (JSON) del estado de la entidad antes del cambio.
-     * Es vital para procesos de reversión o análisis de discrepancias.
+     * RepresentaciÃ³n serializada (JSON) del estado de la entidad antes del cambio.
+     * Es vital para procesos de reversiÃ³n o anÃ¡lisis de discrepancias.
      */
     @Column(name = "valor_anterior", columnDefinition = "TEXT")
     private String valorAnterior;
 
     /**
-     * Representación serializada (JSON) del nuevo estado de la entidad tras la
-     * operación.
-     * Permite auditar exactamente qué campos fueron alterados.
+     * RepresentaciÃ³n serializada (JSON) del nuevo estado de la entidad tras la
+     * operaciÃ³n.
+     * Permite auditar exactamente quÃ© campos fueron alterados.
      */
     @Column(name = "valor_nuevo", columnDefinition = "TEXT")
     private String valorNuevo;
 
     /**
-     * Fecha de registro de la transacción de auditoría.
+     * Fecha de registro de la transacciÃ³n de auditorÃ­a.
      */
     @Column(name = "fecha", nullable = false)
     private LocalDate fecha;
 
     /**
-     * Método de ciclo de vida de JPA ejecutado antes de la persistencia.
+     * MÃ©todo de ciclo de vida de JPA ejecutado antes de la persistencia.
      * <p>
-     * Garantiza que el campo {@code fecha} esté poblado automáticamente al momento
-     * de la creación.
+     * Garantiza que el campo {@code fecha} estÃ© poblado automÃ¡ticamente al momento
+     * de la creaciÃ³n.
      * </p>
      */
     @PrePersist

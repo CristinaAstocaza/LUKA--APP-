@@ -1,4 +1,4 @@
-package com.auditoria.infraestructura.seguridad;
+﻿package com.auditoria.infraestructura.seguridad;
 
 import com.libreria.comun.seguridad.ConfiguracionSeguridadBase;
 import com.libreria.comun.seguridad.FiltroJwt;
@@ -13,13 +13,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Configuración de seguridad específica para el microservicio de auditoría.
+ * ConfiguraciÃ³n de seguridad especÃ­fica para el microservicio de auditorÃ­a.
  * <p>
- * Extiende de {@link ConfiguracionSeguridadBase} para heredar la gestión de JWT
- * y define los permisos de acceso a los endpoints de auditoría.
+ * Extiende de {@link ConfiguracionSeguridadBase} para heredar la gestiÃ³n de JWT
+ * y define los permisos de acceso a los endpoints de auditorÃ­a.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.2.0
  */
 @Configuration
@@ -32,12 +31,12 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
     }
 
     /**
-     * Configura la cadena de filtros de seguridad específica para el microservicio
-     * de auditoría.
+     * Configura la cadena de filtros de seguridad especÃ­fica para el microservicio
+     * de auditorÃ­a.
      * 
-     * @param http Configuración HttpSecurity.
+     * @param http ConfiguraciÃ³n HttpSecurity.
      * @return SecurityFilterChain configurado.
-     * @throws Exception Si ocurre un error en la configuración.
+     * @throws Exception Si ocurre un error en la configuraciÃ³n.
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,19 +44,19 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
         // 1. Configuramos la base (JWT, Stateless, Exception handling)
         super.configurarAutorizacion(http);
 
-        // 2. Definimos las reglas de este microservicio (De lo más específico a lo
+        // 2. Definimos las reglas de este microservicio (De lo mÃ¡s especÃ­fico a lo
         // general)
         http.authorizeHttpRequests(auth -> auth
-                // Endpoints públicos o de infraestructura (Gateway)
+                // Endpoints pÃºblicos o de infraestructura (Gateway)
                 .requestMatchers("/api/v1/seguridad/verificar-ip/**").permitAll()
 
-                // Las consultas detalladas de auditoría y bloqueos de IP solo para administradores
+                // Las consultas detalladas de auditorÃ­a y bloqueos de IP solo para administradores
                 .requestMatchers("/api/v1/seguridad/lista-negra", "/api/v1/seguridad/lista-negra/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/auditoria/accesos", "/api/v1/auditoria/accesos/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/auditoria/registros", "/api/v1/auditoria/registros/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/auditoria/transacciones", "/api/v1/auditoria/transacciones/**").hasRole("ADMIN")
 
-                // Monitoreo y Documentación (Público)
+                // Monitoreo y DocumentaciÃ³n (PÃºblico)
                 .requestMatchers("/actuator/**", "/error/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 

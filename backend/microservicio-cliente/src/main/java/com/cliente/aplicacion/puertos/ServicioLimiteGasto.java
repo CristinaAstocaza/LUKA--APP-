@@ -1,4 +1,4 @@
-package com.cliente.aplicacion.puertos;
+﻿package com.cliente.aplicacion.puertos;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -8,9 +8,8 @@ import com.cliente.aplicacion.dtos.respuestas.RespuestaLimiteGasto;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudLimiteGasto;
 
 /**
- * Interfaz de puerto para la gestión del límite de gasto global.
+ * Interfaz de puerto para la gestiÃ³n del lÃ­mite de gasto global.
  *
- * @author Paulo Moron
  * @since 2026-05
  */
 public interface ServicioLimiteGasto {
@@ -28,7 +27,7 @@ public interface ServicioLimiteGasto {
     boolean evaluarYNotificarLimiteGlobal(UUID usuarioId, BigDecimal gastoTotalActual, String ipOrigen);
 
     /**
-     * Consulta interna del límite activo sin validación de JWT (uso para Facade).
+     * Consulta interna del lÃ­mite activo sin validaciÃ³n de JWT (uso para Facade).
      */
     RespuestaLimiteGasto obtenerActivoInterno(UUID usuarioId);
 }

@@ -52,6 +52,5 @@ El microservicio de pagos actúa como un **emisor de eventos dominantes**. Cuand
 5.  **ms-mensajeria** envía el **Email** de bienvenida y comprobante de pago.
 
 ---
-**Autor:** Antigravity (AI Assistant)
 **Versión:** 1.0.0
 **Fecha:** Mayo 2026

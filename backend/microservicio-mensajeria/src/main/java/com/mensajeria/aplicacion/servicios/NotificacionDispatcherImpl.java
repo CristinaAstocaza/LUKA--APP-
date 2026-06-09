@@ -1,4 +1,4 @@
-package com.mensajeria.aplicacion.servicios;
+﻿package com.mensajeria.aplicacion.servicios;
 
 import com.mensajeria.aplicacion.puertos.IEmailService;
 import com.mensajeria.aplicacion.servicios.canales.CanalNotificacionStrategy;
@@ -14,12 +14,11 @@ import java.util.Map;
 /**
  * Despachador central de notificaciones que coordina los diferentes canales.
  * <p>
- * Implementa el patrón <b>Strategy</b> de forma pura: inyecta todas las 
+ * Implementa el patrÃ³n <b>Strategy</b> de forma pura: inyecta todas las 
  * implementaciones de {@link CanalNotificacionStrategy} y selecciona la adecuada
- * en tiempo de ejecución.
+ * en tiempo de ejecuciÃ³n.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.5.0
  */
 import com.mensajeria.aplicacion.servicios.canales.NotificacionAdminService;
@@ -30,7 +29,7 @@ import com.mensajeria.aplicacion.servicios.canales.NotificacionAdminService;
 public class NotificacionDispatcherImpl implements NotificacionService, NotificacionAdminService {
 
     private final List<CanalNotificacionStrategy> estrategias;
-    private final IEmailService emailService; // Mantener para métodos específicos de admin
+    private final IEmailService emailService; // Mantener para mÃ©todos especÃ­ficos de admin
 
     @Override
     @org.springframework.scheduling.annotation.Async("notificacionExecutor")
@@ -46,7 +45,7 @@ public class NotificacionDispatcherImpl implements NotificacionService, Notifica
 
     @Override
     public void enviarEmailAdministrador(String destinatario, String asunto, String cuerpo, boolean esHtml) {
-        // Delegamos al servicio de email especializado para tareas de administración
+        // Delegamos al servicio de email especializado para tareas de administraciÃ³n
         emailService.enviarEmailAdministrador(destinatario, asunto, cuerpo, esHtml);
     }
 }

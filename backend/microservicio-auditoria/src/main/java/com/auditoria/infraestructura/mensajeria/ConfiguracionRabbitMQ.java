@@ -1,4 +1,4 @@
-package com.auditoria.infraestructura.mensajeria;
+﻿package com.auditoria.infraestructura.mensajeria;
 
 import com.libreria.comun.mensajeria.NombresCola;
 import com.libreria.comun.mensajeria.NombresExchange;
@@ -9,13 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuración de la topología de RabbitMQ para el Microservicio de Auditoría.
+ * ConfiguraciÃ³n de la topologÃ­a de RabbitMQ para el Microservicio de AuditorÃ­a.
  * <p>
  * Define la estructura de Exchanges, Colas y Bindings utilizando las constantes
- * de la librería común.
+ * de la librerÃ­a comÃºn.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.4
  * @since 2026-05
  */
@@ -27,7 +26,7 @@ public class ConfiguracionRabbitMQ {
     // =========================================================================
 
     /**
-     * Define el Exchange principal de tipo Topic para el enrutamiento de auditoría.
+     * Define el Exchange principal de tipo Topic para el enrutamiento de auditorÃ­a.
      * 
      * @return {@link TopicExchange} configurado como durable.
      */
@@ -57,7 +56,7 @@ public class ConfiguracionRabbitMQ {
     // =========================================================================
 
     /**
-     * Configura la cola para eventos de acceso con redirección a DLQ y TTL.
+     * Configura la cola para eventos de acceso con redirecciÃ³n a DLQ y TTL.
      * 
      * @return {@link Queue} con argumentos de Dead Lettering y tiempo de vida de 10
      *         min.
@@ -72,7 +71,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Configura la cola para otros eventos con redirección a DLQ y TTL.
+     * Configura la cola para otros eventos con redirecciÃ³n a DLQ y TTL.
      * 
      * @return {@link Queue} con argumentos de Dead Lettering y tiempo de vida de 10
      *         min.
@@ -89,7 +88,7 @@ public class ConfiguracionRabbitMQ {
     /**
      * Configura la cola para trazas transaccionales.
      * 
-     * @return {@link Queue} configurada para resiliencia en eventos críticos
+     * @return {@link Queue} configurada para resiliencia en eventos crÃ­ticos
      *         financieros.
      */
     @Bean
@@ -106,7 +105,7 @@ public class ConfiguracionRabbitMQ {
     // =========================================================================
 
     /**
-     * Define la cola física donde se almacenarán los mensajes de acceso que fallen.
+     * Define la cola fÃ­sica donde se almacenarÃ¡n los mensajes de acceso que fallen.
      * 
      * @return {@link Queue} durable para persistencia de fallos.
      */
@@ -118,7 +117,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Define la cola física donde se almacenarán los mensajes de eventos que fallen.
+     * Define la cola fÃ­sica donde se almacenarÃ¡n los mensajes de eventos que fallen.
      * 
      * @return {@link Queue} durable para persistencia de fallos.
      */
@@ -130,7 +129,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Define la cola física donde se almacenarán los mensajes de acceso que fallen.
+     * Define la cola fÃ­sica donde se almacenarÃ¡n los mensajes de acceso que fallen.
      * 
      * @return {@link Queue} durable para persistencia de fallos.
      */
@@ -149,7 +148,7 @@ public class ConfiguracionRabbitMQ {
      * Vincula la cola de accesos al exchange principal mediante su Routing Key.
      * 
      * @param colaAccesos       Bean de la cola de accesos.
-     * @param exchangeAuditoria Bean del exchange de auditoría.
+     * @param exchangeAuditoria Bean del exchange de auditorÃ­a.
      * @return {@link Binding} que establece la ruta de mensajes de acceso.
      */
     @Bean
@@ -166,7 +165,7 @@ public class ConfiguracionRabbitMQ {
      * Vincula la cola de eventos al exchange principal mediante su Routing Key.
      * 
      * @param colaEventos       Bean de la cola de eventos.
-     * @param exchangeAuditoria Bean del exchange de auditoría.
+     * @param exchangeAuditoria Bean del exchange de auditorÃ­a.
      * @return {@link Binding} que establece la ruta de mensajes de acceso.
      */
     @Bean
@@ -183,7 +182,7 @@ public class ConfiguracionRabbitMQ {
      * Vincula la cola transaccional al exchange principal.
      * 
      * @param colaTransacciones Bean de la cola transaccional.
-     * @param exchangeAuditoria Bean del exchange de auditoría.
+     * @param exchangeAuditoria Bean del exchange de auditorÃ­a.
      * @return {@link Binding} para eventos de cambio de entidades.
      */
     @Bean
@@ -256,7 +255,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Define la cola de pagos exitosos específica de auditoría.
+     * Define la cola de pagos exitosos especÃ­fica de auditorÃ­a.
      */
     @Bean
     public Queue queuePagosExitososAuditoria() {
@@ -264,7 +263,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Realiza el enlace entre la cola de pagos de auditoría y el exchange de pagos.
+     * Realiza el enlace entre la cola de pagos de auditorÃ­a y el exchange de pagos.
      */
     @Bean
     public Binding bindingPagosAuditoria(

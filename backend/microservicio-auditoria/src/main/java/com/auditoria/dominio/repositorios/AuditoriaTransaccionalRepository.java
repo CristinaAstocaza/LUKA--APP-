@@ -1,4 +1,4 @@
-package com.auditoria.dominio.repositorios;
+﻿package com.auditoria.dominio.repositorios;
 
 import com.auditoria.dominio.entidades.AuditoriaTransaccional;
 import org.springframework.data.domain.Page;
@@ -8,31 +8,30 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.UUID;
 
 /**
- * Repositorio para la gestión y consulta de trazabilidad transaccional.
+ * Repositorio para la gestiÃ³n y consulta de trazabilidad transaccional.
  * Permite reconstruir el historial de cambios en las entidades de negocio del
  * sistema.
  * 
- * @author Paulo Moron
  * @version 1.2.0
  */
 public interface AuditoriaTransaccionalRepository extends JpaRepository<AuditoriaTransaccional, UUID>, JpaSpecificationExecutor<AuditoriaTransaccional> {
 
     /**
-     * Recupera el historial de cambios realizados por un usuario específico.
+     * Recupera el historial de cambios realizados por un usuario especÃ­fico.
      * 
      * @param usuarioId  Identificador del usuario.
-     * @param paginacion Configuración de página y orden.
-     * @return Página de registros transaccionales del usuario.
+     * @param paginacion ConfiguraciÃ³n de pÃ¡gina y orden.
+     * @return PÃ¡gina de registros transaccionales del usuario.
      */
     Page<AuditoriaTransaccional> findByUsuarioIdOrderByFechaDesc(UUID usuarioId, Pageable paginacion);
 
     /**
-     * Recupera todos los cambios aplicados a una instancia de entidad específica.
+     * Recupera todos los cambios aplicados a una instancia de entidad especÃ­fica.
      * 
-     * @param entidadAfectada Nombre técnico de la entidad (ej: "Cliente").
+     * @param entidadAfectada Nombre tÃ©cnico de la entidad (ej: "Cliente").
      * @param entidadId       Identificador de la entidad modificada.
-     * @param paginacion      Configuración de página y orden.
-     * @return Historial cronológico de cambios de la entidad.
+     * @param paginacion      ConfiguraciÃ³n de pÃ¡gina y orden.
+     * @return Historial cronolÃ³gico de cambios de la entidad.
      */
     Page<AuditoriaTransaccional> findByEntidadAfectadaAndEntidadIdOrderByFechaDesc(
             String entidadAfectada,
@@ -40,12 +39,12 @@ public interface AuditoriaTransaccionalRepository extends JpaRepository<Auditori
             Pageable paginacion);
 
     /**
-     * Recupera el registro transaccional más reciente de un usuario y entidad afectada.
-     * Utilizado para resolver dinámicamente el valor anterior de un plan financiero.
+     * Recupera el registro transaccional mÃ¡s reciente de un usuario y entidad afectada.
+     * Utilizado para resolver dinÃ¡micamente el valor anterior de un plan financiero.
      * 
      * @param usuarioId        Identificador del usuario.
      * @param entidadAfectada  Nombre de la entidad afectada.
-     * @return El registro transaccional opcional más reciente.
+     * @return El registro transaccional opcional mÃ¡s reciente.
      */
     java.util.Optional<AuditoriaTransaccional> findFirstByUsuarioIdAndEntidadAfectadaOrderByFechaDesc(
             UUID usuarioId,

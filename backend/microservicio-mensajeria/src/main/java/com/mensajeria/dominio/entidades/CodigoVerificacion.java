@@ -1,4 +1,4 @@
-package com.mensajeria.dominio.entidades;
+﻿package com.mensajeria.dominio.entidades;
 
 import com.libreria.comun.enums.PropositoCodigo;
 import com.libreria.comun.enums.TipoVerificacion;
@@ -8,11 +8,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Entidad principal del microservicio. Almacena los códigos OTP de 6 dígitos
- * asociados a un usuario específico. Vigencia por defecto: 10 minutos
+ * Entidad principal del microservicio. Almacena los cÃ³digos OTP de 6 dÃ­gitos
+ * asociados a un usuario especÃ­fico. Vigencia por defecto: 10 minutos
  * (configurable).
  *
- * @author Paulo — ampliado desde CodigoVerificacion de Ikaza
  */
 @Entity
 @Table(
@@ -38,7 +37,7 @@ public class CodigoVerificacion {
 
     /**
      * Identificador del usuario en el Microservicio-Usuario. Campo OBLIGATORIO:
-     * todo código debe estar ligado a un usuario del sistema.
+     * todo cÃ³digo debe estar ligado a un usuario del sistema.
      */
     @Column(name = "usuario_id", nullable = false, updatable = false)
     private UUID usuarioId;
@@ -77,16 +76,16 @@ public class CodigoVerificacion {
     @PrePersist
     protected void alCrear() {
         fechaCreacion = LocalDateTime.now();
-        // La expiración puede ser sobreescrita antes del persist si viene del servicio;
+        // La expiraciÃ³n puede ser sobreescrita antes del persist si viene del servicio;
         // si sigue siendo null, asignamos el valor por defecto de 10 minutos.
         if (fechaExpiracion == null) {
             fechaExpiracion = LocalDateTime.now().plusMinutes(10);
         }
     }
 
-    // ─── Métodos de dominio ───────────────────────────────────────────────────
+    // â”€â”€â”€ MÃ©todos de dominio â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     /**
-     * Evalúa si el código ya pasó su ventana de validez.
+     * EvalÃºa si el cÃ³digo ya pasÃ³ su ventana de validez.
      *
      * @return
      */
@@ -95,8 +94,8 @@ public class CodigoVerificacion {
     }
     
     /**
-     * Validación optimizada: verifica si el código coincide, no ha sido usado,
-     * no ha expirado y el propósito es el correcto.
+     * ValidaciÃ³n optimizada: verifica si el cÃ³digo coincide, no ha sido usado,
+     * no ha expirado y el propÃ³sito es el correcto.
      * @param codigoIngresado
      * @param propositoRequerido
      * @return 

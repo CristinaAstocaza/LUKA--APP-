@@ -1,4 +1,4 @@
-package com.libreria.comun.seguridad;
+﻿package com.libreria.comun.seguridad;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +14,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 /**
- * Configuración base de seguridad para el ecosistema LUKA APP.
+ * ConfiguraciÃ³n base de seguridad para el ecosistema LUKA APP.
  * <p>
  * Proporciona los cimientos de una arquitectura Stateless: 1. Deshabilita CSRF
  * y sesiones (Stateless). 2. Configura el Punto de Entrada para errores 401 en
@@ -23,7 +23,6 @@ import java.util.List;
  * peticiones desde el frontend.
  * </p>
  *
- * @author Paulo Moron
  */
 @RequiredArgsConstructor
 public abstract class ConfiguracionSeguridadBase {
@@ -35,12 +34,12 @@ public abstract class ConfiguracionSeguridadBase {
     protected FiltroAutenticacionInterna filtroAutenticacionInterna;
 
     /**
-     * Define la configuración común de la cadena de filtros. Los microservicios
-     * deben llamar a este método y añadir sus rutas específicas.
+     * Define la configuraciÃ³n comÃºn de la cadena de filtros. Los microservicios
+     * deben llamar a este mÃ©todo y aÃ±adir sus rutas especÃ­ficas.
      *
-     * @param http Configuración de seguridad de Spring.
+     * @param http ConfiguraciÃ³n de seguridad de Spring.
      * @return {@link SecurityFilterChain} configurado.
-     * @throws Exception Si ocurre un error en la configuración.
+     * @throws Exception Si ocurre un error en la configuraciÃ³n.
      */
     protected HttpSecurity configurarAutorizacion(HttpSecurity http) throws Exception {
         return http
@@ -53,13 +52,13 @@ public abstract class ConfiguracionSeguridadBase {
     }
 
     /**
-     * Configuración de CORS permitiendo orígenes de desarrollo.
+     * ConfiguraciÃ³n de CORS permitiendo orÃ­genes de desarrollo.
      * @return 
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permitir orígenes de desarrollo comunes
+        // Permitir orÃ­genes de desarrollo comunes
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:8081",
                 "http://localhost:8082",
@@ -70,7 +69,7 @@ public abstract class ConfiguracionSeguridadBase {
                 "http://localhost:61274",
                 "http://localhost:4200",
                 "http://localhost:4201",
-                "http://localhost:61878", // Puerto dinámico detectado
+                "http://localhost:61878", // Puerto dinÃ¡mico detectado
                 "http://localhost:5173" // Vite
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
@@ -85,8 +84,8 @@ public abstract class ConfiguracionSeguridadBase {
     }
 
     /**
-     * Bean de codificación de contraseñas único para toda la plataforma. Se usa
-     * BCrypt con fuerza 12 para máxima seguridad.
+     * Bean de codificaciÃ³n de contraseÃ±as Ãºnico para toda la plataforma. Se usa
+     * BCrypt con fuerza 12 para mÃ¡xima seguridad.
      *
      * @return password
      */

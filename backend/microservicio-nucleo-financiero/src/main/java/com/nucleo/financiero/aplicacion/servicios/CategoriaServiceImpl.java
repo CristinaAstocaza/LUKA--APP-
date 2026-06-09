@@ -1,4 +1,4 @@
-package com.nucleo.financiero.aplicacion.servicios;
+﻿package com.nucleo.financiero.aplicacion.servicios;
 
 import com.nucleo.financiero.aplicacion.dtos.respuestas.CategoriaDTO;
 import com.nucleo.financiero.aplicacion.dtos.solicitudes.CategoriaRequestDTO;
@@ -17,10 +17,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Implementación de {@link ICategoriaService} para la gestión de categorías.
- * Aplica lógica de negocio y persistencia para el dominio financiero.
+ * ImplementaciÃ³n de {@link ICategoriaService} para la gestiÃ³n de categorÃ­as.
+ * Aplica lÃ³gica de negocio y persistencia para el dominio financiero.
  *
- * @author Luka-Dev-Backend
  * @version 1.2.0
  */
 @Service
@@ -44,7 +43,7 @@ public class CategoriaServiceImpl implements ICategoriaService {
                 .tipo(request.tipo())
                 .build();
         Categoria guardada = categoriaRepository.save(nueva);
-        log.info("Categoría creada: '{}' ({})", guardada.getNombre(), guardada.getTipo());
+        log.info("CategorÃ­a creada: '{}' ({})", guardada.getNombre(), guardada.getTipo());
         return categoriaMapper.aDto(guardada);
     }
 
@@ -92,7 +91,7 @@ public class CategoriaServiceImpl implements ICategoriaService {
         existente.setTipo(request.tipo());
 
         Categoria actualizada = categoriaRepository.save(existente);
-        log.info("Categoría actualizada: '{}' ({})", actualizada.getNombre(), actualizada.getId());
+        log.info("CategorÃ­a actualizada: '{}' ({})", actualizada.getNombre(), actualizada.getId());
         return categoriaMapper.aDto(actualizada);
     }
 
@@ -103,6 +102,6 @@ public class CategoriaServiceImpl implements ICategoriaService {
             throw new ExcepcionRecursoNoEncontrado("Categoria", id);
         }
         categoriaRepository.deleteById(id);
-        log.info("Categoría eliminada: {}", id);
+        log.info("CategorÃ­a eliminada: {}", id);
     }
 }

@@ -1,11 +1,11 @@
-package com.auditoria.aplicacion.dtos;
+﻿package com.auditoria.aplicacion.dtos;
 
 import java.time.LocalDateTime;
 
 /**
  * Respuesta del endpoint GET /verificar-ip/{ip}.
  * <p>
-    DTO de respuesta de consulta del Gateway para decidir si rechaza o permite la petición.
+    DTO de respuesta de consulta del Gateway para decidir si rechaza o permite la peticiÃ³n.
  * </p>
  * 
  * @param ip              IP del usuario que esta realizando la peticion.
@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
  * @param motivo          Motivo del bloqueo (intentos fallidos, spam, protocolo, etc).
  * @param fechaExpiracion Fecha de desbloqueo de la IP bloqueada (null si es permanente o no esta bloqueada).
  * 
- * @author Paulo Moron
  * @since 2026-05
  */
 public record RespuestaVerificacionIpDTO(

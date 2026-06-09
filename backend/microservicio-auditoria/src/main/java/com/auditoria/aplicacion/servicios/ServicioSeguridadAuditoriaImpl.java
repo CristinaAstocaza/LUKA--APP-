@@ -1,4 +1,4 @@
-package com.auditoria.aplicacion.servicios;
+﻿package com.auditoria.aplicacion.servicios;
 
 import com.auditoria.aplicacion.dtos.RespuestaVerificacionIpDTO;
 import com.auditoria.aplicacion.excepciones.IpBloqueadaException;
@@ -17,14 +17,13 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Implementación de la lógica de protección contra fuerza bruta y gestión de
+ * ImplementaciÃ³n de la lÃ³gica de protecciÃ³n contra fuerza bruta y gestiÃ³n de
  * lista negra.
  * <p>
  * Utiliza una ventana deslizante de tiempo y un umbral de intentos fallidos
- * configurables para determinar el bloqueo automático de atacantes.
+ * configurables para determinar el bloqueo automÃ¡tico de atacantes.
  * </p>
  * 
- * @author Paulo Moron
  */
 @Slf4j
 @Service
@@ -44,7 +43,7 @@ public class ServicioSeguridadAuditoriaImpl implements ServicioSeguridadAuditori
         long fallosRecientes = repositorioAcceso.contarIntentosPorIpYEstadoDesde(
                 ipOrigen, EstadoEvento.FALLO, ventanaDesde);
 
-        log.debug("[SEGURIDAD] Evaluación de IP: {}. Fallos: {}/{}", ipOrigen, fallosRecientes,
+        log.debug("[SEGURIDAD] EvaluaciÃ³n de IP: {}. Fallos: {}/{}", ipOrigen, fallosRecientes,
                 propiedadesSeguridad.getMaxIntentosFallidos());
 
         if (fallosRecientes >= propiedadesSeguridad.getMaxIntentosFallidos()) {
@@ -52,7 +51,7 @@ public class ServicioSeguridadAuditoriaImpl implements ServicioSeguridadAuditori
             // Sincronizar con Redis para el Gateway
             redisTemplate.opsForValue().set("bloqueo:ip:" + ipOrigen, true,
                     java.time.Duration.ofMinutes(propiedadesSeguridad.getBloqueoMinutos()));
-            log.info("[SEGURIDAD-REDIS] IP sincronizada en caché de bloqueo: {}", ipOrigen);
+            log.info("[SEGURIDAD-REDIS] IP sincronizada en cachÃ© de bloqueo: {}", ipOrigen);
             
             throw new IpBloqueadaException(ipOrigen);
         }
@@ -80,7 +79,7 @@ public class ServicioSeguridadAuditoriaImpl implements ServicioSeguridadAuditori
         ListaNegraIp registro = repositorioListaNegra.findActivaByIp(Objects.requireNonNull(ip), ahora)
                 .orElse(ListaNegraIp.builder().ip(ip).fechaBloqueo(ahora).build());
 
-        registro.setMotivo(String.format("Bloqueo automático: %d intentos fallidos.", intentos));
+        registro.setMotivo(String.format("Bloqueo automÃ¡tico: %d intentos fallidos.", intentos));
         registro.setFechaExpiracion(ahora.plusMinutes(propiedadesSeguridad.getBloqueoMinutos()));
 
         repositorioListaNegra.save(registro);
@@ -115,7 +114,7 @@ public class ServicioSeguridadAuditoriaImpl implements ServicioSeguridadAuditori
         } else {
             redisTemplate.opsForValue().set("bloqueo:ip:" + ip, true);
         }
-        log.warn("[SEGURIDAD-ADMIN] IP bloqueada manualmente: {} por motivo: {}. Expiración: {}", 
+        log.warn("[SEGURIDAD-ADMIN] IP bloqueada manualmente: {} por motivo: {}. ExpiraciÃ³n: {}", 
                 ip, registro.getMotivo(), registro.getFechaExpiracion());
     }
 

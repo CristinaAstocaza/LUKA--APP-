@@ -1,4 +1,4 @@
-package com.usuario.dominio.entidades;
+﻿package com.usuario.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,10 +12,9 @@ import java.util.UUID;
  * Entidad de dominio que representa a un Usuario en el sistema.
  * <p>
  * Implementa {@link UserDetails} para permitir que Spring Security gestione la
- * autenticación y autorización directamente con este objeto.
+ * autenticaciÃ³n y autorizaciÃ³n directamente con este objeto.
  * </p>
  *
- * * @author Paulo
  * @version 1.0
  */
 @Entity
@@ -103,7 +102,7 @@ public class Usuario implements UserDetails {
     /**
      * Convierte los roles de la entidad en autoridades reconocidas por Spring
      * Security.
-     * @return Colección de autoridades (permisos/roles).
+     * @return ColecciÃ³n de autoridades (permisos/roles).
      */
     @Override
     public java.util.Collection<? extends org.springframework.security.core.GrantedAuthority> getAuthorities() {

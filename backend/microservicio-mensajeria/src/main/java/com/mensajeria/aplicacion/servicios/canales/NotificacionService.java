@@ -1,42 +1,41 @@
-package com.mensajeria.aplicacion.servicios.canales;
+﻿package com.mensajeria.aplicacion.servicios.canales;
 
 import java.util.Map;
 
 /**
- * Contrato unificado del servicio de notificaciones del microservicio de mensajería.
+ * Contrato unificado del servicio de notificaciones del microservicio de mensajerÃ­a.
  * <p>
- * Esta interfaz es <strong>agnóstica al canal</strong>: no sabe si el mensaje
- * se enviará por email o SMS. Cada implementación concreta en
- * {@code com.mensajeria.aplicacion.servicios.impl} decide cómo despachar la
- * notificación según el {@link TipoNotificacion} recibido.
+ * Esta interfaz es <strong>agnÃ³stica al canal</strong>: no sabe si el mensaje
+ * se enviarÃ¡ por email o SMS. Cada implementaciÃ³n concreta en
+ * {@code com.mensajeria.aplicacion.servicios.impl} decide cÃ³mo despachar la
+ * notificaciÃ³n segÃºn el {@link TipoNotificacion} recibido.
  * </p>
  * <p>
- * El mapa {@code variables} es abierto por diseño: permite que cada
- * implementación extraiga lo que necesita ({@code "codigo"}, {@code "appName"},
+ * El mapa {@code variables} es abierto por diseÃ±o: permite que cada
+ * implementaciÃ³n extraiga lo que necesita ({@code "codigo"}, {@code "appName"},
  * {@code "proposito"}, etc.) sin acoplar la interfaz a DTOs concretos.
  * </p>
  *
- * @author Paulo Moron
  * @version 1.1.0
  */
 public interface NotificacionService {
 
     /**
-     * Envía una notificación al destinatario usando el canal y las variables
+     * EnvÃ­a una notificaciÃ³n al destinatario usando el canal y las variables
      * proporcionadas.
      *
-     * @param tipo         Canal de envío ({@link TipoNotificacion#EMAIL} o
-     *                     {@link TipoNotificacion#SMS}). La implementación
-     *                     deberá lanzar {@link UnsupportedOperationException}
+     * @param tipo         Canal de envÃ­o ({@link TipoNotificacion#EMAIL} o
+     *                     {@link TipoNotificacion#SMS}). La implementaciÃ³n
+     *                     deberÃ¡ lanzar {@link UnsupportedOperationException}
      *                     si no soporta el tipo recibido.
-     * @param destinatario Dirección de destino: email en formato RFC 5321 para
-     *                     {@code EMAIL}, o número en formato E.164 para {@code SMS}.
-     * @param variables    Mapa de parámetros de la plantilla. Claves estándar:<br>
-     *                     &nbsp;• {@code "codigo"} — OTP de 6 dígitos (requerido).<br>
-     *                     &nbsp;• {@code "proposito"} — {@code PropositoCodigo} del OTP.<br>
-     *                     &nbsp;• {@code "appName"} — nombre de la app para el asunto del correo.
+     * @param destinatario DirecciÃ³n de destino: email en formato RFC 5321 para
+     *                     {@code EMAIL}, o nÃºmero en formato E.164 para {@code SMS}.
+     * @param variables    Mapa de parÃ¡metros de la plantilla. Claves estÃ¡ndar:<br>
+     *                     &nbsp;â€¢ {@code "codigo"} â€” OTP de 6 dÃ­gitos (requerido).<br>
+     *                     &nbsp;â€¢ {@code "proposito"} â€” {@code PropositoCodigo} del OTP.<br>
+     *                     &nbsp;â€¢ {@code "appName"} â€” nombre de la app para el asunto del correo.
      * @throws com.mensajeria.aplicacion.excepciones.MensajeriaExternaException
-     *             si el proveedor externo (SMTP, Twilio) rechaza el envío.
+     *             si el proveedor externo (SMTP, Twilio) rechaza el envÃ­o.
      */
     void enviar(TipoNotificacion tipo, String destinatario, Map<String, Object> variables);
 

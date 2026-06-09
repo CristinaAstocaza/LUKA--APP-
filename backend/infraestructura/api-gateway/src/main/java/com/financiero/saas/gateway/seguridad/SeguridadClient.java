@@ -1,4 +1,4 @@
-package com.financiero.saas.gateway.seguridad;
+﻿package com.financiero.saas.gateway.seguridad;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
@@ -10,17 +10,16 @@ import reactor.core.publisher.Mono;
 import java.time.Duration;
 
 /**
- * Cliente reactivo para la integración de seguridad perimetral.
+ * Cliente reactivo para la integraciÃ³n de seguridad perimetral.
  * <p>
  * Este componente es responsable de consultar el estado de una IP (libre o
  * bloqueada).
- * Utiliza un patrón de caché *Cache-Aside* con Redis para minimizar la latencia y
- * evitar saturar el microservicio de auditoría en cada petición entrante.
- * Incorpora resiliencia ante fallos garantizando que el tráfico legítimo no se
+ * Utiliza un patrÃ³n de cachÃ© *Cache-Aside* con Redis para minimizar la latencia y
+ * evitar saturar el microservicio de auditorÃ­a en cada peticiÃ³n entrante.
+ * Incorpora resiliencia ante fallos garantizando que el trÃ¡fico legÃ­timo no se
  * bloquee si los servicios de seguridad dejan de responder.
  * </p>
  * 
- * @author Paulo Moron
  * @version 2.0.0
  * @since 2026-05-10
  */
@@ -38,7 +37,7 @@ public class SeguridadClient {
                            @org.springframework.beans.factory.annotation.Value("${URL_PROD_AUDITORIA:https://luka-auditoria.onrender.com}") String urlProdAuditoria) {
         this.redisTemplate = redisTemplate;
         
-        // Determinar si usamos Eureka (LoadBalancer) o conexión directa (Render)
+        // Determinar si usamos Eureka (LoadBalancer) o conexiÃ³n directa (Render)
         if (urlProdAuditoria.startsWith("lb://") || urlProdAuditoria.contains("microservicio-auditoria")) {
             this.webClient = webClientBuilder.build();
             this.urlBaseAuditoria = "http://microservicio-auditoria/api/v1/seguridad/verificar-ip/";
@@ -51,11 +50,11 @@ public class SeguridadClient {
     }
 
     /**
-     * Verifica asíncronamente si una IP está bloqueada por políticas de seguridad.
+     * Verifica asÃ­ncronamente si una IP estÃ¡ bloqueada por polÃ­ticas de seguridad.
      * 
-     * @param ip Dirección IP a consultar.
-     * @return {@link Mono} que emite {@code true} si está bloqueada, o
-     *         {@code false} si está libre.
+     * @param ip DirecciÃ³n IP a consultar.
+     * @return {@link Mono} que emite {@code true} si estÃ¡ bloqueada, o
+     *         {@code false} si estÃ¡ libre.
      */
     public Mono<Boolean> estaBloqueada(String ip) {
         String claveCache = PREFIJO_CACHE + ip;
@@ -65,7 +64,7 @@ public class SeguridadClient {
                 .switchIfEmpty(Mono.defer(() -> consultarAuditoriaYCachear(ip, claveCache)))
                 .onErrorResume(error -> {
                     log.error(
-                            "[SEGURIDAD-CLIENTE] Error verificando IP {}: {}. Falla segura activada (permitiendo tráfico).",
+                            "[SEGURIDAD-CLIENTE] Error verificando IP {}: {}. Falla segura activada (permitiendo trÃ¡fico).",
                             ip, error.getMessage());
                      return Mono.just(false); // Falla segura: permitir si el sistema de seguridad falla
                 });
@@ -89,7 +88,7 @@ public class SeguridadClient {
                 })
                 .timeout(Duration.ofMillis(1500))
                 .onErrorResume(error -> {
-                    log.warn("[SEGURIDAD-CLIENTE] Latencia excedida o error en Auditoría. Fallback seguro activado: {}", error.getMessage());
+                    log.warn("[SEGURIDAD-CLIENTE] Latencia excedida o error en AuditorÃ­a. Fallback seguro activado: {}", error.getMessage());
                     return Mono.just(false); 
                 })
                 .flatMap(bloqueada ->

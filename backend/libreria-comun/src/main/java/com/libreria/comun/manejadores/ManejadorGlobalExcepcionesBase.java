@@ -1,4 +1,4 @@
-package com.libreria.comun.manejadores;
+﻿package com.libreria.comun.manejadores;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,14 +17,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.util.List;
 
 /**
- * Clase base para la gestión de excepciones en el ecosistema LUKA APP.
+ * Clase base para la gestiÃ³n de excepciones en el ecosistema LUKA APP.
  * <p>
- * Proporciona implementaciones estándar para errores comunes (Feign, Validaciones, Errores Globales).
- * Los microservicios DEBEN extender de esta clase y anotar su implementación local con 
+ * Proporciona implementaciones estÃ¡ndar para errores comunes (Feign, Validaciones, Errores Globales).
+ * Los microservicios DEBEN extender de esta clase y anotar su implementaciÃ³n local con 
  * {@code @RestControllerAdvice}.
  * </p>
  *
- * @author Paulo Moron
  */
 @Slf4j
 public abstract class ManejadorGlobalExcepcionesBase {
@@ -32,11 +31,11 @@ public abstract class ManejadorGlobalExcepcionesBase {
     protected final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
-     * Maneja excepciones de comunicación entre microservicios (Feign).
+     * Maneja excepciones de comunicaciÃ³n entre microservicios (Feign).
      */
     @ExceptionHandler(FeignException.class)
     public ResponseEntity<ResultadoApi<?>> manejarFeignException(FeignException ex, HttpServletRequest req) {
-        String mensajeFinal = "Error en comunicación con servicio externo.";
+        String mensajeFinal = "Error en comunicaciÃ³n con servicio externo.";
 
         try {
             if (ex.contentUTF8() != null && !ex.contentUTF8().isBlank()) {
@@ -57,7 +56,7 @@ public abstract class ManejadorGlobalExcepcionesBase {
     }
 
     /**
-     * Captura toda la jerarquía de excepciones propias de LUKA APP.
+     * Captura toda la jerarquÃ­a de excepciones propias de LUKA APP.
      */
     @SuppressWarnings("null")
     @ExceptionHandler(ExcepcionGlobal.class)
@@ -65,7 +64,7 @@ public abstract class ManejadorGlobalExcepcionesBase {
         CodigoError cod = ex.getError();
         HttpStatus status = cod.getStatus();
 
-        log.warn("Excepción controlada [{}]: {}", cod.name(), ex.getMensaje());
+        log.warn("ExcepciÃ³n controlada [{}]: {}", cod.name(), ex.getMensaje());
 
         @SuppressWarnings("unchecked")
         List<String> detalles = (ex.getDetalles() instanceof List) ? (List<String>) ex.getDetalles() : null;
@@ -79,7 +78,7 @@ public abstract class ManejadorGlobalExcepcionesBase {
     }
 
     /**
-     * Traduce los errores de validación de Bean Validation (@Valid) a mensajes amigables.
+     * Traduce los errores de validaciÃ³n de Bean Validation (@Valid) a mensajes amigables.
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ResultadoApi<?>> manejarValidacion(MethodArgumentNotValidException ex,
@@ -89,19 +88,19 @@ public abstract class ManejadorGlobalExcepcionesBase {
                 .toList();
 
         return ResponseEntity.badRequest()
-                .body(ResultadoApi.fallaConDetalles(CodigoError.ERROR_VALIDACION, "Datos de entrada inválidos.",
+                .body(ResultadoApi.fallaConDetalles(CodigoError.ERROR_VALIDACION, "Datos de entrada invÃ¡lidos.",
                         req.getRequestURI(), errores));
     }
 
     /**
-     * Captura cualquier excepción no controlada.
+     * Captura cualquier excepciÃ³n no controlada.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ResultadoApi<?>> manejarErrorInesperado(Exception ex, HttpServletRequest req) {
         log.error("Error no controlado en {}: {}", req.getRequestURI(), ex.getMessage(), ex);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ResultadoApi.falla(CodigoError.ERROR_INTERNO, "Ocurrió un fallo inesperado en el servidor.",
+                .body(ResultadoApi.falla(CodigoError.ERROR_INTERNO, "OcurriÃ³ un fallo inesperado en el servidor.",
                         req.getRequestURI()));
     }
 

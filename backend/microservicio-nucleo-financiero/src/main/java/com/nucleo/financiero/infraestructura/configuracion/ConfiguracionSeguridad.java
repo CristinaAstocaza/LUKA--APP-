@@ -1,4 +1,4 @@
-package com.nucleo.financiero.infraestructura.configuracion;
+﻿package com.nucleo.financiero.infraestructura.configuracion;
 
 import com.libreria.comun.seguridad.ConfiguracionSeguridadBase;
 import com.libreria.comun.seguridad.FiltroJwt;
@@ -11,12 +11,11 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Configuración de Seguridad para el Núcleo Financiero.
- * Extiende de {@link ConfiguracionSeguridadBase} para heredar la lógica de
- * autenticación JWT.
- * Define reglas de autorización específicas para este microservicio.
+ * ConfiguraciÃ³n de Seguridad para el NÃºcleo Financiero.
+ * Extiende de {@link ConfiguracionSeguridadBase} para heredar la lÃ³gica de
+ * autenticaciÃ³n JWT.
+ * Define reglas de autorizaciÃ³n especÃ­ficas para este microservicio.
  *
- * @author Luka-Dev-Backend
  * @version 1.1.0
  */
 @Configuration
@@ -29,12 +28,12 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
     }
 
     /**
-     * Configura la cadena de filtros de seguridad específica para el microservicio
-     * de núcleo financiero.
+     * Configura la cadena de filtros de seguridad especÃ­fica para el microservicio
+     * de nÃºcleo financiero.
      * 
-     * @param http Configuración de seguridad
+     * @param http ConfiguraciÃ³n de seguridad
      * @return SecurityFilterChain configurado
-     * @throws Exception Si ocurre un error en la configuración
+     * @throws Exception Si ocurre un error en la configuraciÃ³n
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -42,7 +41,7 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
         // 1. Configuramos la base (JWT, Stateless, Exception handling)
         super.configurarAutorizacion(http);
 
-        // 2. Definimos las reglas de este microservicio (De lo más específico a lo
+        // 2. Definimos las reglas de este microservicio (De lo mÃ¡s especÃ­fico a lo
         // general)
         http.authorizeHttpRequests(auth -> auth
                 // Endpoints de negocio financiero
@@ -51,7 +50,7 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
                 .requestMatchers("/api/v1/transacciones/**").hasAnyRole("FREE", "PREMIUM", "PRO")
                 .requestMatchers("/api/v1/ia/**").hasAnyRole("FREE", "PREMIUM", "PRO", "ADMIN", "ADMINISTRADOR")
 
-                // Monitoreo y Documentación (Público)
+                // Monitoreo y DocumentaciÃ³n (PÃºblico)
                 .requestMatchers("/actuator/**", "/error/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 

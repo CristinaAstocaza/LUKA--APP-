@@ -1,4 +1,4 @@
-package com.mensajeria.infraestructura.configuracion;
+﻿package com.mensajeria.infraestructura.configuracion;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -7,13 +7,12 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Mapeo centralizado de las propiedades de Twilio.
  *
- * <p>A partir de la versión 1.2.0 se utiliza el {@code messagingServiceSid}
- * para enviar SMS y WhatsApp a través del Messaging Service de Twilio,
- * eliminando la dependencia de números de teléfono estáticos (from/number).
- * La autenticación se realiza con API Key Restringida (sid + secret) en lugar
+ * <p>A partir de la versiÃ³n 1.2.0 se utiliza el {@code messagingServiceSid}
+ * para enviar SMS y WhatsApp a travÃ©s del Messaging Service de Twilio,
+ * eliminando la dependencia de nÃºmeros de telÃ©fono estÃ¡ticos (from/number).
+ * La autenticaciÃ³n se realiza con API Key Restringida (sid + secret) en lugar
  * del Auth Token maestro.</p>
  *
- * @author Paulo Moron
  * @version 1.2.0
  */
 @Configuration
@@ -32,14 +31,14 @@ public class PropiedadesTwilio {
 
     /**
      * Messaging Service SID (prefijo {@code MG...}).
-     * Permite enrutar mensajes sin fijar un número de origen estático.
+     * Permite enrutar mensajes sin fijar un nÃºmero de origen estÃ¡tico.
      */
     private String messagingServiceSid;
 
-    /** Número del Sandbox de WhatsApp de Twilio. */
+    /** NÃºmero del Sandbox de WhatsApp de Twilio. */
     private String sandboxWhatsappFrom;
 
-    // ── Clases internas para compatibilidad con binding de Spring Boot ──────────
+    // â”€â”€ Clases internas para compatibilidad con binding de Spring Boot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Data
     public static class Account {
@@ -68,7 +67,7 @@ public class PropiedadesTwilio {
         private String from;
     }
 
-    // ── Campos heredados (mantenidos por compatibilidad con TwilioInitializer) ──
+    // â”€â”€ Campos heredados (mantenidos por compatibilidad con TwilioInitializer) â”€â”€
 
     private Account account = new Account();
     private Auth auth = new Auth();

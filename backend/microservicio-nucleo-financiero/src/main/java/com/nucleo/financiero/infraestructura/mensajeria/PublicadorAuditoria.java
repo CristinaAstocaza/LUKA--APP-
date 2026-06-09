@@ -1,4 +1,4 @@
-package com.nucleo.financiero.infraestructura.mensajeria;
+﻿package com.nucleo.financiero.infraestructura.mensajeria;
 
 import com.libreria.comun.dtos.EventoAccesoDTO;
 import com.libreria.comun.dtos.EventoTransaccionalDTO;
@@ -10,15 +10,14 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * Publicador de eventos de auditoría para el Núcleo Financiero.
+ * Publicador de eventos de auditorÃ­a para el NÃºcleo Financiero.
  * <p>
- * Extiende de {@link PublicadorEventosBase} para heredar la lógica de envío
- * asíncrona centralizada.
- * Utiliza los DTOs oficiales de la librería común para asegurar la
+ * Extiende de {@link PublicadorEventosBase} para heredar la lÃ³gica de envÃ­o
+ * asÃ­ncrona centralizada.
+ * Utiliza los DTOs oficiales de la librerÃ­a comÃºn para asegurar la
  * compatibilidad con el ms-auditoria.
  * </p>
  *
- * @author Luka-Dev-Backend
  * @version 1.2.1
  */
 @Component
@@ -29,15 +28,15 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
         }
 
         /**
-         * Publica un registro de auditoría transaccional para trazabilidad de cambios.
+         * Publica un registro de auditorÃ­a transaccional para trazabilidad de cambios.
          * 
-         * @param usuarioId  ID del usuario que realiza la acción.
-         * @param entidadId  ID de la entidad afectada (Transacción, Categoría).
-         * @param valorNuevo Representación JSON o String del nuevo estado del objeto.
-         * @param ip         Dirección IP desde donde se realiza la acción.
+         * @param usuarioId  ID del usuario que realiza la acciÃ³n.
+         * @param entidadId  ID de la entidad afectada (TransacciÃ³n, CategorÃ­a).
+         * @param valorNuevo RepresentaciÃ³n JSON o String del nuevo estado del objeto.
+         * @param ip         DirecciÃ³n IP desde donde se realiza la acciÃ³n.
          */
         public void publicarRegistro(UUID usuarioId, UUID entidadId, String valorNuevo, String ip) {
-                // Mapeo al DTO oficial de la librería
+                // Mapeo al DTO oficial de la librerÃ­a
                 EventoTransaccionalDTO dto = EventoTransaccionalDTO.crear(
                                 usuarioId,
                                 entidadId,
@@ -51,19 +50,19 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
         }
 
         /**
-         * Publica un evento de acceso o lectura de información sensible.
+         * Publica un evento de acceso o lectura de informaciÃ³n sensible.
          * <p>
-         * Se utiliza para registrar consultas de historial, resúmenes financieros y
+         * Se utiliza para registrar consultas de historial, resÃºmenes financieros y
          * reportes.
          * </p>
          * 
-         * @param usuarioId ID del usuario que accede a la información.
-         * @param accion    Etiqueta de la acción realizada (ej: CONSULTA_HISTORIAL).
-         * @param mensaje   Detalle descriptivo o rango de búsqueda.
-         * @param ip        Dirección IP de origen.
+         * @param usuarioId ID del usuario que accede a la informaciÃ³n.
+         * @param accion    Etiqueta de la acciÃ³n realizada (ej: CONSULTA_HISTORIAL).
+         * @param mensaje   Detalle descriptivo o rango de bÃºsqueda.
+         * @param ip        DirecciÃ³n IP de origen.
          */
         public void publicarAcceso(UUID usuarioId, String accion, String mensaje, String ip) {
-                // Combinamos la acción con el mensaje para no perder metadata en el DTO oficial
+                // Combinamos la acciÃ³n con el mensaje para no perder metadata en el DTO oficial
                 String detalleCompleto = String.format("[%s] %s", accion, mensaje);
 
                 EventoAccesoDTO dto = EventoAccesoDTO.de(

@@ -1,4 +1,4 @@
-package com.mensajeria.aplicacion.servicios;
+﻿package com.mensajeria.aplicacion.servicios;
 
 import com.mensajeria.aplicacion.excepciones.LimiteIntentosExcedidoException;
 import com.mensajeria.aplicacion.puertos.IThrottlingService;
@@ -12,19 +12,18 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 
 /**
- * Implementación del servicio de throttling por canal usando Redis como almacén
+ * ImplementaciÃ³n del servicio de throttling por canal usando Redis como almacÃ©n
  * de contadores con TTL diario.
  * <p>
  * La estructura de clave en Redis es:
  * {@code luka:throttling:{canal}:{identificador}}
  * donde {@code canal} puede ser {@code email} o {@code sms}, e
- * {@code identificador} es el valor único del usuario en ese canal.
+ * {@code identificador} es el valor Ãºnico del usuario en ese canal.
  * El contador se incrementa en cada intento; al superar 3 se lanza
  * {@link LimiteIntentosExcedidoException}. El TTL se fija a las 00:00:00
- * del día siguiente.
+ * del dÃ­a siguiente.
  * </p>
  *
- * @author Paulo Moron
  * @version 1.1.0
  */
 @Service
@@ -40,12 +39,12 @@ public class ThrottlingServiceImpl implements IThrottlingService {
     /**
      * {@inheritDoc}
      * <p>
-     * Si la clave no existía (primer intento del día), configura su TTL para
+     * Si la clave no existÃ­a (primer intento del dÃ­a), configura su TTL para
      * expirar exactamente a las 00:00:00 de la zona horaria local.
      * </p>
      *
-     * @param canal         Canal de notificación ({@code "email"} o {@code "sms"}).
-     * @param identificador Email, teléfono o UUID del usuario en ese canal.
+     * @param canal         Canal de notificaciÃ³n ({@code "email"} o {@code "sms"}).
+     * @param identificador Email, telÃ©fono o UUID del usuario en ese canal.
      * @throws LimiteIntentosExcedidoException cuando los intentos acumulados superan 3.
      */
     @Override
@@ -66,7 +65,7 @@ public class ThrottlingServiceImpl implements IThrottlingService {
         log.debug("[THROTTLING] Canal={}, id={}, intentos={}/{}", canal, identificador, intentos, MAX_INTENTOS);
 
         if (intentos != null && intentos > MAX_INTENTOS) {
-            log.warn("[THROTTLING] Límite superado para canal='{}', id='{}'", canal, identificador);
+            log.warn("[THROTTLING] LÃ­mite superado para canal='{}', id='{}'", canal, identificador);
             throw new LimiteIntentosExcedidoException(canal);
         }
     }

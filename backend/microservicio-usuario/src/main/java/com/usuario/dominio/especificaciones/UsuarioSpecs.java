@@ -1,4 +1,4 @@
-package com.usuario.dominio.especificaciones;
+﻿package com.usuario.dominio.especificaciones;
 
 import com.usuario.dominio.entidades.Rol;
 import com.usuario.dominio.entidades.Usuario;
@@ -8,16 +8,15 @@ import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalDateTime;
 
 /**
- * Especificaciones dinámicas para la búsqueda y filtrado de Usuarios.
- * Implementa el Specification Pattern para desacoplar la lógica de consulta del repositorio.
+ * Especificaciones dinÃ¡micas para la bÃºsqueda y filtrado de Usuarios.
+ * Implementa el Specification Pattern para desacoplar la lÃ³gica de consulta del repositorio.
  * 
- * @author Paulo
  * @version 1.0.0
  */
 public class UsuarioSpecs {
 
     /**
-     * Filtra usuarios por su estado de habilitación.
+     * Filtra usuarios por su estado de habilitaciÃ³n.
      */
     public static Specification<Usuario> esHabilitado(Boolean habilitado) {
         return (root, query, cb) -> 
@@ -25,7 +24,7 @@ public class UsuarioSpecs {
     }
 
     /**
-     * Filtra usuarios por un rol específico.
+     * Filtra usuarios por un rol especÃ­fico.
      */
     public static Specification<Usuario> tieneRol(String nombreRol) {
         return (root, query, cb) -> {

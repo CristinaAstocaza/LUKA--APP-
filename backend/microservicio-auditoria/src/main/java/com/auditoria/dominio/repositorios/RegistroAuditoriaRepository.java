@@ -1,4 +1,4 @@
-package com.auditoria.dominio.repositorios;
+﻿package com.auditoria.dominio.repositorios;
 
 import com.auditoria.dominio.entidades.RegistroAuditoria;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -6,17 +6,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.UUID;
 
 /**
- * Repositorio para la gestión de persistencia de la entidad
+ * Repositorio para la gestiÃ³n de persistencia de la entidad
  * {@link RegistroAuditoria}.
  * <p>
- * Proporciona los métodos estándar de CRUD mediante Spring Data JPA y define
+ * Proporciona los mÃ©todos estÃ¡ndar de CRUD mediante Spring Data JPA y define
  * consultas
- * especializadas para la explotación de datos de auditoría, permitiendo
+ * especializadas para la explotaciÃ³n de datos de auditorÃ­a, permitiendo
  * filtrado
- * dinámico y paginación sobre los eventos registrados.
+ * dinÃ¡mico y paginaciÃ³n sobre los eventos registrados.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.1.0
  * @since 2026-05-10
  */

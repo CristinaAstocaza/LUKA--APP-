@@ -1,4 +1,4 @@
-package com.nucleo.financiero.aplicacion.puertos;
+﻿package com.nucleo.financiero.aplicacion.puertos;
 
 import com.nucleo.financiero.aplicacion.dtos.respuestas.CategoriaDTO;
 import com.nucleo.financiero.aplicacion.dtos.solicitudes.CategoriaRequestDTO;
@@ -7,54 +7,53 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Interfaz de servicio para la gestión de categorías financieras.
- * Define el contrato de negocio para el registro y consulta de categorías.
+ * Interfaz de servicio para la gestiÃ³n de categorÃ­as financieras.
+ * Define el contrato de negocio para el registro y consulta de categorÃ­as.
  *
- * @author Luka-Dev-Backend
  * @version 1.2.0
  */
 public interface ICategoriaService {
 
     /**
-     * Registra una nueva categoría en el sistema.
-     * @param request Datos de la categoría a crear
-     * @return DTO de la categoría creada
-     * @throws IllegalStateException Si el nombre de la categoría ya existe
+     * Registra una nueva categorÃ­a en el sistema.
+     * @param request Datos de la categorÃ­a a crear
+     * @return DTO de la categorÃ­a creada
+     * @throws IllegalStateException Si el nombre de la categorÃ­a ya existe
      */
     CategoriaDTO crear(CategoriaRequestDTO request);
 
     /**
-     * Lista todas las categorías registradas.
-     * @return Lista de DTOs de categorías
+     * Lista todas las categorÃ­as registradas.
+     * @return Lista de DTOs de categorÃ­as
      */
     List<CategoriaDTO> listarTodas();
 
     /**
-     * Filtra categorías por tipo de movimiento (INGRESO/EGRESO).
+     * Filtra categorÃ­as por tipo de movimiento (INGRESO/EGRESO).
      * @param tipo Tipo de movimiento
      * @return Lista filtrada de DTOs
      */
     List<CategoriaDTO> listarPorTipo(TipoMovimiento tipo);
 
     /**
-     * Obtiene el detalle de una categoría por su ID.
-     * @param id Identificador único de la categoría
-     * @return DTO de la categoría
-     * @throws IllegalArgumentException Si la categoría no existe
+     * Obtiene el detalle de una categorÃ­a por su ID.
+     * @param id Identificador Ãºnico de la categorÃ­a
+     * @return DTO de la categorÃ­a
+     * @throws IllegalArgumentException Si la categorÃ­a no existe
      */
     CategoriaDTO obtenerPorId(UUID id);
 
     /**
-     * Actualiza los datos de una categoría existente.
-     * @param id Identificador de la categoría
+     * Actualiza los datos de una categorÃ­a existente.
+     * @param id Identificador de la categorÃ­a
      * @param request Nuevos datos
      * @return DTO actualizado
      */
     CategoriaDTO actualizar(UUID id, CategoriaRequestDTO request);
 
     /**
-     * Elimina una categoría del sistema.
-     * @param id Identificador de la categoría
+     * Elimina una categorÃ­a del sistema.
+     * @param id Identificador de la categorÃ­a
      */
     void eliminar(UUID id);
 }

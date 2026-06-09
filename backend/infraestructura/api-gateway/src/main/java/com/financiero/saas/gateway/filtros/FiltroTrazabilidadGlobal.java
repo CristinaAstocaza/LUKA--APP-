@@ -1,4 +1,4 @@
-package com.financiero.saas.gateway.filtros;
+﻿package com.financiero.saas.gateway.filtros;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -13,14 +13,13 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 /**
- * Filtro global para la gestión de la trazabilidad distribuida (Trace-ID).
+ * Filtro global para la gestiÃ³n de la trazabilidad distribuida (Trace-ID).
  * <p>
- * Este filtro asegura que cada petición entrante tenga un identificador único
- * (X-Correlation-ID). Si el cliente no lo envía, el Gateway lo genera y lo
+ * Este filtro asegura que cada peticiÃ³n entrante tenga un identificador Ãºnico
+ * (X-Correlation-ID). Si el cliente no lo envÃ­a, el Gateway lo genera y lo
  * propaga hacia todos los microservicios aguas abajo.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.0.0
  */
 @Component
@@ -44,12 +43,12 @@ public class FiltroTrazabilidadGlobal implements GlobalFilter, Ordered {
             log.info("[GATEWAY-PETICION] Propagando Trace-ID: {} para [{} {}]", correlationId, method, path);
         }
 
-        // Inyectamos el ID en la petición que va hacia los microservicios
+        // Inyectamos el ID en la peticiÃ³n que va hacia los microservicios
         ServerHttpRequest requestModificada = exchange.getRequest().mutate()
                 .header(CORRELATION_ID_HEADER, correlationId)
                 .build();
 
-        // También lo añadimos a la respuesta para facilitar el debugging en el cliente
+        // TambiÃ©n lo aÃ±adimos a la respuesta para facilitar el debugging en el cliente
         exchange.getResponse().getHeaders().add(CORRELATION_ID_HEADER, correlationId);
 
         return chain.filter(exchange.mutate().request(requestModificada).build());

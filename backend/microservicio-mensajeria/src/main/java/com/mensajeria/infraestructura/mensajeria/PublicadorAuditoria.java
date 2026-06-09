@@ -1,4 +1,4 @@
-package com.mensajeria.infraestructura.mensajeria;
+﻿package com.mensajeria.infraestructura.mensajeria;
 
 import com.libreria.comun.dtos.EventoAuditoriaDTO;
 import com.libreria.comun.mensajeria.PublicadorEventosBase;
@@ -13,10 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Publicador de auditoría para mensajería.
- * Hereda de la base para aprovechar el enrutamiento estándar.
+ * Publicador de auditorÃ­a para mensajerÃ­a.
+ * Hereda de la base para aprovechar el enrutamiento estÃ¡ndar.
  * 
- * @author Paulo Moron
  * @version 1.2.0
  */
 @Component
@@ -27,7 +26,7 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
     private final ObjectMapper objectMapper;
 
     /**
-     * Constructor con inyección de dependencias.
+     * Constructor con inyecciÃ³n de dependencias.
      */
     public PublicadorAuditoria(RabbitTemplate rabbitTemplate, 
                                RepositorioBandejaSalidaMensajeria outboxRepository,
@@ -38,10 +37,10 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
     }
 
     /**
-     * Publica un evento de seguridad de mensajería usando Patrón Outbox.
+     * Publica un evento de seguridad de mensajerÃ­a usando PatrÃ³n Outbox.
      * 
      * @param usuario id del usuario
-     * @param accion  acción realizada
+     * @param accion  acciÃ³n realizada
      * @param detalle detalle adicional
      */
     @Transactional
@@ -54,7 +53,7 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
                 detalle);
 
         try {
-            // 1. Guardar en Bandeja de Salida (dentro de la misma transacción de negocio)
+            // 1. Guardar en Bandeja de Salida (dentro de la misma transacciÃ³n de negocio)
             String payload = objectMapper.writeValueAsString(dto);
             BandejaSalidaMensajeria outbox = BandejaSalidaMensajeria.builder()
                     .tipoEvento(".seguridad")
@@ -65,13 +64,13 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
             // 2. Intentar enviar a RabbitMQ
             super.publicarEvento(dto, ".seguridad");
 
-            // 3. Si tiene éxito inmediato, marcar como procesado
+            // 3. Si tiene Ã©xito inmediato, marcar como procesado
             outbox.setProcesado(true);
             outboxRepository.save(outbox);
             
         } catch (Exception e) {
-            log.error("[OUTBOX] Error al publicar evento de auditoría inmediatamente, se reintentará luego: {}", e.getMessage());
-            // No relanzar excepción, permitir que la transacción de negocio principal se complete
+            log.error("[OUTBOX] Error al publicar evento de auditorÃ­a inmediatamente, se reintentarÃ¡ luego: {}", e.getMessage());
+            // No relanzar excepciÃ³n, permitir que la transacciÃ³n de negocio principal se complete
         }
     }
 }

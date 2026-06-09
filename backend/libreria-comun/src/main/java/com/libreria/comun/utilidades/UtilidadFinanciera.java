@@ -1,4 +1,4 @@
-package com.libreria.comun.utilidades;
+﻿package com.libreria.comun.utilidades;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -10,7 +10,6 @@ import java.util.Locale;
  * Utilidad transversal para el formateo consistente de datos financieros y
  * temporales.
  * 
- * @author Paulo Moron
  */
 public final class UtilidadFinanciera {
 
@@ -22,7 +21,7 @@ public final class UtilidadFinanciera {
     }
 
     /**
-     * Formatea una fecha al estándar de lectura en español para la plataforma.
+     * Formatea una fecha al estÃ¡ndar de lectura en espaÃ±ol para la plataforma.
      * 
      * @param fecha LocalDateTime a formatear.
      * @return String formateado (ej: 08/05/2026 14:30:00).
@@ -34,9 +33,9 @@ public final class UtilidadFinanciera {
     /**
      * Asegura que un monto financiero tenga exactamente 2 decimales con redondeo
      * hacia arriba.
-     * Evita errores de precisión en cálculos de saldos.
+     * Evita errores de precisiÃ³n en cÃ¡lculos de saldos.
      * 
-     * @param monto El valor numérico a normalizar.
+     * @param monto El valor numÃ©rico a normalizar.
      * @return BigDecimal con escala 2.
      */
     public static BigDecimal normalizarMonto(BigDecimal monto) {

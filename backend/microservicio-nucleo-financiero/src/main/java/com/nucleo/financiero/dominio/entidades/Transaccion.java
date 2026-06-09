@@ -1,4 +1,4 @@
-package com.nucleo.financiero.dominio.entidades;
+﻿package com.nucleo.financiero.dominio.entidades;
 
 import com.nucleo.financiero.dominio.entidades.Categoria.TipoMovimiento;
 import jakarta.persistence.*;
@@ -8,14 +8,13 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Entidad núcleo que representa un movimiento financiero (Ingreso o Egreso).
+ * Entidad nÃºcleo que representa un movimiento financiero (Ingreso o Egreso).
  * <p>
- * Almacena la información transaccional detallada, incluyendo montos, categorías,
- * métodos de pago y metadatos para auditoría. Es la fuente principal para el
+ * Almacena la informaciÃ³n transaccional detallada, incluyendo montos, categorÃ­as,
+ * mÃ©todos de pago y metadatos para auditorÃ­a. Es la fuente principal para el
  * motor de IA.
  * </p>
  * 
- * @author Luka-Dev-Backend
  * @version 1.1.0
  */
 @Entity
@@ -74,14 +73,14 @@ public class Transaccion {
     private LocalDateTime fechaRegistro;
 
     /**
-     * Catálogo de métodos de pago soportados por la plataforma.
+     * CatÃ¡logo de mÃ©todos de pago soportados por la plataforma.
      */
     public enum MetodoPago {
-        /** Pago en moneda física */
+        /** Pago en moneda fÃ­sica */
         EFECTIVO,
-        /** Uso de tarjetas de crédito o débito */
+        /** Uso de tarjetas de crÃ©dito o dÃ©bito */
         TARJETA,
-        /** Operación bancaria directa */
+        /** OperaciÃ³n bancaria directa */
         TRANSFERENCIA,
         /** Wallets o pasarelas de pago (Mercado Pago, Culqui) */
         DIGITAL

@@ -1,4 +1,4 @@
-package com.usuario.dominio.repositorios;
+﻿package com.usuario.dominio.repositorios;
 
 import com.usuario.dominio.entidades.Usuario;
 import java.time.LocalDateTime;
@@ -13,10 +13,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Repositorio para la gestión de usuarios.
+ * Repositorio para la gestiÃ³n de usuarios.
  * Extiende JpaSpecificationExecutor para soportar el Specification Pattern.
  * 
- * @author Paulo
  */
 public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpecificationExecutor<Usuario> {
     
@@ -35,7 +34,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, UUID>, JpaSpec
     /**
      * Elimina usuarios que no han activado su cuenta tras un periodo de tiempo.
      *
-     * @param fechaLimite Punto de corte (24 horas atrás).
+     * @param fechaLimite Punto de corte (24 horas atrÃ¡s).
      * @return Cantidad de registros eliminados.
      */
     @Modifying

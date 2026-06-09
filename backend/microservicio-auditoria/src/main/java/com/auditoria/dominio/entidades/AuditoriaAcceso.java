@@ -1,4 +1,4 @@
-package com.auditoria.dominio.entidades;
+﻿package com.auditoria.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -10,13 +10,12 @@ import com.libreria.comun.enums.EstadoEvento;
 /**
  * Entidad de persistencia que registra cada intento de acceso al sistema.
  * <p>
- * Esta clase es la fuente de verdad para el módulo de seguridad, permitiendo
- * rastrear inicios de sesión exitosos y fallidos. Su diseño optimizado mediante
- * índices permite realizar análisis de seguridad en tiempo real para detectar
+ * Esta clase es la fuente de verdad para el mÃ³dulo de seguridad, permitiendo
+ * rastrear inicios de sesiÃ³n exitosos y fallidos. Su diseÃ±o optimizado mediante
+ * Ã­ndices permite realizar anÃ¡lisis de seguridad en tiempo real para detectar
  * y mitigar ataques de fuerza bruta basados en IP o cuenta de usuario.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.1.0
  * @since 2026-05-10
  */
@@ -35,7 +34,7 @@ import com.libreria.comun.enums.EstadoEvento;
 public class AuditoriaAcceso {
 
     /**
-     * Identificador único universal (UUID) del registro de acceso.
+     * Identificador Ãºnico universal (UUID) del registro de acceso.
      */
     @Id
     @GeneratedValue
@@ -43,7 +42,7 @@ public class AuditoriaAcceso {
     private UUID id;
 
     /**
-     * Identificador único (UUID) del usuario que intentó autenticarse.
+     * Identificador Ãºnico (UUID) del usuario que intentÃ³ autenticarse.
      * <p>
      * Puede ser {@code null} en casos donde el intento de acceso se realice con
      * credenciales de un usuario inexistente en el sistema.
@@ -53,34 +52,34 @@ public class AuditoriaAcceso {
     private UUID usuarioId;
 
     /**
-     * Dirección IP desde la cual se originó el intento de acceso.
+     * DirecciÃ³n IP desde la cual se originÃ³ el intento de acceso.
      */
     @Column(name = "ip_origen", nullable = false, length = 45)
     private String ipOrigen;
 
     /**
-     * Información del User-Agent del navegador o cliente utilizado para el acceso.
+     * InformaciÃ³n del User-Agent del navegador o cliente utilizado para el acceso.
      */
     @Column(name = "navegador", length = 500)
     private String navegador;
 
     /**
      * Estado del evento de acceso (exitoso o fallido).
-     * Proviene de la enumeración estandarizada en la {@code libreria-comun}.
+     * Proviene de la enumeraciÃ³n estandarizada en la {@code libreria-comun}.
      */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private EstadoEvento estado;
 
     /**
-     * Descripción detallada del error en caso de un acceso fallido (ej. "Contraseña
+     * DescripciÃ³n detallada del error en caso de un acceso fallido (ej. "ContraseÃ±a
      * incorrecta").
      */
     @Column(name = "detalle_error", length = 500)
     private String detalleError;
 
     /**
-     * Identificador de correlación para garantizar la idempotencia del registro.
+     * Identificador de correlaciÃ³n para garantizar la idempotencia del registro.
      */
     @Column(name = "correlation_id", unique = true, length = 100)
     private String correlationId;
@@ -92,7 +91,7 @@ public class AuditoriaAcceso {
     private LocalDateTime fecha;
 
     /**
-     * Método de ciclo de vida de JPA ejecutado antes de la persistencia.
+     * MÃ©todo de ciclo de vida de JPA ejecutado antes de la persistencia.
      * <p>
      * Asegura la integridad temporal del registro asignando la fecha actual
      * si no se ha especificado previamente.

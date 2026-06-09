@@ -1,4 +1,4 @@
-package com.pagos;
+﻿package com.pagos;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,11 +11,10 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 /**
  * Clase principal del Microservicio de Pagos.
  * <p>
- * Gestiona la integración con Stripe, suscripciones y procesamiento de pagos
+ * Gestiona la integraciÃ³n con Stripe, suscripciones y procesamiento de pagos
  * dentro del ecosistema LUKA APP.
  * </p>
  * 
- * @author Luka-Dev-Backend
  * @version 1.0.0
  */
 @SpringBootApplication(scanBasePackages = {"com.pagos", "com.libreria.comun"})

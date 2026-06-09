@@ -1,4 +1,4 @@
-package com.nucleo.financiero.presentacion.controladores;
+﻿package com.nucleo.financiero.presentacion.controladores;
 
 import com.libreria.comun.respuesta.ResultadoApi;
 import com.nucleo.financiero.aplicacion.dtos.respuestas.CategoriaDTO;
@@ -14,13 +14,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Controlador REST para la gestión de categorías financieras.
+ * Controlador REST para la gestiÃ³n de categorÃ­as financieras.
  * <p>
  * Estandarizado con {@link ResultadoApi} para proporcionar respuestas consistentes
  * a los consumidores del frontend y otros microservicios.
  * </p>
  *
- * @author Luka-Dev-Backend
  * @version 1.2.1
  */
 @RestController
@@ -32,23 +31,23 @@ public class CategoriaController {
     private final ICategoriaService categoriaService;
 
     /**
-     * Registra una nueva categoría en el sistema.
+     * Registra una nueva categorÃ­a en el sistema.
      * 
-     * @param request Datos de la categoría validados.
-     * @return ResponseEntity con la categoría creada.
+     * @param request Datos de la categorÃ­a validados.
+     * @return ResponseEntity con la categorÃ­a creada.
      */
     @PostMapping
     public ResponseEntity<ResultadoApi<CategoriaDTO>> crear(@Valid @RequestBody CategoriaRequestDTO request) {
-        log.info("REST request para crear categoría: {}", request.nombre());
+        log.info("REST request para crear categorÃ­a: {}", request.nombre());
         CategoriaDTO dto = categoriaService.crear(request);
-        return ResponseEntity.status(201).body(ResultadoApi.creado(dto, "Categoría creada correctamente"));
+        return ResponseEntity.status(201).body(ResultadoApi.creado(dto, "CategorÃ­a creada correctamente"));
     }
 
     /**
-     * Lista todas las categorías, permitiendo filtrado opcional por tipo de movimiento.
+     * Lista todas las categorÃ­as, permitiendo filtrado opcional por tipo de movimiento.
      * 
      * @param tipo Tipo de movimiento (INGRESO o EGRESO). Opcional.
-     * @return ResponseEntity con la lista de categorías encontradas.
+     * @return ResponseEntity con la lista de categorÃ­as encontradas.
      */
     @GetMapping
     public ResponseEntity<ResultadoApi<List<CategoriaDTO>>> listar(@RequestParam(required = false) TipoMovimiento tipo) {
@@ -60,10 +59,10 @@ public class CategoriaController {
     }
 
     /**
-     * Recupera el detalle de una categoría específica por su identificador único.
+     * Recupera el detalle de una categorÃ­a especÃ­fica por su identificador Ãºnico.
      * 
-     * @param id UUID de la categoría.
-     * @return ResponseEntity con el DTO de la categoría.
+     * @param id UUID de la categorÃ­a.
+     * @return ResponseEntity con el DTO de la categorÃ­a.
      */
     @GetMapping("/{id}")
     public ResponseEntity<ResultadoApi<CategoriaDTO>> obtener(@PathVariable UUID id) {
@@ -72,27 +71,27 @@ public class CategoriaController {
     }
 
     /**
-     * Actualiza los atributos de una categoría existente.
+     * Actualiza los atributos de una categorÃ­a existente.
      * 
-     * @param id UUID de la categoría a modificar.
-     * @param request Nuevos datos de la categoría.
+     * @param id UUID de la categorÃ­a a modificar.
+     * @param request Nuevos datos de la categorÃ­a.
      * @return ResponseEntity con el estado actualizado.
      */
     @PutMapping("/{id}")
     public ResponseEntity<ResultadoApi<CategoriaDTO>> actualizar(@PathVariable UUID id, @Valid @RequestBody CategoriaRequestDTO request) {
         CategoriaDTO dto = categoriaService.actualizar(id, request);
-        return ResponseEntity.ok(ResultadoApi.exito(dto, "Categoría actualizada correctamente"));
+        return ResponseEntity.ok(ResultadoApi.exito(dto, "CategorÃ­a actualizada correctamente"));
     }
 
     /**
-     * Elimina una categoría del sistema.
+     * Elimina una categorÃ­a del sistema.
      * 
-     * @param id UUID de la categoría a eliminar.
-     * @return ResponseEntity confirmando la eliminación.
+     * @param id UUID de la categorÃ­a a eliminar.
+     * @return ResponseEntity confirmando la eliminaciÃ³n.
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ResultadoApi<Void>> eliminar(@PathVariable UUID id) {
         categoriaService.eliminar(id);
-        return ResponseEntity.ok(ResultadoApi.sinContenido("Categoría eliminada correctamente"));
+        return ResponseEntity.ok(ResultadoApi.sinContenido("CategorÃ­a eliminada correctamente"));
     }
 }

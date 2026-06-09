@@ -1,20 +1,19 @@
-package com.libreria.comun.excepciones;
+﻿package com.libreria.comun.excepciones;
 
 import com.libreria.comun.enums.CodigoError;
 import java.util.List;
 
 /**
- * Excepción lanzada cuando los datos de entrada no cumplen con las reglas de negocio
- * o las restricciones de validación (@Valid).
+ * ExcepciÃ³n lanzada cuando los datos de entrada no cumplen con las reglas de negocio
+ * o las restricciones de validaciÃ³n (@Valid).
  * <p>Mapea a un estado HTTP 400 Bad Request.</p>
  * 
- * @author Paulo Moron
  */
 public class ExcepcionValidacion extends ExcepcionGlobal {
 
     /**
-     * @param mensaje  Descripción general del error de validación.
-     * @param errores Lista de campos o motivos específicos del fallo.
+     * @param mensaje  DescripciÃ³n general del error de validaciÃ³n.
+     * @param errores Lista de campos o motivos especÃ­ficos del fallo.
      */
     public ExcepcionValidacion(String mensaje, List<String> errores) {
         super(CodigoError.ERROR_VALIDACION, mensaje, errores);

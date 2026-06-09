@@ -1,4 +1,4 @@
-package com.mensajeria.infraestructura.clientes;
+﻿package com.mensajeria.infraestructura.clientes;
 
 import java.util.UUID;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.libreria.comun.respuesta.ResultadoApi;
 
 /**
- * Feign Client para la sincronización de datos personales con el ms-usuario.
+ * Feign Client para la sincronizaciÃ³n de datos personales con el ms-usuario.
  * <p>
- * Invocado por el ms-mensajeria cuando la validación OTP por SMS en el flujo
- * de recuperación de contraseña es exitosa, garantizando que el teléfono
+ * Invocado por el ms-mensajeria cuando la validaciÃ³n OTP por SMS en el flujo
+ * de recuperaciÃ³n de contraseÃ±a es exitosa, garantizando que el telÃ©fono
  * verificado quede persistido en el microservicio correspondiente.
  * </p>
  * <p>
@@ -21,32 +21,31 @@ import com.libreria.comun.respuesta.ResultadoApi;
  * </p>
  *
  * <p>
- * <strong>⚠ Contrato pendiente:</strong> El endpoint
+ * <strong>âš  Contrato pendiente:</strong> El endpoint
  * {@code PUT /api/v1/datos-personales/telefono/{usuarioId}} debe ser creado
  * en el {@code microservicio-usuario} antes del primer despliegue conjunto.
- * Mientras no exista, el fallback capturará el 404 automáticamente.
+ * Mientras no exista, el fallback capturarÃ¡ el 404 automÃ¡ticamente.
  * Responsable: equipo de ms-usuario. Referencia: ADR-MENSAJERIA-001.
  * </p>
  *
- * @author Paulo Moron
  * @version 1.1.0
  */
 @FeignClient(name = "microservicio-usuario", contextId = "clienteActualizarTelefono", url = "${URL_PROD_USUARIO:http://localhost:8081}", fallback = ClienteActualizarTelefonoFallback.class)
 public interface ClienteActualizarTelefono {
 
     /**
-     * Actualiza el número de teléfono verificado del usuario en el ms-usuario.
+     * Actualiza el nÃºmero de telÃ©fono verificado del usuario en el ms-usuario.
      * <p>
      * Este endpoint es el contrato definido por el equipo de arquitectura para
-     * la sincronización de datos personales tras la validación OTP. Si el
-     * endpoint devuelve 404 (aún no implementado), el fallback lo intercepta.
+     * la sincronizaciÃ³n de datos personales tras la validaciÃ³n OTP. Si el
+     * endpoint devuelve 404 (aÃºn no implementado), el fallback lo intercepta.
      * </p>
      *
-     * @param usuarioId UUID del usuario cuyo teléfono debe actualizarse; se
-     *                  pasa como variable de ruta para identificación directa.
-     * @param telefono  Número de teléfono en formato E.164 ({@code +51XXXXXXXXX})
+     * @param usuarioId UUID del usuario cuyo telÃ©fono debe actualizarse; se
+     *                  pasa como variable de ruta para identificaciÃ³n directa.
+     * @param telefono  NÃºmero de telÃ©fono en formato E.164 ({@code +51XXXXXXXXX})
      *                  verificado mediante OTP y que debe persistirse.
-     * @return Cadena de confirmación del ms-usuario, o
+     * @return Cadena de confirmaciÃ³n del ms-usuario, o
      *         {@code "SINCRONIZACION_PENDIENTE"} si el servicio no responde.
      */
     @PutMapping("/api/v1/datos-personales/telefono/{usuarioId}")

@@ -1,33 +1,32 @@
-package com.mensajeria.aplicacion.servicios.canales;
+﻿package com.mensajeria.aplicacion.servicios.canales;
 
 /**
- * Enumeración de los canales de notificación disponibles en el sistema.
+ * EnumeraciÃ³n de los canales de notificaciÃ³n disponibles en el sistema.
  * <p>
- * Permite que {@link NotificacionService} sea completamente agnóstico al
- * medio de entrega: la implementación concreta decide cómo enviar el mensaje
- * (SMTP, Twilio, etc.) según el tipo recibido.
+ * Permite que {@link NotificacionService} sea completamente agnÃ³stico al
+ * medio de entrega: la implementaciÃ³n concreta decide cÃ³mo enviar el mensaje
+ * (SMTP, Twilio, etc.) segÃºn el tipo recibido.
  * </p>
  *
- * @author Paulo Moron
  * @version 1.1.0
  */
 public enum TipoNotificacion {
 
     /**
-     * Notificación enviada por correo electrónico mediante SMTP (Thymeleaf).
+     * NotificaciÃ³n enviada por correo electrÃ³nico mediante SMTP (Thymeleaf).
      * La clave {@code "destinatario"} del mapa de variables debe contener el email.
      */
     EMAIL,
 
     /**
-     * Notificación enviada por SMS mediante Twilio.
+     * NotificaciÃ³n enviada por SMS mediante Twilio.
      * La clave {@code "destinatario"} del mapa de variables debe contener el
-     * número de teléfono en formato E.164.
+     * nÃºmero de telÃ©fono en formato E.164.
      */
     SMS,
 
     /**
-     * Notificación enviada por WhatsApp mediante Meta Cloud API.
+     * NotificaciÃ³n enviada por WhatsApp mediante Meta Cloud API.
      */
     WHATSAPP
 }

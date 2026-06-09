@@ -1,4 +1,4 @@
-package com.nucleo.financiero.dominio.repositorios;
+﻿package com.nucleo.financiero.dominio.repositorios;
 
 import com.nucleo.financiero.dominio.entidades.Categoria.TipoMovimiento;
 import com.nucleo.financiero.dominio.entidades.Transaccion;
@@ -12,13 +12,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Repositorio para la gestión persistente de transacciones financieras.
+ * Repositorio para la gestiÃ³n persistente de transacciones financieras.
  * <p>
- * Contiene consultas personalizadas (JPQL) para el filtrado dinámico de historial
- * y el cálculo de agregados financieros (sumas y conteos) por periodos de tiempo.
+ * Contiene consultas personalizadas (JPQL) para el filtrado dinÃ¡mico de historial
+ * y el cÃ¡lculo de agregados financieros (sumas y conteos) por periodos de tiempo.
  * </p>
  * 
- * @author Luka-Dev-Backend
  * @version 1.1.0
  */
 @Repository

@@ -1,4 +1,4 @@
-package com.libreria.comun.seguridad;
+﻿package com.libreria.comun.seguridad;
 
 import com.libreria.comun.excepciones.ExcepcionNoAutorizado;
 import jakarta.servlet.FilterChain;
@@ -25,7 +25,6 @@ import java.io.IOException;
  * adicionales a la base de datos.
  * </p>
  *
- * @author Paulo Moron
  */
 @Slf4j
 @Component
@@ -38,10 +37,10 @@ public class FiltroJwt extends OncePerRequestFilter {
     private static final String PREFIJO_BEARER = "Bearer ";
 
     /**
-     * Proceso principal de filtrado. Extrae el token e inyecta la autenticación
-     * si es válido.
+     * Proceso principal de filtrado. Extrae el token e inyecta la autenticaciÃ³n
+     * si es vÃ¡lido.
      *
-     * @param request     Objeto con la información de la petición HTTP.
+     * @param request     Objeto con la informaciÃ³n de la peticiÃ³n HTTP.
      * @param response    Objeto para gestionar la respuesta HTTP.
      * @param filterChain Cadena de filtros de seguridad.
      * @throws ServletException Si ocurre un error en el servlet.
@@ -66,7 +65,7 @@ public class FiltroJwt extends OncePerRequestFilter {
         try {
             String email = servicioJwt.extraerSubject(jwt);
 
-            // Si el token tiene un subject y no hay autenticación previa en el hilo actual
+            // Si el token tiene un subject y no hay autenticaciÃ³n previa en el hilo actual
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 if (servicioJwt.esTokenValido(jwt)) {
@@ -77,7 +76,7 @@ public class FiltroJwt extends OncePerRequestFilter {
                             .roles(servicioJwt.extraerRoles(jwt))
                             .build();
 
-                    // 2. Creamos el token de autenticación usando el objeto 'detalles' como
+                    // 2. Creamos el token de autenticaciÃ³n usando el objeto 'detalles' como
                     // Principal
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             detalles,
@@ -89,11 +88,11 @@ public class FiltroJwt extends OncePerRequestFilter {
                     // 3. Inyectamos en el contexto
                     SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                    log.debug("Autenticación Stateless exitosa para usuarioId: '{}'", detalles.getUsuarioId());
+                    log.debug("AutenticaciÃ³n Stateless exitosa para usuarioId: '{}'", detalles.getUsuarioId());
                 }
             }
         } catch (ExcepcionNoAutorizado e) {
-            log.warn("Fallo en validación de token: {}", e.getMensaje());
+            log.warn("Fallo en validaciÃ³n de token: {}", e.getMensaje());
             SecurityContextHolder.clearContext();
         } catch (Exception e) {
             log.error("Error inesperado en el filtro de seguridad: {}", e.getMessage());
@@ -106,8 +105,8 @@ public class FiltroJwt extends OncePerRequestFilter {
     /**
      * Determina si el filtro debe omitirse para ciertas rutas (Whitelist).
      *
-     * @param request Petición actual.
-     * @return true si la ruta es pública y no debe filtrarse.
+     * @param request PeticiÃ³n actual.
+     * @return true si la ruta es pÃºblica y no debe filtrarse.
      */
     @Override
     protected boolean shouldNotFilter(@SuppressWarnings("null") HttpServletRequest request) {

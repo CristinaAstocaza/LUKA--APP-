@@ -1,4 +1,4 @@
-package com.usuario.dominio.entidades;
+﻿package com.usuario.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +11,6 @@ import java.util.UUID;
  * Los roles soportados son: FREE, PRO, PREMIUM, ADMIN y ADMINISTRADOR.
  * </p>
  * 
- * @author Paulo
  * @version 1.1.0
  */
 @Entity
@@ -29,13 +28,13 @@ public class Rol {
     private UUID id;
 
     /**
-     * Nombre del rol. Convención Spring Security: prefijo ROLE_.
+     * Nombre del rol. ConvenciÃ³n Spring Security: prefijo ROLE_.
      */
     @Column(nullable = false, unique = true, length = 50)
     private String nombre;
 
     // -------------------------------------------------------------------------
-    // Enum de referencia para uso seguro en código
+    // Enum de referencia para uso seguro en cÃ³digo
     // -------------------------------------------------------------------------
     public enum NombreRol {
         ROLE_ADMIN,

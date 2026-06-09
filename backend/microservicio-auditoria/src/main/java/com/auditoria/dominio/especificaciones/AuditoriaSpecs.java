@@ -1,4 +1,4 @@
-package com.auditoria.dominio.especificaciones;
+﻿package com.auditoria.dominio.especificaciones;
 
 import com.auditoria.dominio.entidades.AuditoriaTransaccional;
 import com.auditoria.dominio.entidades.RegistroAuditoria;
@@ -7,10 +7,9 @@ import org.springframework.data.jpa.domain.Specification;
 import java.time.LocalDateTime;
 
 /**
- * Especificaciones dinámicas para el filtrado de registros de auditoría.
- * Implementa el Specification Pattern para búsquedas avanzadas y modulares.
+ * Especificaciones dinÃ¡micas para el filtrado de registros de auditorÃ­a.
+ * Implementa el Specification Pattern para bÃºsquedas avanzadas y modulares.
  * 
- * @author Paulo Moron
  * @version 1.0.0
  */
 public class AuditoriaSpecs {
@@ -18,7 +17,7 @@ public class AuditoriaSpecs {
     // --- Especificaciones para RegistroAuditoria ---
 
     /**
-     * Filtra por el módulo que generó el evento (case-insensitive).
+     * Filtra por el mÃ³dulo que generÃ³ el evento (case-insensitive).
      */
     public static Specification<RegistroAuditoria> registroPorModulo(String modulo) {
         return (root, query, cb) -> 
@@ -27,7 +26,7 @@ public class AuditoriaSpecs {
     }
 
     /**
-     * Filtra por nivel de severidad o tipo de evento (acción).
+     * Filtra por nivel de severidad o tipo de evento (acciÃ³n).
      */
     public static Specification<RegistroAuditoria> registroPorTipo(String tipo) {
         return (root, query, cb) -> 
@@ -37,7 +36,7 @@ public class AuditoriaSpecs {
     // --- Especificaciones para AuditoriaTransaccional ---
 
     /**
-     * Filtra por el microservicio de origen de la transacción.
+     * Filtra por el microservicio de origen de la transacciÃ³n.
      */
     public static Specification<AuditoriaTransaccional> transaccionPorServicio(String servicio) {
         return (root, query, cb) -> 
@@ -59,7 +58,7 @@ public class AuditoriaSpecs {
     }
 
     /**
-     * Filtra por el tipo de operación (CREATE, UPDATE, DELETE) buscando coincidencia en la descripción.
+     * Filtra por el tipo de operaciÃ³n (CREATE, UPDATE, DELETE) buscando coincidencia en la descripciÃ³n.
      */
     public static Specification<AuditoriaTransaccional> transaccionPorOperacion(String operacion) {
         return (root, query, cb) -> 

@@ -1,4 +1,4 @@
-package com.cliente.infraestructura.mensajeria;
+﻿package com.cliente.infraestructura.mensajeria;
 
 import com.libreria.comun.mensajeria.NombresCola;
 import com.libreria.comun.mensajeria.NombresExchange;
@@ -9,13 +9,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuración de la topología de RabbitMQ para el Microservicio de Cliente.
+ * ConfiguraciÃ³n de la topologÃ­a de RabbitMQ para el Microservicio de Cliente.
  * <p>
  * Define la estructura de Exchanges, Colas y Bindings utilizando las constantes
- * de la librería común.
+ * de la librerÃ­a comÃºn.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.4
  * @since 2026-09
  */
@@ -27,7 +26,7 @@ public class ConfiguracionRabbitMQ {
     // =========================================================================
 
     /**
-     * Define el Exchange principal de tipo Topic para el enrutamiento de auditoría.
+     * Define el Exchange principal de tipo Topic para el enrutamiento de auditorÃ­a.
      * 
      * @return {@link TopicExchange} configurado como durable.
      */
@@ -57,7 +56,7 @@ public class ConfiguracionRabbitMQ {
     // =========================================================================
 
     /**
-     * Configura la cola para otros eventos con redirección a DLQ y TTL.
+     * Configura la cola para otros eventos con redirecciÃ³n a DLQ y TTL.
      * 
      * @return {@link Queue} con argumentos de Dead Lettering y tiempo de vida de 10
      *         min.
@@ -76,7 +75,7 @@ public class ConfiguracionRabbitMQ {
     // =========================================================================
 
     /**
-     * Define la cola física donde se almacenarán los mensajes de eventos que
+     * Define la cola fÃ­sica donde se almacenarÃ¡n los mensajes de eventos que
      * fallen.
      * 
      * @return {@link Queue} durable para persistencia de fallos.
@@ -96,7 +95,7 @@ public class ConfiguracionRabbitMQ {
      * Vincula la cola de eventos al exchange principal mediante su Routing Key.
      * 
      * @param colaEventos       Bean de la cola de eventos.
-     * @param exchangeAuditoria Bean del exchange de auditoría.
+     * @param exchangeAuditoria Bean del exchange de auditorÃ­a.
      * @return {@link Binding} que establece la ruta de mensajes de acceso.
      */
     @Bean
@@ -110,10 +109,10 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Vincula la cola de error de auditoría (DLQ) al Dead Letter Exchange (DLX).
+     * Vincula la cola de error de auditorÃ­a (DLQ) al Dead Letter Exchange (DLX).
      * 
-     * @param colaEventosDlq      Bean de la cola DLQ de auditoría.
-     * @param exchangeAuditoriaDlq Bean del exchange DLX de auditoría.
+     * @param colaEventosDlq      Bean de la cola DLQ de auditorÃ­a.
+     * @param exchangeAuditoriaDlq Bean del exchange DLX de auditorÃ­a.
      * @return {@link Binding} que establece la ruta de reintento.
      */
     @Bean
@@ -127,13 +126,13 @@ public class ConfiguracionRabbitMQ {
     }
 
     // =========================================================================
-    // SINCRONIZACIÓN CLIENTE → IA (Tiempo Real)
+    // SINCRONIZACIÃ“N CLIENTE â†’ IA (Tiempo Real)
     // =========================================================================
 
     /**
-     * Exchange de tipo Topic para la sincronización de cambios del cliente.
+     * Exchange de tipo Topic para la sincronizaciÃ³n de cambios del cliente.
      *
-     * @return {@link TopicExchange} durable para sincronización.
+     * @return {@link TopicExchange} durable para sincronizaciÃ³n.
      */
     @Bean
     public TopicExchange exchangeClienteActualizaciones() {
@@ -144,7 +143,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Dead Letter Exchange (DLX) para mensajes de sincronización fallidos.
+     * Dead Letter Exchange (DLX) para mensajes de sincronizaciÃ³n fallidos.
      *
      * @return {@link DirectExchange} durable para mensajes de error.
      */
@@ -161,7 +160,7 @@ public class ConfiguracionRabbitMQ {
      * <p>
      * Configurada con Dead Letter Exchange y TTL. Si un mensaje falla tras
      * 3 reintentos (controlados por el consumidor Python), se redirige a
-     * {@code cola.ia.sincronizacion.error} para análisis posterior.
+     * {@code cola.ia.sincronizacion.error} para anÃ¡lisis posterior.
      * </p>
      *
      * @return {@link Queue} durable con soporte para DLQ.
@@ -177,7 +176,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Cola de error donde se almacenan los mensajes de sincronización
+     * Cola de error donde se almacenan los mensajes de sincronizaciÃ³n
      * que no pudieron ser procesados exitosamente.
      *
      * @return {@link Queue} durable para persistencia de fallos.
@@ -190,9 +189,9 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Vincula la cola de sincronización al exchange de actualizaciones de cliente.
+     * Vincula la cola de sincronizaciÃ³n al exchange de actualizaciones de cliente.
      *
-     * @param colaSincronizacionContexto     Bean de la cola de sincronización.
+     * @param colaSincronizacionContexto     Bean de la cola de sincronizaciÃ³n.
      * @param exchangeClienteActualizaciones Bean del exchange de actualizaciones.
      * @return {@link Binding} con routing key {@code cliente.perfil.actualizado}.
      */
@@ -207,7 +206,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Vincula la cola de error al DLX de sincronización.
+     * Vincula la cola de error al DLX de sincronizaciÃ³n.
      *
      * @param colaSincronizacionError           Bean de la cola de error.
      * @param exchangeClienteActualizacionesDlx Bean del DLX.

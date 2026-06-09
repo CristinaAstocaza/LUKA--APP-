@@ -1,4 +1,4 @@
-package com.cliente.aplicacion.puertos;
+﻿package com.cliente.aplicacion.puertos;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaPerfilFinanciero;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudPerfilFinanciero;
@@ -7,7 +7,6 @@ import java.util.UUID;
 /**
  * Interfaz de puerto para el perfil financiero del cliente.
  *
- * @author Paulo Moron
  * @version 1.1.0
  */
 public interface ServicioPerfilFinanciero {
@@ -21,7 +20,7 @@ public interface ServicioPerfilFinanciero {
     RespuestaPerfilFinanciero consultar(UUID usuarioIdRuta, UUID usuarioIdToken);
 
     /**
-     * Consulta interna del perfil financiero sin validación de JWT (uso para Facade).
+     * Consulta interna del perfil financiero sin validaciÃ³n de JWT (uso para Facade).
      */
     RespuestaPerfilFinanciero consultarInterno(UUID usuarioId);
 }

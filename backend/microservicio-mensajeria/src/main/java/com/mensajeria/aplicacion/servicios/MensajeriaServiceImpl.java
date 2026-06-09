@@ -1,4 +1,4 @@
-package com.mensajeria.aplicacion.servicios;
+﻿package com.mensajeria.aplicacion.servicios;
 
 import com.libreria.comun.enums.PropositoCodigo;
 import com.libreria.comun.enums.TipoVerificacion;
@@ -33,15 +33,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 /**
- * Implementación principal del servicio de mensajería y OTP de LUKA APP.
+ * ImplementaciÃ³n principal del servicio de mensajerÃ­a y OTP de LUKA APP.
  * <p>
- * Orquesta la generación y validación de códigos de un solo uso, diferenciando
+ * Orquesta la generaciÃ³n y validaciÃ³n de cÃ³digos de un solo uso, diferenciando
  * los flujos de {@code ACTIVACION_CUENTA} y {@code RESTABLECER_PASSWORD}.
- * Integra throttling por canal (Redis), auditoría (RabbitMQ) y sincronización
+ * Integra throttling por canal (Redis), auditorÃ­a (RabbitMQ) y sincronizaciÃ³n
  * con el ms-usuario mediante Feign con fallback de Resilience4j.
  * </p>
  *
- * @author Paulo Moron
  * @version 1.1.0
  */
 @Service("mensajeriaServiceImpl")
@@ -63,7 +62,7 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
     private final com.mensajeria.infraestructura.configuracion.PropiedadesTwilio propiedadesTwilio;
 
     // =========================================================================
-    // 1. GENERACIÓN Y ENVÍO
+    // 1. GENERACIÃ“N Y ENVÃO
     // =========================================================================
 
     /**
@@ -71,12 +70,12 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
      * <p>
      * Flujo interno:
      * <ol>
-     *   <li>Valida que el usuario no esté bloqueado por intentos fallidos.</li>
-     *   <li>Valida que no haya superado el límite diario de 3 códigos.</li>
+     *   <li>Valida que el usuario no estÃ© bloqueado por intentos fallidos.</li>
+     *   <li>Valida que no haya superado el lÃ­mite diario de 3 cÃ³digos.</li>
      *   <li>Registra el intento de throttling por canal en Redis.</li>
-     *   <li>Genera un código OTP aleatorio de 6 dígitos y lo persiste.</li>
-     *   <li>Despacha el código por EMAIL o SMS según el canal de la solicitud.</li>
-     *   <li>Publica un evento de auditoría asíncrono vía RabbitMQ.</li>
+     *   <li>Genera un cÃ³digo OTP aleatorio de 6 dÃ­gitos y lo persiste.</li>
+     *   <li>Despacha el cÃ³digo por EMAIL o SMS segÃºn el canal de la solicitud.</li>
+     *   <li>Publica un evento de auditorÃ­a asÃ­ncrono vÃ­a RabbitMQ.</li>
      * </ol>
      * </p>
      */
@@ -107,23 +106,23 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
                 ? solicitud.email() 
                 : solicitud.telefono();
 
-        // Enviamos de forma agnóstica (la implementación decide si es SMTP o Twilio)
+        // Enviamos de forma agnÃ³stica (la implementaciÃ³n decide si es SMTP o Twilio)
         notificacionService.enviar(tipoEnvio, destino, variables);
 
 
 
-        return new RespuestaGeneracion(true, "Código enviado exitosamente", solicitud.tipo());
+        return new RespuestaGeneracion(true, "CÃ³digo enviado exitosamente", solicitud.tipo());
     }
 
     // =========================================================================
-    // 2. VALIDACIÓN — ACTIVACIÓN DE CUENTA
+    // 2. VALIDACIÃ“N â€” ACTIVACIÃ“N DE CUENTA
     // =========================================================================
 
     /**
      * {@inheritDoc}
      * <p>
      * Si el OTP es correcto, notifica al ms-usuario para activar la cuenta y
-     * sincroniza el teléfono si el canal fue SMS.
+     * sincroniza el telÃ©fono si el canal fue SMS.
      * </p>
      */
     @Override
@@ -132,27 +131,27 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
         CodigoVerificacion cv = procesarValidacionInterna(solicitud, PropositoCodigo.ACTIVACION_CUENTA);
         String telefonoVerificado = cv.getTelefono();
 
-        log.info("[MS-MENSAJERIA] Activando cuenta para usuario: {} con teléfono: {}",
+        log.info("[MS-MENSAJERIA] Activando cuenta para usuario: {} con telÃ©fono: {}",
                 cv.getUsuarioId(), telefonoVerificado);
 
         com.libreria.comun.respuesta.ResultadoApi<String> resultado = clienteUsuario.activarCuenta(cv.getUsuarioId(), telefonoVerificado);
 
         if (resultado == null || "ACTIVACION_PENDIENTE".equals(resultado.datos())) {
-            log.error("[MS-MENSAJERIA] Activación fallida en ms-usuario para: {}. El OTP sigue siendo válido.", cv.getUsuarioId());
-            throw new MensajeriaExternaException("No se pudo activar la cuenta en el servicio de usuario. El OTP sigue activo. Intente de nuevo.", "ms-usuario offline durante la activación");
+            log.error("[MS-MENSAJERIA] ActivaciÃ³n fallida en ms-usuario para: {}. El OTP sigue siendo vÃ¡lido.", cv.getUsuarioId());
+            throw new MensajeriaExternaException("No se pudo activar la cuenta en el servicio de usuario. El OTP sigue activo. Intente de nuevo.", "ms-usuario offline durante la activaciÃ³n");
         }
 
-        // Mover el cv.setUsado(true) a después de que activarCuenta() confirme éxito — no antes.
+        // Mover el cv.setUsado(true) a despuÃ©s de que activarCuenta() confirme Ã©xito â€” no antes.
         cv.setUsado(true);
         cv.setFechaUso(LocalDateTime.now());
         reiniciarIntentos(cv.getUsuarioId());
         codigoRepository.save(cv);
 
-        return new RespuestaValidacion(true, "OTP válido. Cuenta activada y teléfono sincronizado.");
+        return new RespuestaValidacion(true, "OTP vÃ¡lido. Cuenta activada y telÃ©fono sincronizado.");
     }
 
     // =========================================================================
-    // 3. VALIDACIÓN — RECUPERACIÓN DE CONTRASEÑA
+    // 3. VALIDACIÃ“N â€” RECUPERACIÃ“N DE CONTRASEÃ‘A
     // =========================================================================
 
     /**
@@ -170,20 +169,20 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
         reiniciarIntentos(cv.getUsuarioId());
         codigoRepository.save(cv);
 
-        // Sincronizar el teléfono verificado tras la validación exitosa del OTP
+        // Sincronizar el telÃ©fono verificado tras la validaciÃ³n exitosa del OTP
         if (cv.getTipo() == TipoVerificacion.SMS || cv.getTipo() == TipoVerificacion.WHATSAPP) {
             String telefonoVerificado = cv.getTelefono();
             if (telefonoVerificado != null && !telefonoVerificado.isBlank()) {
                 try {
-                    log.info("[MS-MENSAJERIA] Sincronizando teléfono verificado tras validación OTP exitosa.");
+                    log.info("[MS-MENSAJERIA] Sincronizando telÃ©fono verificado tras validaciÃ³n OTP exitosa.");
                     ResultadoApi<String> resultado = usuarioFeignClient.sincronizarTelefono(
                             cv.getUsuarioId(), telefonoVerificado);
                     if (resultado != null && "SINCRONIZACION_PENDIENTE".equals(resultado.datos())) {
-                        log.warn("[FEIGN] Sincronización de teléfono pendiente en ms-usuario para: {}",
+                        log.warn("[FEIGN] SincronizaciÃ³n de telÃ©fono pendiente en ms-usuario para: {}",
                                 cv.getUsuarioId());
                     }
                 } catch (Exception e) {
-                    log.error("[FEIGN] Error al sincronizar el teléfono con ms-usuario. Fallback no disponible o error interno. Se continuará con el flujo.", e);
+                    log.error("[FEIGN] Error al sincronizar el telÃ©fono con ms-usuario. Fallback no disponible o error interno. Se continuarÃ¡ con el flujo.", e);
                 }
             }
         }
@@ -192,7 +191,7 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
     }
 
     // =========================================================================
-    // 4. VERIFICACIÓN ANTICIPADA DE RESTRICCIONES
+    // 4. VERIFICACIÃ“N ANTICIPADA DE RESTRICCIONES
     // =========================================================================
 
     /**
@@ -206,21 +205,21 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
     }
 
     // =========================================================================
-    // LÓGICA PRIVADA COMPARTIDA
+    // LÃ“GICA PRIVADA COMPARTIDA
     // =========================================================================
 
     /**
-     * Valida el OTP internamente para el propósito dado, registrando intentos
-     * fallidos y bloqueando al usuario si supera el máximo configurado.
+     * Valida el OTP internamente para el propÃ³sito dado, registrando intentos
+     * fallidos y bloqueando al usuario si supera el mÃ¡ximo configurado.
      *
-     * @param sol  DTO con el ID del usuario y el código ingresado.
-     * @param prop Propósito esperado del OTP ({@code ACTIVACION_CUENTA} o
+     * @param sol  DTO con el ID del usuario y el cÃ³digo ingresado.
+     * @param prop PropÃ³sito esperado del OTP ({@code ACTIVACION_CUENTA} o
      *             {@code RECUPERACION_PASSWORD}).
      * @return Entidad {@link CodigoVerificacion} validada (no guardada como usada).
-     * @throws UsuarioBloqueadoExcepcion si el usuario ya está bloqueado.
-     * @throws CodigoPendienteNotFoundException si no hay códigos pendientes.
-     * @throws CodigoExpiradoException si el código ya expiró.
-     * @throws CodigoInvalidoException si el código es incorrecto.
+     * @throws UsuarioBloqueadoExcepcion si el usuario ya estÃ¡ bloqueado.
+     * @throws CodigoPendienteNotFoundException si no hay cÃ³digos pendientes.
+     * @throws CodigoExpiradoException si el cÃ³digo ya expirÃ³.
+     * @throws CodigoInvalidoException si el cÃ³digo es incorrecto.
      */
     private CodigoVerificacion procesarValidacionInterna(SolicitudValidarCodigo sol, PropositoCodigo prop) {
         verificarBloqueo(sol.usuarioId());
@@ -240,7 +239,7 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
             if (registrarIntentoFallido(sol.usuarioId())) {
                 throw new UsuarioBloqueadoExcepcion(sol.usuarioId(), propiedadesOtp.getBloqueoHoras());
             }
-            throw new CodigoInvalidoException("código incorrecto");
+            throw new CodigoInvalidoException("cÃ³digo incorrecto");
         }
 
         return cv;
@@ -250,7 +249,7 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
      * Verifica si el usuario tiene un bloqueo activo por intentos fallidos previos.
      *
      * @param uId UUID del usuario a verificar.
-     * @throws UsuarioBloqueadoExcepcion si el bloqueo aún no ha expirado.
+     * @throws UsuarioBloqueadoExcepcion si el bloqueo aÃºn no ha expirado.
      */
     private void verificarBloqueo(UUID uId) {
         intentoRepository.findByUsuarioId(uId).ifPresent(i -> {
@@ -263,10 +262,10 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
 
     /**
      * Incrementa el contador de intentos fallidos y bloquea al usuario si supera
-     * el máximo. Emite advertencia de auditoría en el segundo intento.
+     * el mÃ¡ximo. Emite advertencia de auditorÃ­a en el segundo intento.
      *
-     * @param uId UUID del usuario que falló la validación.
-     * @return {@code true} si el usuario quedó bloqueado tras este intento.
+     * @param uId UUID del usuario que fallÃ³ la validaciÃ³n.
+     * @return {@code true} si el usuario quedÃ³ bloqueado tras este intento.
      */
     private boolean registrarIntentoFallido(UUID uId) {
         IntentoValidacion i = intentoRepository.findByUsuarioId(uId)
@@ -284,7 +283,7 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
     }
 
     /**
-     * Reinicia el contador de intentos fallidos del usuario tras una validación
+     * Reinicia el contador de intentos fallidos del usuario tras una validaciÃ³n
      * exitosa, eliminando cualquier bloqueo activo.
      *
      * @param uId UUID del usuario cuyo registro de intentos debe reiniciarse.
@@ -298,13 +297,13 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
     }
 
     /**
-     * Verifica que el usuario no haya superado el límite de 3 solicitudes diarias
-     * para el propósito dado, contando desde el inicio del día actual.
+     * Verifica que el usuario no haya superado el lÃ­mite de 3 solicitudes diarias
+     * para el propÃ³sito dado, contando desde el inicio del dÃ­a actual.
      *
      * @param uId       UUID del usuario a verificar.
-     * @param proposito Propósito del OTP para contar solo las solicitudes del mismo
+     * @param proposito PropÃ³sito del OTP para contar solo las solicitudes del mismo
      *                  tipo.
-     * @throws LimiteCodigosExcedidoException si ya agotó los 3 intentos diarios.
+     * @throws LimiteCodigosExcedidoException si ya agotÃ³ los 3 intentos diarios.
      */
     private void verificarLimiteDiario(UUID uId, PropositoCodigo proposito) {
         LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
@@ -312,14 +311,14 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
                 uId, proposito, inicioDia);
 
         if (pedidosHoy >= 3) {
-            log.warn("[MS-MENSAJERIA] Límite diario alcanzado — usuario: {}, propósito: {}", uId, proposito);
+            log.warn("[MS-MENSAJERIA] LÃ­mite diario alcanzado â€” usuario: {}, propÃ³sito: {}", uId, proposito);
             throw new LimiteCodigosExcedidoException(
-                    "Has alcanzado el límite de 3 solicitudes diarias para este trámite. Inténtalo mañana.");
+                    "Has alcanzado el lÃ­mite de 3 solicitudes diarias para este trÃ¡mite. IntÃ©ntalo maÃ±ana.");
         }
     }
 
     // =========================================================================
-    // 5. BÚSQUEDA DINÁMICA — SPECIFICATION PATTERN (Auditoría)
+    // 5. BÃšSQUEDA DINÃMICA â€” SPECIFICATION PATTERN (AuditorÃ­a)
     // =========================================================================
 
     /**
@@ -344,14 +343,14 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
     @Override
     public boolean validarConexionTwilio() {
         try {
-            // Validación puramente local (no realiza llamadas a la API de Twilio)
+            // ValidaciÃ³n puramente local (no realiza llamadas a la API de Twilio)
             // Evita errores de permisos (ej. falta de twilio/iam/accounts/read en API Keys Restringidas)
             // y no bloquea el arranque con peticiones de red pesadas en el Health Check.
             String accountSid = propiedadesTwilio.getAccountSid() != null ? propiedadesTwilio.getAccountSid() : propiedadesTwilio.getAccount().getSid();
             String apiKeySid = propiedadesTwilio.getApiKeySid() != null ? propiedadesTwilio.getApiKeySid() : propiedadesTwilio.getApiKey().getSid();
             
             if (accountSid == null || accountSid.isBlank()) {
-                throw new IllegalStateException("El Account SID de Twilio no está configurado.");
+                throw new IllegalStateException("El Account SID de Twilio no estÃ¡ configurado.");
             }
             
             boolean tieneApiKey = apiKeySid != null && !apiKeySid.isBlank();
@@ -361,11 +360,11 @@ public class MensajeriaServiceImpl implements IMensajeriaService {
                 throw new IllegalStateException("Falta configurar credenciales de Twilio (API Key o Auth Token).");
             }
             
-            // log.trace("[TWILIO-HEALTH] Validación local exitosa. Credenciales presentes para Account SID: {}", accountSid);
+            // log.trace("[TWILIO-HEALTH] ValidaciÃ³n local exitosa. Credenciales presentes para Account SID: {}", accountSid);
             return true;
         } catch (Exception e) {
-            log.error("[TWILIO-HEALTH] Error en validación local de Twilio: {}", e.getMessage());
-            throw new RuntimeException("Fallo de configuración local en Twilio: " + e.getMessage(), e);
+            log.error("[TWILIO-HEALTH] Error en validaciÃ³n local de Twilio: {}", e.getMessage());
+            throw new RuntimeException("Fallo de configuraciÃ³n local en Twilio: " + e.getMessage(), e);
         }
     }
 }

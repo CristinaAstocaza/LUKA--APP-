@@ -1,4 +1,4 @@
-package com.cliente.presentacion.controladores;
+﻿package com.cliente.presentacion.controladores;
 
 import com.libreria.comun.dtos.ContextoEstrategicoIADTO;
 import com.libreria.comun.dtos.ContextoUsuarioDTO;
@@ -13,15 +13,14 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 /**
- * Controlador INTERNO único para comunicación y sincronización entre
- * microservicios vía Feign.
+ * Controlador INTERNO Ãºnico para comunicaciÃ³n y sincronizaciÃ³n entre
+ * microservicios vÃ­a Feign.
  *
- * Expone el contexto del cliente y maneja eventos de sincronización del perfil
+ * Expone el contexto del cliente y maneja eventos de sincronizaciÃ³n del perfil
  * del usuario.
- * No requiere autenticación JWT del usuario final ya que es comunicación
+ * No requiere autenticaciÃ³n JWT del usuario final ya que es comunicaciÃ³n
  * interna de confianza.
  *
- * @author Paulo Moron
  * @version 1.2.0
  * @since 2026-05-10
  */
@@ -37,13 +36,13 @@ public class ControladorInterno {
 
     /**
      * Retorna el contexto financiero y personal optimizado (menor privilegio)
-     * para la generación de recomendaciones en el ms-ia.
+     * para la generaciÃ³n de recomendaciones en el ms-ia.
      */
     @GetMapping("/contexto-financiero/{usuarioId}")
     public ResponseEntity<ResultadoApi<ContextoEstrategicoIADTO>> obtenerContextoFinanciero(
             @PathVariable UUID usuarioId) {
-        log.debug("Solicitud interna de contexto estratégico de IA para usuarioId={}", usuarioId);
-        return ResponseEntity.ok(ResultadoApi.exito(servicioContexto.obtenerContextoFinanciero(usuarioId), "Contexto estratégico de IA recuperado", null));
+        log.debug("Solicitud interna de contexto estratÃ©gico de IA para usuarioId={}", usuarioId);
+        return ResponseEntity.ok(ResultadoApi.exito(servicioContexto.obtenerContextoFinanciero(usuarioId), "Contexto estratÃ©gico de IA recuperado", null));
     }
 
     /**
@@ -61,33 +60,33 @@ public class ControladorInterno {
      */
     @PostMapping("/inicial")
     public ResponseEntity<ResultadoApi<Void>> crearPerfilInicial(@RequestParam UUID usuarioId) {
-        log.info("[INTERNO] Solicitud de creación de perfil inicial para usuario: {}", usuarioId);
+        log.info("[INTERNO] Solicitud de creaciÃ³n de perfil inicial para usuario: {}", usuarioId);
         servicioDatosPersonales.crearPerfil(usuarioId);
-        return ResponseEntity.ok().body(ResultadoApi.sinContenido("Perfil inicial creado con éxito."));
+        return ResponseEntity.ok().body(ResultadoApi.sinContenido("Perfil inicial creado con Ã©xito."));
     }
 
     /**
-     * Recupera el teléfono verificado de un usuario.
+     * Recupera el telÃ©fono verificado de un usuario.
      */
     @GetMapping("/perfiles/{usuarioId}/telefono")
     public ResponseEntity<ResultadoApi<String>> obtenerTelefono(
             @PathVariable UUID usuarioId) {
-        log.info("[INTERNO] Recuperando teléfono para usuario: {}", usuarioId);
+        log.info("[INTERNO] Recuperando telÃ©fono para usuario: {}", usuarioId);
         com.cliente.aplicacion.dtos.respuestas.RespuestaDatosPersonales respuesta = servicioDatosPersonales.consultarInterno(usuarioId);
         String telefono = respuesta != null ? respuesta.telefono() : null;
-        return ResponseEntity.ok(ResultadoApi.exito(telefono, "Teléfono recuperado", null));
+        return ResponseEntity.ok(ResultadoApi.exito(telefono, "TelÃ©fono recuperado", null));
     }
 
     /**
-     * Actualiza el teléfono de un usuario tras una validación exitosa en el
+     * Actualiza el telÃ©fono de un usuario tras una validaciÃ³n exitosa en el
      * ms-mensajeria.
      */
     @PatchMapping("/perfiles/{usuarioId}/telefono")
     public ResponseEntity<ResultadoApi<Void>> actualizarTelefono(
             @PathVariable UUID usuarioId,
             @RequestParam String telefono) {
-        log.info("[INTERNO] Sincronizando teléfono para usuario: {} -> {}", usuarioId, telefono);
+        log.info("[INTERNO] Sincronizando telÃ©fono para usuario: {} -> {}", usuarioId, telefono);
         servicioDatosPersonales.actualizarTelefono(usuarioId, telefono);
-        return ResponseEntity.ok().body(ResultadoApi.sinContenido("Teléfono sincronizado con éxito."));
+        return ResponseEntity.ok().body(ResultadoApi.sinContenido("TelÃ©fono sincronizado con Ã©xito."));
     }
 }

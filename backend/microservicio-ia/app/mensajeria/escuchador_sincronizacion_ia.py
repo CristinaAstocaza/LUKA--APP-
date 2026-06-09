@@ -1,24 +1,23 @@
-"""
-mensajeria/escuchador_sincronizacion_ia.py  ·  v2.0
-══════════════════════════════════════════════════════════════════════════════
-Consumidor RabbitMQ dedicado a la sincronización en tiempo real del contexto
+﻿"""
+mensajeria/escuchador_sincronizacion_ia.py  Â·  v2.0
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+Consumidor RabbitMQ dedicado a la sincronizaciÃ³n en tiempo real del contexto
 financiero del cliente. Escucha la cola `cola.ia.sincronizacion.contexto`
-y actualiza la caché Redis `ia:contexto:{usuarioId}` inmediatamente.
+y actualiza la cachÃ© Redis `ia:contexto:{usuarioId}` inmediatamente.
 
-v2.0 — Mejoras de producción:
-  - Modelo Pydantic con mapeo camelCase → snake_case (populate_by_name).
-  - Reintentos exponenciales (3x) si Redis no está disponible.
-  - NACK sin requeue tras agotar reintentos → DLQ captura el mensaje.
+v2.0 â€” Mejoras de producciÃ³n:
+  - Modelo Pydantic con mapeo camelCase â†’ snake_case (populate_by_name).
+  - Reintentos exponenciales (3x) si Redis no estÃ¡ disponible.
+  - NACK sin requeue tras agotar reintentos â†’ DLQ captura el mensaje.
 
 Flujo:
-    ms-cliente (COMMIT) → @TransactionalEventListener → RabbitMQ
-        → cola.ia.sincronizacion.contexto → EscuchadorSincronizacionIA
-        → Redis (ia:contexto:{usuarioId})
+    ms-cliente (COMMIT) â†’ @TransactionalEventListener â†’ RabbitMQ
+        â†’ cola.ia.sincronizacion.contexto â†’ EscuchadorSincronizacionIA
+        â†’ Redis (ia:contexto:{usuarioId})
 
-@author Paulo Moron
 @version 2.0.0
 @since 2026-05-10
-══════════════════════════════════════════════════════════════════════════════
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 """
 
 import json
@@ -36,7 +35,7 @@ from app.configuracion import obtener_configuracion
 
 logger = logging.getLogger(__name__)
 
-# ── Constantes alineadas con libreria-comun (Java) ──────────────────────────
+# â”€â”€ Constantes alineadas con libreria-comun (Java) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 EXCHANGE_CLIENTE_ACTUALIZACIONES = "exchange.cliente.actualizaciones"
 COLA_IA_SINCRONIZACION_CONTEXTO = "cola.ia.sincronizacion.contexto"
 ROUTING_KEY_PERFIL_ACTUALIZADO = "cliente.perfil.actualizado"
@@ -44,7 +43,7 @@ REDIS_KEY_PREFIX = "ia:contexto:"
 REDIS_TTL_SECONDS = 3600  # 1 hora, alineado con ms-cliente
 
 
-# ── Modelo Pydantic con mapeo camelCase → snake_case ─────────────────────────
+# â”€â”€ Modelo Pydantic con mapeo camelCase â†’ snake_case â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _camel_to_snake(name: str) -> str:
     """Convierte camelCase a snake_case."""
@@ -98,13 +97,13 @@ class EscuchadorSincronizacionIA:
         hilo.start()
     """
 
-    # ── Parámetros de resiliencia ────────────────────────────────────────────
+    # â”€â”€ ParÃ¡metros de resiliencia â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     MAX_REINTENTOS = 3
     BACKOFF_BASE_SECONDS = 1  # 1s, 2s, 4s (exponencial)
 
     def __init__(self, redis_client) -> None:
         """
-        Inicializa el escuchador con la configuración de RabbitMQ y un
+        Inicializa el escuchador con la configuraciÃ³n de RabbitMQ y un
         cliente Redis inyectado.
 
         Args:
@@ -115,7 +114,7 @@ class EscuchadorSincronizacionIA:
         self._conexion: Optional[pika.BlockingConnection] = None
         self._canal: Optional[BlockingChannel] = None
 
-    # ── Ciclo de vida ────────────────────────────────────────────────────────
+    # â”€â”€ Ciclo de vida â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def iniciar(self) -> None:
         """Conecta al broker y comienza a consumir mensajes (bloqueante)."""
@@ -123,12 +122,12 @@ class EscuchadorSincronizacionIA:
             self._conectar()
             self._declarar_topologia()
             logger.info(
-                "[SYNC-IA] Escuchando sincronización de contexto en: %s",
+                "[SYNC-IA] Escuchando sincronizaciÃ³n de contexto en: %s",
                 COLA_IA_SINCRONIZACION_CONTEXTO,
             )
             self._canal.start_consuming()
         except pika.exceptions.AMQPConnectionError as exc:
-            logger.critical("[SYNC-IA] Error de conexión con RabbitMQ: %s", exc)
+            logger.critical("[SYNC-IA] Error de conexiÃ³n con RabbitMQ: %s", exc)
             raise
         except KeyboardInterrupt:
             self.detener()
@@ -140,22 +139,22 @@ class EscuchadorSincronizacionIA:
         try:
             if self._canal and self._canal.is_open:
                 self._conexion.add_callback_threadsafe(self._canal.stop_consuming)
-            logger.info("[SYNC-IA] Solicitando detención del consumidor...")
+            logger.info("[SYNC-IA] Solicitando detenciÃ³n del consumidor...")
         except Exception as exc:
-            logger.warning("[SYNC-IA] Error al solicitar detención: %s", exc)
+            logger.warning("[SYNC-IA] Error al solicitar detenciÃ³n: %s", exc)
 
     def _cerrar_conexion(self) -> None:
         try:
             if self._conexion and not self._conexion.is_closed:
                 self._conexion.close()
-                logger.info("[SYNC-IA] Conexión RabbitMQ cerrada.")
+                logger.info("[SYNC-IA] ConexiÃ³n RabbitMQ cerrada.")
         except Exception as exc:
-            logger.warning("[SYNC-IA] Error al cerrar conexión: %s", exc)
+            logger.warning("[SYNC-IA] Error al cerrar conexiÃ³n: %s", exc)
 
-    # ── Conexión ─────────────────────────────────────────────────────────────
+    # â”€â”€ ConexiÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _conectar(self) -> None:
-        """Establece la conexión y el canal con RabbitMQ."""
+        """Establece la conexiÃ³n y el canal con RabbitMQ."""
         credenciales = pika.PlainCredentials(
             self._config.rabbitmq_usuario,
             self._config.rabbitmq_password,
@@ -175,8 +174,8 @@ class EscuchadorSincronizacionIA:
 
     def _declarar_topologia(self) -> None:
         """
-        Declara el exchange y la cola de sincronización de forma idempotente.
-        La topología debe coincidir con la del ms-cliente (Java).
+        Declara el exchange y la cola de sincronizaciÃ³n de forma idempotente.
+        La topologÃ­a debe coincidir con la del ms-cliente (Java).
         """
         self._canal.exchange_declare(
             exchange=EXCHANGE_CLIENTE_ACTUALIZACIONES,
@@ -201,11 +200,11 @@ class EscuchadorSincronizacionIA:
             on_message_callback=self._callback,
         )
 
-    # ── Callback principal ───────────────────────────────────────────────────
+    # â”€â”€ Callback principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _callback(self, canal, metodo, propiedades, cuerpo) -> None:
         """
-        Procesa el mensaje de sincronización recibido.
+        Procesa el mensaje de sincronizaciÃ³n recibido.
         Valida con Pydantic y actualiza Redis con reintentos exponenciales.
 
         Args:
@@ -216,12 +215,12 @@ class EscuchadorSincronizacionIA:
         """
         tag = metodo.delivery_tag
         try:
-            # 1. Deserializar y validar con Pydantic (camelCase → snake_case)
+            # 1. Deserializar y validar con Pydantic (camelCase â†’ snake_case)
             datos_raw = json.loads(cuerpo)
             contexto = ContextoEstrategicoIA.model_validate(datos_raw)
 
             logger.info(
-                "[SYNC-IA] Contexto recibido — nombres='%s', ocupacion='%s', "
+                "[SYNC-IA] Contexto recibido â€” nombres='%s', ocupacion='%s', "
                 "ingreso=S/ %s, tono='%s'",
                 contexto.nombres,
                 contexto.ocupacion,
@@ -241,7 +240,7 @@ class EscuchadorSincronizacionIA:
                 canal.basic_ack(delivery_tag=tag)
                 return
 
-            # 3. Serializar en snake_case para que Python lo consuma cómodamente
+            # 3. Serializar en snake_case para que Python lo consuma cÃ³modamente
             redis_key = f"{REDIS_KEY_PREFIX}{usuario_id}"
             json_value = contexto.model_dump_json()
 
@@ -254,11 +253,11 @@ class EscuchadorSincronizacionIA:
                 canal.basic_ack(delivery_tag=tag)
             else:
                 logger.error(
-                    "[SYNC-IA] Falló escritura en Redis tras %d reintentos. "
-                    "NACK sin requeue → DLQ.",
+                    "[SYNC-IA] FallÃ³ escritura en Redis tras %d reintentos. "
+                    "NACK sin requeue â†’ DLQ.",
                     self.MAX_REINTENTOS,
                 )
-                # NACK sin requeue: el mensaje irá a la DLQ
+                # NACK sin requeue: el mensaje irÃ¡ a la DLQ
                 canal.basic_nack(delivery_tag=tag, requeue=False)
 
         except json.JSONDecodeError as exc:
@@ -266,12 +265,12 @@ class EscuchadorSincronizacionIA:
             canal.basic_ack(delivery_tag=tag)
         except Exception as exc:
             logger.error(
-                "[SYNC-IA] Error inesperado procesando sincronización: %s",
+                "[SYNC-IA] Error inesperado procesando sincronizaciÃ³n: %s",
                 exc, exc_info=True,
             )
             canal.basic_nack(delivery_tag=tag, requeue=False)
 
-    # ── Resiliencia: Reintentos con backoff exponencial ──────────────────────
+    # â”€â”€ Resiliencia: Reintentos con backoff exponencial â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     def _guardar_en_redis_con_reintentos(
         self, clave: str, valor: str
@@ -284,7 +283,7 @@ class EscuchadorSincronizacionIA:
             valor: Valor JSON serializado del contexto (snake_case).
 
         Returns:
-            True si la escritura fue exitosa, False si agotó reintentos.
+            True si la escritura fue exitosa, False si agotÃ³ reintentos.
         """
         for intento in range(1, self.MAX_REINTENTOS + 1):
             try:
@@ -297,7 +296,7 @@ class EscuchadorSincronizacionIA:
             except Exception as exc:
                 espera = self.BACKOFF_BASE_SECONDS * (2 ** (intento - 1))
                 logger.warning(
-                    "[SYNC-IA] Intento %d/%d — Redis falló: %s. "
+                    "[SYNC-IA] Intento %d/%d â€” Redis fallÃ³: %s. "
                     "Reintentando en %ds...",
                     intento, self.MAX_REINTENTOS, exc, espera,
                 )

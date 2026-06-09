@@ -1,10 +1,9 @@
-package com.usuario.aplicacion.excepciones;
+﻿package com.usuario.aplicacion.excepciones;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  * IP bloqueada por exceso de intentos fallidos.
- * @author Paulo
  */
 @ResponseStatus(HttpStatus.TOO_MANY_REQUESTS)
 public class IpBloqueadaException extends RuntimeException {

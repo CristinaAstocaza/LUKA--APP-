@@ -1,4 +1,4 @@
-package com.cliente.infraestructura.mensajeria;
+﻿package com.cliente.infraestructura.mensajeria;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.libreria.comun.dtos.EventoAuditoriaDTO;
@@ -17,9 +17,8 @@ import java.util.UUID;
 
 /**
  * Publicador especializado de eventos para el Microservicio de Cliente.
- * Implementa el patrón Outbox para garantizar la entrega confiable de eventos.
+ * Implementa el patrÃ³n Outbox para garantizar la entrega confiable de eventos.
  * 
- * @author Paulo Moron
  * @version 1.6
  */
 @Component
@@ -42,7 +41,7 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
     }
 
     /**
-     * Reporta un evento de forma asíncrona usando Outbox.
+     * Reporta un evento de forma asÃ­ncrona usando Outbox.
      */
     @Transactional
     public void publicarEventoExitoso(EventoAuditoriaDTO dto) {
@@ -51,7 +50,7 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
             payloadJson = objectMapper.writeValueAsString(dto);
         } catch (Exception e) {
             log.error("[OUTBOX-ERROR] Error al serializar EventoAuditoriaDTO a JSON: {}", e.getMessage());
-            throw new RuntimeException("Error al serializar el evento de auditoría para Outbox", e);
+            throw new RuntimeException("Error al serializar el evento de auditorÃ­a para Outbox", e);
         }
 
         BandejaSalidaAuditoria outbox = BandejaSalidaAuditoria.builder()
@@ -62,7 +61,7 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
                 .build();
 
         outbox = repositorioOutbox.save(outbox);
-        log.info("[OUTBOX] Registro de auditoría persistido en DB (ID: {}, Acción: {})", outbox.getId(), dto.accion());
+        log.info("[OUTBOX] Registro de auditorÃ­a persistido en DB (ID: {}, AcciÃ³n: {})", outbox.getId(), dto.accion());
 
         final UUID outboxId = outbox.getId();
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
@@ -79,7 +78,7 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
     }
 
     /**
-     * Reporta un evento transaccional de forma asíncrona usando Outbox.
+     * Reporta un evento transaccional de forma asÃ­ncrona usando Outbox.
      */
     @Transactional
     public void publicarTransaccionExitosa(EventoTransaccionalDTO dto) {

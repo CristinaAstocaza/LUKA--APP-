@@ -1,4 +1,4 @@
-package com.auditoria.aplicacion.servicios;
+﻿package com.auditoria.aplicacion.servicios;
 
 import com.auditoria.aplicacion.dtos.RespuestaAuditoriaDetalladoDTO;
 import com.auditoria.aplicacion.puertos.ServicioRegistroAuditoria;
@@ -16,13 +16,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Implementación del servicio de registro de auditoría general enriquecida.
+ * ImplementaciÃ³n del servicio de registro de auditorÃ­a general enriquecida.
  * <p>
  * Utiliza UtilidadSeguridad para capturar datos del contexto de seguridad
  * y mapear los resultados a DTOs detallados.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.3
  */
 @Slf4j
@@ -51,7 +50,7 @@ public class ServicioRegistroAuditoriaImpl implements ServicioRegistroAuditoria 
     @Override
     @Transactional(readOnly = true)
     public Page<RespuestaAuditoriaDetalladoDTO> listarRegistrosDetallados(String modulo, Pageable paginacion) {
-        // Usamos Specification Pattern para filtrado dinámico desacoplado
+        // Usamos Specification Pattern para filtrado dinÃ¡mico desacoplado
         @SuppressWarnings("null")
         Page<RegistroAuditoria> entidades = repositorioAuditoria.findAll(
                 com.auditoria.dominio.especificaciones.AuditoriaSpecs.registroPorModulo(modulo),
@@ -63,14 +62,14 @@ public class ServicioRegistroAuditoriaImpl implements ServicioRegistroAuditoria 
     /**
      * Mapea la entidad a un DTO de respuesta detallada.
      * <p>
-     * Nota: En un entorno distribuido, si el email no se guardó en la BD de auditoría,
-     * se obtendría aquí mediante Feign del ms-usuarios.
+     * Nota: En un entorno distribuido, si el email no se guardÃ³ en la BD de auditorÃ­a,
+     * se obtendrÃ­a aquÃ­ mediante Feign del ms-usuarios.
      * </p>
      */
     private RespuestaAuditoriaDetalladoDTO convertirARespuestaDetallada(RegistroAuditoria entidad) {
         String emailUsuario = "N/A";
         try {
-            // Evitamos NPE y fugas de información comprobando si el usuario auditado es el mismo que está autenticado
+            // Evitamos NPE y fugas de informaciÃ³n comprobando si el usuario auditado es el mismo que estÃ¡ autenticado
             java.util.UUID authUsuarioId = UtilidadSeguridad.obtenerUsuarioId();
             if (authUsuarioId != null && authUsuarioId.equals(entidad.getUsuarioId())) {
                 emailUsuario = UtilidadSeguridad.obtenerUsuarioEmail();

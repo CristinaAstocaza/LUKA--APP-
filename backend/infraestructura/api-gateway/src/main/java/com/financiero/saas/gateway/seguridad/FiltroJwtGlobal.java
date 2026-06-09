@@ -1,4 +1,4 @@
-package com.financiero.saas.gateway.seguridad;
+﻿package com.financiero.saas.gateway.seguridad;
 
 import com.libreria.comun.enums.CodigoError;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +21,10 @@ import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Filtro global perimetral para la validación y desencriptación del token JWT.
- * Se ejecuta únicamente después de que el cortafuegos de IPs (FiltroBloqueoIp)
+ * Filtro global perimetral para la validaciÃ³n y desencriptaciÃ³n del token JWT.
+ * Se ejecuta Ãºnicamente despuÃ©s de que el cortafuegos de IPs (FiltroBloqueoIp)
  * haya validado que la IP de origen es segura.
  * 
- * @author Paulo Moron
  * @version 2.0.0
  * @since 2026-05-10
  */
@@ -41,21 +40,21 @@ public class FiltroJwtGlobal implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        // 0. Si es una petición de Pre-flight (CORS OPTIONS), la dejamos pasar sin validar JWT
+        // 0. Si es una peticiÃ³n de Pre-flight (CORS OPTIONS), la dejamos pasar sin validar JWT
         if (CorsUtils.isPreFlightRequest(exchange.getRequest())) {
             return chain.filter(exchange);
         }
 
         String path = exchange.getRequest().getURI().getPath();
 
-        log.debug("Verificando JWT para petición: [{} {}]", exchange.getRequest().getMethod(), path);
+        log.debug("Verificando JWT para peticiÃ³n: [{} {}]", exchange.getRequest().getMethod(), path);
 
-        // 1. RUTAS PÚBLICAS (Login, Registro)
+        // 1. RUTAS PÃšBLICAS (Login, Registro)
         if (esRutaPublica(path)) {
             return chain.filter(exchange);
         }
 
-        // 2. VALIDACIÓN USANDO LA LIBRERÍA
+        // 2. VALIDACIÃ“N USANDO LA LIBRERÃA
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return responderError(exchange, CodigoError.ACCESO_NO_AUTORIZADO, "Token ausente");
@@ -63,7 +62,7 @@ public class FiltroJwtGlobal implements GlobalFilter, Ordered {
 
         String token = authHeader.substring(7);
         try {
-            // Aquí usamos la lógica común de la librería
+            // AquÃ­ usamos la lÃ³gica comÃºn de la librerÃ­a
             if (!servicioJwt.esTokenValido(token)) {
                 return responderError(exchange, CodigoError.TOKEN_INVALIDO, "Token no vigente");
             }
@@ -71,7 +70,7 @@ public class FiltroJwtGlobal implements GlobalFilter, Ordered {
             return responderError(exchange, CodigoError.TOKEN_INVALIDO, "Error de firma");
         }
 
-        // 3. INYECCIÓN DE HEADERS PARA LOS MICROSERVICIOS AGUAS ABAJO
+        // 3. INYECCIÃ“N DE HEADERS PARA LOS MICROSERVICIOS AGUAS ABAJO
         ServerHttpRequest requestModificada = exchange.getRequest().mutate()
                 .header("X-Usuario-Id", servicioJwt.extraerUsuarioId(token))
                 .header("X-Usuario-Roles", String.join(",", servicioJwt.extraerRoles(token)))
@@ -80,7 +79,7 @@ public class FiltroJwtGlobal implements GlobalFilter, Ordered {
         return chain.filter(exchange.mutate().request(requestModificada).build());
     }
 
-    // Usamos nuestro ResultadoApi de la librería para el error del Gateway
+    // Usamos nuestro ResultadoApi de la librerÃ­a para el error del Gateway
     private Mono<Void> responderError(ServerWebExchange exchange, CodigoError cod, String msg) {
         return responderError(exchange, cod.getStatus(), cod.name(), msg);
     }
@@ -91,7 +90,7 @@ public class FiltroJwtGlobal implements GlobalFilter, Ordered {
         response.setStatusCode(status);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        // Creamos el formato de la librería manualmente porque Gateway es reactivo
+        // Creamos el formato de la librerÃ­a manualmente porque Gateway es reactivo
         String cuerpo = String.format(
                 "{\"exito\": false, \"estado\": %d, \"error\": \"%s\", \"mensaje\": \"%s\", \"ruta\": \"%s\"}",
                 status.value(), error, msg, exchange.getRequest().getURI().getPath());
@@ -102,7 +101,7 @@ public class FiltroJwtGlobal implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        // Se ejecuta después de FiltroBloqueoIp (Ordered.HIGHEST_PRECEDENCE) y FiltroTrazabilidadGlobal (Ordered.HIGHEST_PRECEDENCE + 1)
+        // Se ejecuta despuÃ©s de FiltroBloqueoIp (Ordered.HIGHEST_PRECEDENCE) y FiltroTrazabilidadGlobal (Ordered.HIGHEST_PRECEDENCE + 1)
         return Ordered.HIGHEST_PRECEDENCE + 2;
     }
 

@@ -1,24 +1,23 @@
-package com.libreria.comun.excepciones;
+﻿package com.libreria.comun.excepciones;
 
 import com.libreria.comun.enums.CodigoError;
 import java.util.Map;
 
 /**
- * Excepción lanzada cuando ocurre un conflicto con el estado actual del servidor.
+ * ExcepciÃ³n lanzada cuando ocurre un conflicto con el estado actual del servidor.
  * <p>
- * Comúnmente utilizada para violaciones de unicidad en la base de datos (ej. DNI duplicado,
+ * ComÃºnmente utilizada para violaciones de unicidad en la base de datos (ej. DNI duplicado,
  * correo ya registrado). Mapea a un estado HTTP 409 Conflict.
  * </p>
  * 
- * @author Paulo Moron
  */
 public class ExcepcionConflicto extends ExcepcionGlobal {
     
     /**
-     * Construye una nueva excepción de conflicto.
+     * Construye una nueva excepciÃ³n de conflicto.
      * 
      * @param campo Nombre del campo que causa la duplicidad (ej. "email").
-     * @param valor Valor que ya existe en el sistema y causa la colisión.
+     * @param valor Valor que ya existe en el sistema y causa la colisiÃ³n.
      */
     public ExcepcionConflicto(String campo, String valor) {
         super(CodigoError.CONFLICTO_DE_DATOS, 

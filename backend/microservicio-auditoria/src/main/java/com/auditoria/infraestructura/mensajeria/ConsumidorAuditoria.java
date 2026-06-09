@@ -1,4 +1,4 @@
-package com.auditoria.infraestructura.mensajeria;
+﻿package com.auditoria.infraestructura.mensajeria;
 
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaAcceso;
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaTransaccional;
@@ -17,14 +17,13 @@ import com.rabbitmq.client.Channel;
 import org.springframework.stereotype.Component;
 
 /**
- * Consumidor de eventos de RabbitMQ para el microservicio de auditoría.
+ * Consumidor de eventos de RabbitMQ para el microservicio de auditorÃ­a.
  * <p>
- * Centraliza la recepción de mensajes de seguridad y transacciones. Utiliza
- * los contratos de la librería común y delega el procesamiento a los servicios
+ * Centraliza la recepciÃ³n de mensajes de seguridad y transacciones. Utiliza
+ * los contratos de la librerÃ­a comÃºn y delega el procesamiento a los servicios
  * especializados.
  * </p>
  * 
- * @author Paulo Moron
  * @version 2.0
  * @since 2026-05
  */
@@ -46,8 +45,8 @@ public class ConsumidorAuditoria {
      * de errores global para garantizar la resiliencia.
      * </p>
      * 
-     * @param evento Contrato de datos de acceso de la librería común.
-     * @param channel Canal RabbitMQ para confirmación manual.
+     * @param evento Contrato de datos de acceso de la librerÃ­a comÃºn.
+     * @param channel Canal RabbitMQ para confirmaciÃ³n manual.
      * @param deliveryTag Etiqueta identificadora del mensaje.
      */
     @RabbitListener(queues = NombresCola.AUDITORIA_ACCESOS, errorHandler = RABBIT_ERROR_HANDLER)
@@ -63,8 +62,8 @@ public class ConsumidorAuditoria {
      * de errores global para garantizar la resiliencia.
      * </p>
      * 
-     * @param evento Contrato de datos de auditoría de la librería común.
-     * @param channel Canal RabbitMQ para confirmación manual.
+     * @param evento Contrato de datos de auditorÃ­a de la librerÃ­a comÃºn.
+     * @param channel Canal RabbitMQ para confirmaciÃ³n manual.
      * @param deliveryTag Etiqueta identificadora del mensaje.
      */
     @RabbitListener(queues = NombresCola.AUDITORIA_EVENTOS, errorHandler = RABBIT_ERROR_HANDLER)
@@ -76,8 +75,8 @@ public class ConsumidorAuditoria {
     /**
      * Escucha eventos de cambios transaccionales en las entidades de negocio.
      * 
-     * @param evento Contrato de datos transaccionales de la librería común.
-     * @param channel Canal RabbitMQ para confirmación manual.
+     * @param evento Contrato de datos transaccionales de la librerÃ­a comÃºn.
+     * @param channel Canal RabbitMQ para confirmaciÃ³n manual.
      * @param deliveryTag Etiqueta identificadora del mensaje.
      */
     @RabbitListener(queues = NombresCola.AUDITORIA_TRANSACCIONES, errorHandler = RABBIT_ERROR_HANDLER)
@@ -88,16 +87,16 @@ public class ConsumidorAuditoria {
     }
 
     /**
-     * Escucha eventos de pago exitoso para generar auditoría financiera.
-     * Corregido para usar EventoTransaccionalDTO.crear() y "pago" por consistencia semántica.
+     * Escucha eventos de pago exitoso para generar auditorÃ­a financiera.
+     * Corregido para usar EventoTransaccionalDTO.crear() y "pago" por consistencia semÃ¡ntica.
      * 
-     * @param evento Contrato de datos de pago exitoso de la librería común.
-     * @param channel Canal RabbitMQ para confirmación manual.
+     * @param evento Contrato de datos de pago exitoso de la librerÃ­a comÃºn.
+     * @param channel Canal RabbitMQ para confirmaciÃ³n manual.
      * @param deliveryTag Etiqueta identificadora del mensaje.
      */
     @RabbitListener(queues = NombresCola.PAGOS_EXITOSOS_AUDITORIA, errorHandler = RABBIT_ERROR_HANDLER)
     public void manejarPagoExitoso(EventoPagoExitosoDTO evento) throws java.io.IOException {
-        log.info("[RABBIT-PAGOS] Registrando auditoría de pago para usuario: {}", evento.usuarioId());
+        log.info("[RABBIT-PAGOS] Registrando auditorÃ­a de pago para usuario: {}", evento.usuarioId());
 
         String planAnterior = servicioTransaccional.obtenerUltimoPlanUsuario(evento.usuarioId());
 
@@ -106,7 +105,7 @@ public class ConsumidorAuditoria {
                 evento.pagoId(),
                 "microservicio-pago",
                 "pago",
-                "Actualización de plan a: " + evento.planNuevo(),
+                "ActualizaciÃ³n de plan a: " + evento.planNuevo(),
                 planAnterior,
                 evento.planNuevo());
 

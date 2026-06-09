@@ -1,4 +1,4 @@
-package com.pagos.dominio.especificaciones;
+﻿package com.pagos.dominio.especificaciones;
 
 import com.pagos.aplicacion.enums.EstadoPago;
 import com.pagos.dominio.entidades.Pago;
@@ -8,10 +8,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Especificaciones dinámicas para la búsqueda y filtrado de Pagos.
- * Implementa el Specification Pattern para desacoplar la lógica de consulta del repositorio.
+ * Especificaciones dinÃ¡micas para la bÃºsqueda y filtrado de Pagos.
+ * Implementa el Specification Pattern para desacoplar la lÃ³gica de consulta del repositorio.
  * 
- * @author LUKA APP Team
  * @version 1.0.0
  */
 public class PagoSpecs {
@@ -45,7 +44,7 @@ public class PagoSpecs {
     }
 
     /**
-     * Filtra por el ID de sesión de Stripe.
+     * Filtra por el ID de sesiÃ³n de Stripe.
      */
     public static Specification<Pago> porStripeSessionId(String sessionId) {
         return (root, query, cb) -> 

@@ -1,4 +1,4 @@
-package com.cliente.aplicacion.servicios;
+﻿package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaMetaAhorro;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudMetaAhorro;
@@ -27,9 +27,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Lógica de negocio para la gestión de metas de ahorro.
+ * LÃ³gica de negocio para la gestiÃ³n de metas de ahorro.
  * 
- * @author Paulo Moron
  * @version 1.2.0
  */
 @Service
@@ -58,7 +57,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
 
         publicadorAuditoria.publicarEventoExitoso(EventoAuditoriaDTO.crear(
                 usuarioIdToken, "META_AHORRO_CREADA", "MS-CLIENTE", ipOrigen,
-                String.format("Meta creada: '%s' — objetivo: S/ %.2f", guardada.getNombre(), guardada.getMontoObjetivo())));
+                String.format("Meta creada: '%s' â€” objetivo: S/ %.2f", guardada.getNombre(), guardada.getMontoObjetivo())));
 
         eventPublisher.publishEvent(new EventoContextoActualizado(usuarioIdToken, "META_AHORRO_CREADA"));
         return convertirADTO(guardada);
@@ -102,7 +101,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
         if (recienCompletada) {
             publicadorAuditoria.publicarTransaccionExitosa(EventoTransaccionalDTO.crear(
                     usuarioIdToken, metaId, "MS-CLIENTE", "META_AHORRO",
-                    String.format("¡Meta '%s' alcanzada! S/ %.2f de S/ %.2f", actualizada.getNombre(), actualizada.getMontoActual(), actualizada.getMontoObjetivo()),
+                    String.format("Â¡Meta '%s' alcanzada! S/ %.2f de S/ %.2f", actualizada.getNombre(), actualizada.getMontoActual(), actualizada.getMontoObjetivo()),
                     montoAnterior + "", actualizada.getMontoActual() + ""));
         } else {
             publicadorAuditoria.publicarTransaccionExitosa(EventoTransaccionalDTO.crear(
@@ -171,7 +170,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
             throw new ExcepcionAccesoDenegado();
         }
         if (!meta.getActiva()) {
-            throw new MetaNoEncontradaException(metaId); // Si está desactivada, es como si no existiera
+            throw new MetaNoEncontradaException(metaId); // Si estÃ¡ desactivada, es como si no existiera
         }
         return meta;
     }

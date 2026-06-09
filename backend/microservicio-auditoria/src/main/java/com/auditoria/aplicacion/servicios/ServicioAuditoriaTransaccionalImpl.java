@@ -1,4 +1,4 @@
-package com.auditoria.aplicacion.servicios;
+﻿package com.auditoria.aplicacion.servicios;
 
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaTransaccional;
 import com.auditoria.dominio.entidades.AuditoriaTransaccional;
@@ -14,13 +14,12 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Implementación del servicio de auditoría transaccional.
+ * ImplementaciÃ³n del servicio de auditorÃ­a transaccional.
  * <p>
  * Realiza el mapeo entre las entidades de persistencia y los DTOs de la
- * librería común.
+ * librerÃ­a comÃºn.
  * </p>
  * 
- * @author Paulo Moron
  */
 @Service
 @RequiredArgsConstructor
@@ -59,7 +58,7 @@ public class ServicioAuditoriaTransaccionalImpl implements ServicioAuditoriaTran
     public Page<EventoTransaccionalDTO> buscarConFiltros(String servicio, LocalDateTime desde, LocalDateTime hasta,
             Pageable pageable) {
 
-        // Composición dinámica de criterios usando Specification Pattern
+        // ComposiciÃ³n dinÃ¡mica de criterios usando Specification Pattern
         org.springframework.data.jpa.domain.Specification<AuditoriaTransaccional> spec = org.springframework.data.jpa.domain.Specification
                 .where(
                         com.auditoria.dominio.especificaciones.AuditoriaSpecs.transaccionPorServicio(servicio))
@@ -71,7 +70,7 @@ public class ServicioAuditoriaTransaccionalImpl implements ServicioAuditoriaTran
     }
 
     /**
-     * Mapea la entidad de base de datos al DTO estándar de la librería.
+     * Mapea la entidad de base de datos al DTO estÃ¡ndar de la librerÃ­a.
      */
     private EventoTransaccionalDTO mapearADto(AuditoriaTransaccional e) {
         return new EventoTransaccionalDTO(

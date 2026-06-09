@@ -1,4 +1,4 @@
-package com.cliente.aplicacion.servicios;
+﻿package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaDatosPersonales;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudDatosPersonales;
@@ -22,9 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Lógica de negocio para la gestión de datos personales del cliente.
+ * LÃ³gica de negocio para la gestiÃ³n de datos personales del cliente.
  * 
- * @author Paulo Moron
  * @since 2026-05
  */
 @Service
@@ -37,7 +36,7 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * Crea un perfil inicial vacío de datos personales para un usuario.
+     * Crea un perfil inicial vacÃ­o de datos personales para un usuario.
      * Si ya existe, retorna el existente.
      */
     @Override
@@ -64,7 +63,7 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
 
     /**
      * Actualiza los datos personales del usuario. Tras el commit, publica un
-     * evento que dispara la sincronización del contexto con Redis y RabbitMQ.
+     * evento que dispara la sincronizaciÃ³n del contexto con Redis y RabbitMQ.
      */
     @Override
     @Transactional
@@ -103,12 +102,12 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
     }
 
     /**
-     * Actualiza solo el teléfono del usuario (uso interno para sincronización OTP).
+     * Actualiza solo el telÃ©fono del usuario (uso interno para sincronizaciÃ³n OTP).
      */
     @Override
     @Transactional
     public void actualizarTelefono(UUID usuarioId, String telefono) {
-        log.info("Actualizando teléfono verificado para usuario: {}", usuarioId);
+        log.info("Actualizando telÃ©fono verificado para usuario: {}", usuarioId);
         DatosPersonales datos = repositorio.findByUsuarioId(usuarioId)
                 .orElseThrow(() -> new RuntimeException("Perfil no encontrado para usuario: " + usuarioId));
 
@@ -120,7 +119,7 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
     }
 
     /**
-     * Consulta interna de datos personales sin validación de JWT (uso para Facade).
+     * Consulta interna de datos personales sin validaciÃ³n de JWT (uso para Facade).
      */
     @Override
     @Transactional(readOnly = true)
@@ -144,7 +143,7 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
     // =========================================================================
     private void validarPropiedad(UUID usuarioIdRuta, UUID usuarioIdToken) {
         if (!usuarioIdRuta.equals(usuarioIdToken)) {
-            log.warn("Acceso denegado: usuarioIdToken={} intentó acceder al perfil de usuarioIdRuta={}",
+            log.warn("Acceso denegado: usuarioIdToken={} intentÃ³ acceder al perfil de usuarioIdRuta={}",
                     usuarioIdToken, usuarioIdRuta);
             throw new ExcepcionAccesoDenegado();
         }

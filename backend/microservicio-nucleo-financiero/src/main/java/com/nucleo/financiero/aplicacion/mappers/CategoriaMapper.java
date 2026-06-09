@@ -1,16 +1,15 @@
-package com.nucleo.financiero.aplicacion.mappers;
+﻿package com.nucleo.financiero.aplicacion.mappers;
 
 import com.nucleo.financiero.aplicacion.dtos.respuestas.CategoriaDTO;
 import com.nucleo.financiero.dominio.entidades.Categoria;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper dedicado para la conversión de entidades {@link Categoria} a su DTO de salida {@link CategoriaDTO}.
+ * Mapper dedicado para la conversiÃ³n de entidades {@link Categoria} a su DTO de salida {@link CategoriaDTO}.
  * <p>
- * Desacopla la lógica de presentación del dominio del negocio.
+ * Desacopla la lÃ³gica de presentaciÃ³n del dominio del negocio.
  * </p>
  *
- * @author Luka-Dev-Backend
  * @version 1.0.0
  */
 @Component

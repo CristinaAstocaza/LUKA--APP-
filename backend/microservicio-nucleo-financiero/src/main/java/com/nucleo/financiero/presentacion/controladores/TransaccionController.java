@@ -1,4 +1,4 @@
-package com.nucleo.financiero.presentacion.controladores;
+﻿package com.nucleo.financiero.presentacion.controladores;
 
 import com.libreria.comun.respuesta.Paginacion;
 import com.libreria.comun.respuesta.ResultadoApi;
@@ -24,15 +24,14 @@ import java.util.UUID;
 import org.springframework.format.annotation.DateTimeFormat;
 
 /**
- * Controlador REST para el registro y gestión de transacciones financieras.
+ * Controlador REST para el registro y gestiÃ³n de transacciones financieras.
  * <p>
- * Centraliza la lógica de ingresos y egresos manuales, permitiendo tanto
+ * Centraliza la lÃ³gica de ingresos y egresos manuales, permitiendo tanto
  * registros
- * individuales como en lote. Se comunica a través del contrato
+ * individuales como en lote. Se comunica a travÃ©s del contrato
  * {@link ITransaccionService}.
  * </p>
  *
- * @author Luka-Dev-Backend
  * @version 1.2.2
  */
 @RestController
@@ -47,9 +46,9 @@ public class TransaccionController {
     /**
      * Registra un movimiento financiero individual (Ingreso/Egreso).
      * 
-     * @param request     Datos de la transacción.
-     * @param httpRequest Datos de la petición para auditoría.
-     * @return ResponseEntity con la transacción registrada.
+     * @param request     Datos de la transacciÃ³n.
+     * @param httpRequest Datos de la peticiÃ³n para auditorÃ­a.
+     * @return ResponseEntity con la transacciÃ³n registrada.
      */
     @PostMapping
     public ResponseEntity<ResultadoApi<RespuestaTransaccion>> registrar(
@@ -62,17 +61,17 @@ public class TransaccionController {
         }
 
         RespuestaTransaccion respuesta = transaccionService.registrar(request, UtilidadIp.obtenerIpReal(httpRequest));
-        return ResponseEntity.status(201).body(ResultadoApi.creado(respuesta, "Transacción registrada con éxito"));
+        return ResponseEntity.status(201).body(ResultadoApi.creado(respuesta, "TransacciÃ³n registrada con Ã©xito"));
     }
 
     /**
-     * Registra un conjunto de transacciones en una sola operación (Lote).
+     * Registra un conjunto de transacciones en una sola operaciÃ³n (Lote).
      * <p>
      * Optimizado para importaciones masivas o sincronizaciones iniciales.
      * </p>
      * 
      * @param solicitudes Lista de transacciones a registrar.
-     * @param httpRequest Datos de la petición para auditoría.
+     * @param httpRequest Datos de la peticiÃ³n para auditorÃ­a.
      * @return ResponseEntity con el listado de transacciones procesadas.
      */
     @PostMapping("/lote")
@@ -92,16 +91,16 @@ public class TransaccionController {
     }
 
     /**
-     * Consulta el historial paginado de transacciones con filtros dinámicos.
+     * Consulta el historial paginado de transacciones con filtros dinÃ¡micos.
      * 
      * @param usuarioId   ID del propietario de las transacciones.
      * @param tipo        Filtro por INGRESO o EGRESO.
-     * @param categoriaId Filtro por categoría específica.
+     * @param categoriaId Filtro por categorÃ­a especÃ­fica.
      * @param desde       Fecha inicial del rango.
      * @param hasta       Fecha final del rango.
-     * @param pagina      Número de página (0-based).
-     * @param tamanio     Elementos por página.
-     * @param httpRequest Datos de la petición.
+     * @param pagina      NÃºmero de pÃ¡gina (0-based).
+     * @param tamanio     Elementos por pÃ¡gina.
+     * @param httpRequest Datos de la peticiÃ³n.
      * @return ResponseEntity con el resultado paginado estandarizado.
      */
     @GetMapping("/historial")
@@ -135,8 +134,8 @@ public class TransaccionController {
      * 
      * @param usuarioId   ID del usuario.
      * @param mes         Mes del resumen (1-12).
-     * @param anio        Año del resumen.
-     * @param httpRequest Datos de la petición.
+     * @param anio        AÃ±o del resumen.
+     * @param httpRequest Datos de la peticiÃ³n.
      * @return ResponseEntity con el DTO de resumen financiero.
      */
     @GetMapping("/resumen")
@@ -156,10 +155,10 @@ public class TransaccionController {
     }
 
     /**
-     * Busca una transacción específica por su identificador único.
+     * Busca una transacciÃ³n especÃ­fica por su identificador Ãºnico.
      * 
-     * @param id UUID de la transacción.
-     * @return ResponseEntity con el detalle de la transacción.
+     * @param id UUID de la transacciÃ³n.
+     * @return ResponseEntity con el detalle de la transacciÃ³n.
      */
     @GetMapping("/{id}")
     public ResponseEntity<ResultadoApi<RespuestaTransaccion>> obtenerPorId(@PathVariable UUID id) {

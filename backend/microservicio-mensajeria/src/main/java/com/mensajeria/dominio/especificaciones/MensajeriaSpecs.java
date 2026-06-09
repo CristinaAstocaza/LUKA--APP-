@@ -1,4 +1,4 @@
-package com.mensajeria.dominio.especificaciones;
+﻿package com.mensajeria.dominio.especificaciones;
 
 import com.mensajeria.dominio.entidades.CodigoVerificacion;
 import com.libreria.comun.enums.PropositoCodigo;
@@ -8,10 +8,9 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Especificaciones dinámicas para la búsqueda de códigos de verificación.
- * Implementa el Specification Pattern para auditoría y gestión de OTPs.
+ * Especificaciones dinÃ¡micas para la bÃºsqueda de cÃ³digos de verificaciÃ³n.
+ * Implementa el Specification Pattern para auditorÃ­a y gestiÃ³n de OTPs.
  * 
- * @author Paulo Moron
  * @version 1.0.0
  */
 public class MensajeriaSpecs {
@@ -25,7 +24,7 @@ public class MensajeriaSpecs {
     }
 
     /**
-     * Filtra por el propósito del código (ACTIVACION, RESET, etc).
+     * Filtra por el propÃ³sito del cÃ³digo (ACTIVACION, RESET, etc).
      */
     public static Specification<CodigoVerificacion> porProposito(PropositoCodigo proposito) {
         return (root, query, cb) -> 
@@ -33,7 +32,7 @@ public class MensajeriaSpecs {
     }
 
     /**
-     * Filtra códigos que ya han sido usados o están pendientes.
+     * Filtra cÃ³digos que ya han sido usados o estÃ¡n pendientes.
      */
     public static Specification<CodigoVerificacion> estaUsado(Boolean usado) {
         return (root, query, cb) -> 
@@ -41,7 +40,7 @@ public class MensajeriaSpecs {
     }
 
     /**
-     * Filtra códigos creados en un rango de fechas.
+     * Filtra cÃ³digos creados en un rango de fechas.
      */
     public static Specification<CodigoVerificacion> creadoEntre(LocalDateTime inicio, LocalDateTime fin) {
         return (root, query, cb) -> {

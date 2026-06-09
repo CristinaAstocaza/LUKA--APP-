@@ -1,4 +1,4 @@
-package com.cliente.aplicacion.servicios;
+﻿package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaLimiteGasto;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudLimiteGasto;
@@ -25,9 +25,8 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Lógica de negocio para la gestión del limite de gasto global.
+ * LÃ³gica de negocio para la gestiÃ³n del limite de gasto global.
  *
- * @author Paulo Moron
  * @since 2026-05
  */
 @Service
@@ -40,7 +39,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * Crea un nuevo límite de gasto global.
+     * Crea un nuevo lÃ­mite de gasto global.
      */
     @Override
     @Transactional
@@ -53,11 +52,11 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         }
         repositorio.findByUsuarioIdAndActivoTrue(usuarioIdToken).ifPresent((LimiteGasto limite) -> {
             if (!limite.estaVencido()) {
-                throw new LimiteGastoException("Ya tienes un límite global activo y vigente.");
+                throw new LimiteGastoException("Ya tienes un lÃ­mite global activo y vigente.");
             }
         });
 
-        // Desactivación eficiente por lote en la base de datos
+        // DesactivaciÃ³n eficiente por lote en la base de datos
         repositorio.desactivarLimitesAnteriores(usuarioIdToken);
 
         LimiteGasto nuevo = LimiteGasto.builder()
@@ -72,7 +71,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         LimiteGasto guardado = repositorio.save(nuevo);
         publicadorAuditoria.publicarEventoExitoso(EventoAuditoriaDTO.crear(
                 usuarioIdToken, "LIMITE_GLOBAL_CREADO", "MS-CLIENTE",
-                ipOrigen, String.format("Límite global: S/ %.2f hasta %s",
+                ipOrigen, String.format("LÃ­mite global: S/ %.2f hasta %s",
                         guardado.getMontoLimite(), guardado.getFechaFin())));
 
         eventPublisher.publishEvent(new EventoContextoActualizado(usuarioIdToken, "LIMITE_GLOBAL_CREADO"));
@@ -80,7 +79,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Actualiza el límite global ACTIVO.
+     * Actualiza el lÃ­mite global ACTIVO.
      */
     @Override
     @Transactional
@@ -89,7 +88,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
                 .orElseThrow(() -> new LimiteGastoNoEncontradoException(usuarioId));
 
         if (limite.estaVencido()) {
-            throw new LimiteGastoException("El límite actual ha vencido y no se puede modificar. Crea uno nuevo.");
+            throw new LimiteGastoException("El lÃ­mite actual ha vencido y no se puede modificar. Crea uno nuevo.");
         }
 
         if (solicitud.montoLimite() != null) {
@@ -109,7 +108,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Lista todos los límites del usuario.
+     * Lista todos los lÃ­mites del usuario.
      */
     @Override
     @Transactional(readOnly = true)
@@ -121,7 +120,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Obtiene el límite activo del usuario.
+     * Obtiene el lÃ­mite activo del usuario.
      */
     @Override
     @Transactional(readOnly = true)
@@ -132,7 +131,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Desactiva (eliminación lógica) el límite global actual.
+     * Desactiva (eliminaciÃ³n lÃ³gica) el lÃ­mite global actual.
      */
     @Override
     @Transactional
@@ -146,12 +145,12 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         publicadorAuditoria.publicarTransaccionExitosa(EventoTransaccionalDTO.crear(
                 usuarioId, limite.getId(), "MS-CLIENTE", "LIMITE GLOBAL",
                 "Eliminando limite global", "ACTIVO", "DESACTIVADO"));
-        log.info("Límite global desactivado para usuario: {}", usuarioId);
+        log.info("LÃ­mite global desactivado para usuario: {}", usuarioId);
         eventPublisher.publishEvent(new EventoContextoActualizado(usuarioId, "LIMITE_GLOBAL_ELIMINADO"));
     }
 
     /**
-     * Evalúa el gasto TOTAL del usuario contra su límite global único.
+     * EvalÃºa el gasto TOTAL del usuario contra su lÃ­mite global Ãºnico.
      */
     @Override
     @Transactional
@@ -161,7 +160,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
                     if (!limite.estaVencido() && limite.haAlcanzadoUmbral(gastoTotalActual)) {
                         publicadorAuditoria.publicarEventoExitoso(EventoAuditoriaDTO.crear(
                                 usuarioId, "ALERTA_PRESUPUESTO_GLOBAL", "MS-CLIENTE", ipOrigen,
-                                String.format("Gasto total S/ %.2f alcanzó el %d%% de tu presupuesto global S/ %.2f",
+                                String.format("Gasto total S/ %.2f alcanzÃ³ el %d%% de tu presupuesto global S/ %.2f",
                                         gastoTotalActual, limite.getPorcentajeAlerta(), limite.getMontoLimite())));
                         return true;
                     }
@@ -171,7 +170,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Consulta interna del límite activo sin validación de JWT (uso para Facade).
+     * Consulta interna del lÃ­mite activo sin validaciÃ³n de JWT (uso para Facade).
      */
     @Override
     @Transactional(readOnly = true)

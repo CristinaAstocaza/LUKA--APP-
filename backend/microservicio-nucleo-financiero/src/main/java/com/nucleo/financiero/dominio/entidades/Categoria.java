@@ -1,17 +1,16 @@
-package com.nucleo.financiero.dominio.entidades;
+﻿package com.nucleo.financiero.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
 
 /**
- * Entidad de dominio que representa una categoría de gasto o ingreso.
+ * Entidad de dominio que representa una categorÃ­a de gasto o ingreso.
  * <p>
- * Permite organizar los movimientos financieros del usuario (ej: Alimentación,
- * Sueldo, Entretenimiento) para facilitar el análisis por parte de la IA.
+ * Permite organizar los movimientos financieros del usuario (ej: AlimentaciÃ³n,
+ * Sueldo, Entretenimiento) para facilitar el anÃ¡lisis por parte de la IA.
  * </p>
  * 
- * @author Luka-Dev-Backend
  * @version 1.1.0
  */
 @Entity
@@ -49,7 +48,7 @@ public class Categoria {
     private TipoMovimiento tipo;
 
     /**
-     * Define la naturaleza financiera de la categoría.
+     * Define la naturaleza financiera de la categorÃ­a.
      */
     public enum TipoMovimiento {
         /** Entradas de dinero al patrimonio del usuario */

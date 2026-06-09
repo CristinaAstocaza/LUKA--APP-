@@ -1,4 +1,4 @@
-package com.pagos.dominio.entidades;
+﻿package com.pagos.dominio.entidades;
 
 import com.pagos.aplicacion.enums.EstadoPago;
 import jakarta.persistence.*;
@@ -11,10 +11,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Entidad principal que representa un intento o transacción de pago en LUKA APP.
+ * Entidad principal que representa un intento o transacciÃ³n de pago en LUKA APP.
  * Mapea a la tabla 'pagos' en la base de datos exclusiva del microservicio.
  *
- * @author LUKA APP Team
  */
 @Entity
 @Table(name = "pagos", indexes = {
@@ -42,7 +41,7 @@ public class Pago {
     @Column(name = "stripe_session_id", unique = true, length = 255)
     private String stripeSessionId;
 
-    /** ID único del evento Stripe — garantiza idempotencia en webhooks. */
+    /** ID Ãºnico del evento Stripe â€” garantiza idempotencia en webhooks. */
     @Column(name = "stripe_evento_id", unique = true, length = 255)
     private String stripeEventoId;
 

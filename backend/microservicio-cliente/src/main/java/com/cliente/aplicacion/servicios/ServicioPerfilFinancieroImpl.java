@@ -1,4 +1,4 @@
-package com.cliente.aplicacion.servicios;
+﻿package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaPerfilFinanciero;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudPerfilFinanciero;
@@ -20,9 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * Lógica de negocio para el perfil financiero del cliente.
+ * LÃ³gica de negocio para el perfil financiero del cliente.
  * 
- * @author Paulo Moron
  * @version 1.1.0
  */
 @Service
@@ -74,7 +73,7 @@ public class ServicioPerfilFinancieroImpl implements ServicioPerfilFinanciero {
     }
 
     /**
-     * Consulta interna del perfil financiero sin validación de JWT (uso para Facade).
+     * Consulta interna del perfil financiero sin validaciÃ³n de JWT (uso para Facade).
      */
     @Override
     @Transactional(readOnly = true)

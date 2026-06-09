@@ -1,4 +1,4 @@
-package com.mensajeria.dominio.repositorios;
+﻿package com.mensajeria.dominio.repositorios;
 
 import com.mensajeria.dominio.entidades.CodigoVerificacion;
 import com.libreria.comun.enums.PropositoCodigo;
@@ -14,20 +14,19 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repositorio para la gestión de códigos de verificación OTP.
+ * Repositorio para la gestiÃ³n de cÃ³digos de verificaciÃ³n OTP.
  * <p>
  * Extiende JpaSpecificationExecutor para soportar el Specification Pattern,
- * permitiendo auditorías y limpiezas dinámicas.
+ * permitiendo auditorÃ­as y limpiezas dinÃ¡micas.
  * </p>
  * 
- * @author Paulo Moron
  * @version 1.2.0
  */
 @Repository
 public interface CodigoVerificacionRepository extends JpaRepository<CodigoVerificacion, UUID>, JpaSpecificationExecutor<CodigoVerificacion> {
 
     /**
-     * Busca el código más reciente, no usado, filtrando por Usuario y PROPÓSITO.
+     * Busca el cÃ³digo mÃ¡s reciente, no usado, filtrando por Usuario y PROPÃ“SITO.
      */
     Optional<CodigoVerificacion> findTopByUsuarioIdAndPropositoAndUsadoFalseOrderByFechaCreacionDesc(
             UUID usuarioId,
@@ -37,7 +36,7 @@ public interface CodigoVerificacionRepository extends JpaRepository<CodigoVerifi
     Optional<CodigoVerificacion> findByIdAndCodigoAndUsadoFalse(UUID id, String codigo);
     
     /**
-     * Limpieza profunda: Elimina códigos expirados Y códigos ya utilizados.
+     * Limpieza profunda: Elimina cÃ³digos expirados Y cÃ³digos ya utilizados.
      */
     @Modifying
     @Query("DELETE FROM CodigoVerificacion c WHERE c.fechaExpiracion < :fecha OR c.usado = true")
@@ -45,7 +44,7 @@ public interface CodigoVerificacionRepository extends JpaRepository<CodigoVerifi
 
     
     /**
-     * Cuenta cuántos códigos ha solicitado un usuario para un propósito desde una fecha dada.
+     * Cuenta cuÃ¡ntos cÃ³digos ha solicitado un usuario para un propÃ³sito desde una fecha dada.
      */
     long countByUsuarioIdAndPropositoAndFechaCreacionAfter(UUID usuarioId, PropositoCodigo proposito, LocalDateTime fecha);
 }

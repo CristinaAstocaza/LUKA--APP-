@@ -1,4 +1,4 @@
-package com.auditoria.presentacion.controladores;
+﻿package com.auditoria.presentacion.controladores;
 
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaTransaccional;
 import com.libreria.comun.dtos.EventoTransaccionalDTO;
@@ -16,13 +16,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Controlador para la consulta de auditorías de cambios transaccionales.
+ * Controlador para la consulta de auditorÃ­as de cambios transaccionales.
  * <p>
- * Proporciona visibilidad sobre la evolución de los datos en el sistema,
- * permitiendo auditorías técnicas y de negocio.
+ * Proporciona visibilidad sobre la evoluciÃ³n de los datos en el sistema,
+ * permitiendo auditorÃ­as tÃ©cnicas y de negocio.
  * </p>
  * 
- * @author Paulo Moron
  */
 @RestController
 @RequestMapping("/api/v1/auditoria/transacciones")
@@ -32,11 +31,11 @@ public class AuditoriaTransaccionalControlador {
     private final ServicioAuditoriaTransaccional servicio;
 
     /**
-     * Obtiene el historial de cambios realizados por un usuario específico.
+     * Obtiene el historial de cambios realizados por un usuario especÃ­fico.
      * 
      * @param usuarioId UUID del usuario.
-     * @param pagina Índice de página.
-     * @param tamanio Tamaño de página.
+     * @param pagina Ãndice de pÃ¡gina.
+     * @param tamanio TamaÃ±o de pÃ¡gina.
      * @return {@link ResultadoApi} con lista paginada de eventos.
      */
     @GetMapping("/usuario/{usuarioId}")
@@ -58,12 +57,12 @@ public class AuditoriaTransaccionalControlador {
     }
 
     /**
-     * Búsqueda avanzada de auditoría transaccional con filtros de servicio y fechas.
+     * BÃºsqueda avanzada de auditorÃ­a transaccional con filtros de servicio y fechas.
      * 
      * @param servicioOrigen Nombre del microservicio.
-     * @param desde Fecha de inicio de búsqueda.
-     * @param hasta Fecha de fin de búsqueda.
-     * @param pagina Índice de página.
+     * @param desde Fecha de inicio de bÃºsqueda.
+     * @param hasta Fecha de fin de bÃºsqueda.
+     * @param pagina Ãndice de pÃ¡gina.
      * @return {@link ResultadoApi} con los resultados filtrados.
      */
     @GetMapping("/busqueda")
@@ -82,7 +81,7 @@ public class AuditoriaTransaccionalControlador {
 
         return ResponseEntity.ok(ResultadoApi.exito(
                 paginacion.contenido(), 
-                "Búsqueda transaccional finalizada con éxito.", 
+                "BÃºsqueda transaccional finalizada con Ã©xito.", 
                 paginacion)
         );
     }
