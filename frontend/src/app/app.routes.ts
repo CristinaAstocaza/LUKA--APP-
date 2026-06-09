@@ -4,7 +4,8 @@ import { Layout } from './layout/layout/layout/layout';
 export const routes: Routes = [
   // ── Rutas Públicas ──
   {
-    path: 'inicio',
+    path: '',
+    pathMatch: 'full',
     loadComponent: () => import('./features/inicio/inicio').then(m => m.Inicio)
   },
   {
@@ -15,6 +16,7 @@ export const routes: Routes = [
     path: 'recuperar-contrasena',
     loadChildren: () => import('./features/recuperar-contrasena/recuperar-contrasena.routes').then(m => m.RECUPERAR_CONTRASENA_ROUTES)
   },
+
 
   // ── Rutas Privadas (Dashboard) ──
   {
@@ -68,6 +70,14 @@ export const routes: Routes = [
             .then(m => m.PERFIL_ROUTES)
       },
       
+      // ── Suscripcion ──
+      {
+        path: 'suscripcion',
+        loadChildren: () =>
+          import('./features/suscripcion/suscripcion.routes')
+            .then(m => m.SUSCRIPCION_ROUTES)
+      },
+      
       // -- Ayuda --
       {
         path: 'ayuda',
@@ -76,15 +86,16 @@ export const routes: Routes = [
             .then(m => m.AYUDA_ROUTES)
       },
 
+
       {
         path: '',
-        redirectTo: '/inicio',
+        redirectTo: '/dashboard',
         pathMatch: 'full'
       }
     ]
   },
   {
     path: '**',
-    redirectTo: '/inicio'
+    redirectTo: '/'
   }
 ];

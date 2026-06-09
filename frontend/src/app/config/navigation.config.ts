@@ -36,6 +36,11 @@ export const NAV_ITEMS: NavItem[] = [
     route: '/presupuestos',
     icon:  'fa-solid fa-wallet'
   },
+  {
+    label: 'Inteligencia Artificial',
+    route: '/inteligencia-artificial',
+    icon:  'fa-solid fa-robot'
+  },
 ];
 
 // ── Navegación de cuenta  ──
@@ -47,7 +52,7 @@ export const BOTTOM_NAV_ITEMS: NavItem[] = [
   },
   {
     label: 'Configuración',
-    route: '/configuracion',
+    route: '/perfil/configuracion',
     icon:  'fa-solid fa-gear'
   },
   {
