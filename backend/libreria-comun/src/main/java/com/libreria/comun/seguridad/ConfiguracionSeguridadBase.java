@@ -23,7 +23,6 @@ import java.util.List;
  * peticiones desde el frontend.
  * </p>
  *
- * @author Paulo Moron
  */
 @RequiredArgsConstructor
 public abstract class ConfiguracionSeguridadBase {
