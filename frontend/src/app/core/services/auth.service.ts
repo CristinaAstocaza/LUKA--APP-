@@ -9,20 +9,20 @@
 //   POST /api/v1/auth/reset-password
 // =============================================
 
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { DashboardStateService } from './dashboard-state.service';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../enviroments/environment';
 import {
   SolicitudLogin, SolicitudRegistro,
   RespuestaAutenticacion, UsuarioSesion,
   SolicitudRecuperacion, SolicitudCambioPassword,
-  ResultadoApi, SolicitudReenvioOtp
+  ResultadoApi
 } from '../models/auth/user.model';
 
 const TOKEN_KEY = 'luka_token';
-const REFRESH_TOKEN_KEY = 'luka_refresh_token';
 const USUARIO_KEY = 'luka_usuario';
 
 @Injectable({ providedIn: 'root' })
@@ -34,9 +34,43 @@ export class AuthService {
   private _usuario = signal<UsuarioSesion | null>(this.cargarDesdStorage());
   usuario = this._usuario.asReadonly();
   logueado = computed(() => !!this._usuario());
-  esPremium = computed(() => this._usuario()?.roles?.includes('PREMIUM') ?? false);
+  esPremium = computed(() => this._usuario()?.roles?.some(r => r === 'PREMIUM' || r === 'ROLE_PREMIUM') ?? false);
+  esPro = computed(() => this._usuario()?.roles?.some(r => r === 'PRO' || r === 'ROLE_PRO') ?? false);
 
-  constructor(private http: HttpClient, private router: Router) { }
+  private dashboardState = inject(DashboardStateService);
+
+  constructor(private http: HttpClient, private router: Router) {
+    if (this.getToken()) {
+      this.obtenerUsuarioActual().subscribe({
+        error: (err) => console.debug('[AuthService] No se pudo autorefrescar el usuario al inicializar:', err)
+      });
+    }
+  }
+
+  // ── Obtener/Refrescar Usuario Actual ──
+  obtenerUsuarioActual(): Observable<ResultadoApi<RespuestaAutenticacion>> {
+    return this.http.get<ResultadoApi<RespuestaAutenticacion>>(`${this.base}/me`).pipe(
+      tap(resp => {
+        if (resp.exito) {
+          this.actualizarSesion(resp.datos);
+        }
+      })
+    );
+  }
+
+  actualizarSesion(resp: RespuestaAutenticacion): void {
+    const sesion: UsuarioSesion = {
+      id: resp.idUsuario,
+      nombreUsuario: resp.nombreUsuario,
+      roles: resp.roles,
+      token: resp.tokenAcceso,
+      expiraEn: resp.expiraEn
+    };
+    localStorage.setItem(TOKEN_KEY, resp.tokenAcceso);
+    localStorage.setItem(USUARIO_KEY, JSON.stringify(sesion));
+    this._usuario.set(sesion);
+    this.dashboardState.marcarForzarRefresco();
+  }
 
   // ── Login ──
   login(solicitud: SolicitudLogin): Observable<ResultadoApi<RespuestaAutenticacion>> {
@@ -54,14 +88,14 @@ export class AuthService {
   }
 
   // ── Activar cuenta ──
-  activarCuenta(correo: string, codigoOtp: string, telefono?: string): Observable<ResultadoApi<string>> {
-    const params: any = { correo, codigoOtp };
+  activarCuenta(usuarioId: string, codigoOtp: string, telefono?: string): Observable<ResultadoApi<string>> {
+    const params: any = { codigoOtp };
     if (telefono) params.telefono = telefono;
-    return this.http.put<ResultadoApi<string>>(`${this.base}/activar`, null, { params });
+    return this.http.put<ResultadoApi<string>>(`${this.base}/activar/${usuarioId}`, null, { params });
   }
 
-  // ── Solicitar OTP de activación ──
-  solicitarOtpActivacion(solicitud: SolicitudReenvioOtp): Observable<ResultadoApi<string>> {
+  // ── Solicitar OTP Activacion ──
+  solicitarOtpActivacion(solicitud: { email: string; tipo: 'EMAIL' | 'SMS' | 'WHATSAPP'; telefono?: string }): Observable<ResultadoApi<string>> {
     return this.http.post<ResultadoApi<string>>(`${this.base}/solicitar-otp`, solicitud);
   }
 
@@ -86,33 +120,17 @@ export class AuthService {
     return this.http.post(`${this.base}/logout`, {})
   };
 
-  // ── Refrescar token ──
-  refrescarToken(): Observable<ResultadoApi<RespuestaAutenticacion>> {
-    const refreshToken = this.getRefreshToken();
-    return this.http.post<ResultadoApi<RespuestaAutenticacion>>(`${this.base}/refrescar-token`, { refreshToken })
-      .pipe(tap(resp => {
-        if (resp.exito) {
-          this.guardarSesion(resp.datos);
-        }
-      }));
-  }
-
-  // ── Logout ──
   logout(): void {
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USUARIO_KEY);
     this._usuario.set(null);
+    this.dashboardState.limpiarEstado();
     this.router.navigate(['/login']);
   }
 
   // ── Token para el interceptor ──
   getToken(): string | null {
     return localStorage.getItem(TOKEN_KEY);
-  }
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
   // ── Privados ──
@@ -122,14 +140,13 @@ export class AuthService {
       nombreUsuario: resp.nombreUsuario,
       roles: resp.roles,
       token: resp.tokenAcceso,
-      refreshToken: resp.refreshToken,
-      expiraEn: resp.expiraEn,
-      refreshExpiraEn: resp.refreshExpiraEn
+      expiraEn: resp.expiraEn
     };
     localStorage.setItem(TOKEN_KEY, resp.tokenAcceso);
-    localStorage.setItem(REFRESH_TOKEN_KEY, resp.refreshToken);
     localStorage.setItem(USUARIO_KEY, JSON.stringify(sesion));
     this._usuario.set(sesion);
+    // Forzar refresco limpio del dashboard tras login
+    this.dashboardState.marcarForzarRefresco();
   }
 
   private cargarDesdStorage(): UsuarioSesion | null {
