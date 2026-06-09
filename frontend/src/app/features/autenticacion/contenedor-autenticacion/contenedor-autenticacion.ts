@@ -1,113 +1,123 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { RouterLink, ActivatedRoute } from '@angular/router';
+import { CommonModule, Location } from '@angular/common';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { IniciarSesion } from '../iniciar-sesion/iniciar-sesion';
-import { CrearCuenta, RegistroExitosoPayload } from '../crear-cuenta/crear-cuenta';
+import { CrearCuenta } from '../crear-cuenta/crear-cuenta';
 import { VerificarCodigo } from '../../recuperar-contrasena/verificar-codigo/verificar-codigo';
 import { AuthService } from '../../../core/services/auth.service';
-import { TipoCanalOtp } from '../../../core/models/auth/user.model';
+
+export type VistaAuth = 'login' | 'registro' | 'verificar' | 'exito' | 'canal';
 
 @Component({
   selector: 'app-contenedor-autenticacion',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, IniciarSesion, CrearCuenta, VerificarCodigo],
+  imports: [CommonModule, RouterLink, IniciarSesion, CrearCuenta, VerificarCodigo],
   templateUrl: './contenedor-autenticacion.html',
   styleUrl: './contenedor-autenticacion.scss',
 })
 export class ContenedorAutenticacion implements OnInit {
-  vistaActual: 'login' | 'registro' | 'canal' | 'verificar' | 'exito' = 'login';
+  vistaActual: VistaAuth = 'login';
 
-  /** Datos del registro para el paso de verificación */
+  cargandoOtp = false;
+  infoOtp: string | null = null;
+  errorOtp: string | null = null;
+
+  correoActivacion = '';
+  telefonoActivacion = '';
+  usuarioId = '';
+
+  canalSeleccionado: 'EMAIL' | 'SMS' | 'WHATSAPP' = 'EMAIL';
+
   medioVerificacion: 'correo' | 'celular' = 'correo';
   destinoVerificacion = '';
-  registroPendiente: RegistroExitosoPayload | null = null;
-  canalSeleccionado: TipoCanalOtp = 'EMAIL';
-  cargandoOtp = false;
-  errorOtp = '';
-  mensajeOtp = '';
 
-  constructor(private route: ActivatedRoute, private authService: AuthService) {}
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private location: Location,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    // Leer el estado inicial desde los datos de la ruta
     this.route.data.subscribe(data => {
       if (data['vista']) {
-        this.vistaActual = data['vista'];
+        this.vistaActual = data['vista'] as VistaAuth;
       }
     });
   }
 
   cambiarVista(vista: 'login' | 'registro'): void {
     this.vistaActual = vista;
+
+    const ruta =
+      vista === 'login'
+        ? '/autenticacion/iniciar-sesion'
+        : '/autenticacion/crear-cuenta';
+
+    this.location.go(ruta);
   }
 
-  /** Maneja el registro exitoso y muestra la verificación de código */
-  onRegistroExitoso(datos: RegistroExitosoPayload): void {
-    this.registroPendiente = datos;
-    this.canalSeleccionado = datos.telefono ? 'SMS' : 'EMAIL';
-    this.errorOtp = '';
-    this.mensajeOtp = 'Elige el canal y solicita tu código de verificación.';
-    this.vistaActual = 'canal';
-  }
-
-  onCuentaNoActivada(datos: { correo: string }): void {
-    this.registroPendiente = {
-      usuarioId: '',
-      correo: datos.correo,
-      telefono: null,
-      medio: 'correo',
-      destino: datos.correo
-    };
+  onRegistroExitoso(datos: { correo: string; celular?: string; usuarioId: string }): void {
+    this.correoActivacion = datos.correo;
+    this.telefonoActivacion = datos.celular || '';
+    this.usuarioId = datos.usuarioId;
     this.canalSeleccionado = 'EMAIL';
-    this.errorOtp = '';
-    this.mensajeOtp = 'Tu cuenta está pendiente de activación. Solicita un nuevo código para continuar.';
     this.vistaActual = 'canal';
   }
 
-  solicitarCodigoActivacion(): void {
-    if (!this.registroPendiente) return;
+  seleccionarCanal(canal: 'EMAIL' | 'SMS' | 'WHATSAPP'): void {
+    this.canalSeleccionado = canal;
+  }
 
+  enviarCodigoActivacion(): void {
     this.cargandoOtp = true;
-    this.errorOtp = '';
-    this.mensajeOtp = '';
+    this.infoOtp = 'Enviando código de verificación...';
+    this.errorOtp = null;
 
-    this.authService.solicitarOtpActivacion({
-      email: this.registroPendiente.correo,
-      telefono: this.canalSeleccionado === 'EMAIL' ? null : this.registroPendiente.telefono,
-      tipo: this.canalSeleccionado
-    }).subscribe({
-      next: (mensaje) => {
+    const payload = {
+      email: this.correoActivacion,
+      tipo: this.canalSeleccionado,
+      telefono:
+        this.canalSeleccionado !== 'EMAIL'
+          ? this.telefonoActivacion
+          : undefined,
+    };
+
+    this.authService.solicitarOtpActivacion(payload).subscribe({
+      next: resp => {
         this.cargandoOtp = false;
-        this.mensajeOtp = mensaje;
-        this.medioVerificacion = this.canalSeleccionado === 'EMAIL' ? 'correo' : 'celular';
-        this.destinoVerificacion = this.canalSeleccionado === 'EMAIL'
-          ? this.registroPendiente!.correo
-          : this.registroPendiente!.telefono ?? '';
-        this.vistaActual = 'verificar';
+
+        if (resp.exito) {
+          this.infoOtp = resp.mensaje || 'Código enviado correctamente';
+
+          this.medioVerificacion =
+            this.canalSeleccionado === 'EMAIL' ? 'correo' : 'celular';
+
+          this.destinoVerificacion =
+            this.canalSeleccionado === 'EMAIL'
+              ? this.correoActivacion
+              : this.telefonoActivacion;
+
+          this.vistaActual = 'verificar';
+        } else {
+          this.infoOtp = null;
+          this.errorOtp =
+            resp.mensaje || 'Error al enviar el código de verificación';
+        }
       },
-      error: (err) => {
+      error: err => {
         this.cargandoOtp = false;
-        this.errorOtp = err.error?.mensaje ?? err.error?.error ?? 'No se pudo enviar el código de verificación.';
-      }
+        this.infoOtp = null;
+        this.errorOtp =
+          err.error?.mensaje || 'Error de conexión con el servidor';
+
+        console.error('Error al enviar OTP:', err);
+      },
     });
   }
 
-  /** Maneja la verificación exitosa del código */
   onCodigoVerificado(codigo: string): void {
-    if (!this.registroPendiente) return;
-
-    this.authService.activarCuenta(
-      this.registroPendiente.correo,
-      codigo,
-      this.canalSeleccionado === 'EMAIL' ? null : this.registroPendiente.telefono
-    ).subscribe({
-      next: () => {
-        this.vistaActual = 'exito';
-      },
-      error: (err) => {
-        this.errorOtp = err.error?.mensaje ?? err.error?.error ?? 'No se pudo activar la cuenta con el código ingresado.';
-      }
-    });
+    console.log('Cuenta verificada con código:', codigo);
+    this.vistaActual = 'exito';
   }
 }
