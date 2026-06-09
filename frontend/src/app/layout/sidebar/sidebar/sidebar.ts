@@ -10,6 +10,8 @@ import { NAV_ITEMS, BOTTOM_NAV_ITEMS } from '../../../config/navigation.config';
 import { Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { NavigationEnd } from '@angular/router';
+import { SuscripcionService } from '../../../core/services/suscripcion.service';
+
 
 // TODO: reemplazar con MascotaService.getMensajeDiario()
 const MASCOT_MSGS = [
@@ -29,6 +31,38 @@ const MASCOT_MSGS = [
   styleUrl:    './sidebar.scss'
 })
 export class Sidebar implements OnInit {
+
+modalPlanesAbierto = signal(false);
+comprandoPlan = signal(false);
+
+abrirModalPlanes(): void {
+  this.modalPlanesAbierto.set(true);
+}
+
+cerrarModalPlanes(): void {
+  this.modalPlanesAbierto.set(false);
+}
+
+comprarPlan(plan: 'PRO' | 'PREMIUM'): void {
+  if (this.comprandoPlan()) return;
+  this.comprandoPlan.set(true);
+
+  this.suscripcionService.crearSesionCheckout(plan)
+    .subscribe({
+      next: (sesion) => {
+        this.comprandoPlan.set(false);
+        if (sesion && sesion.urlCheckout) {
+          window.location.href = sesion.urlCheckout;
+        } else {
+          console.error('No se recibió la URL de Stripe Checkout');
+        }
+      },
+      error: (err) => {
+        this.comprandoPlan.set(false);
+        console.error('Error al iniciar Checkout de Stripe:', err);
+      }
+    });
+}
 
 
 
@@ -54,6 +88,7 @@ isPerfilSection = false;
 readonly perfilNavItems = [
   { route: '/perfil/cliente',       label: 'Perfil Cliente',    icon: 'fa-solid fa-user' },
   { route: '/perfil/financiero',    label: 'Perfil Financiero', icon: 'fa-solid fa-chart-pie' },
+  { route: '/suscripcion/luka',     label: 'Mi Suscripción',    icon: 'fa-solid fa-crown' },
   { route: '/perfil/configuracion', label: 'Configuración',     icon: 'fa-solid fa-gear' },
   { route: '/perfil/historial',     label: 'Historial',         icon: 'fa-solid fa-clock-rotate-left' },
   { route: '/perfil/transacciones', label: 'Transacciones',     icon: 'fa-solid fa-arrow-right-arrow-left' },
@@ -62,7 +97,8 @@ readonly perfilNavItems = [
   constructor(
     private router: Router,
     public auth:         AuthService,
-    public sidebarState: SidebarStateService
+    public sidebarState: SidebarStateService,
+    private suscripcionService: SuscripcionService
   ) {
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
@@ -84,6 +120,14 @@ readonly perfilNavItems = [
 
   toggle(): void {
     this.sidebarState.toggle();
+  }
+
+  closeMobile(): void {
+    this.sidebarState.closeMobile();
+  }
+
+  onNavClick(): void {
+    this.sidebarState.closeMobile();
   }
 
   toggleMascotMsg(): void {
