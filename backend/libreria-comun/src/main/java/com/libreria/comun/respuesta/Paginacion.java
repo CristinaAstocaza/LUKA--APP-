@@ -22,7 +22,7 @@ import org.springframework.data.domain.Page;
 public record Paginacion<T>(
     List<T> contenido,
     int numeroPagina,
-    int tamaÃ±oPagina,
+    int tamañoPagina,
     long totalElementos,
     int totalPaginas,
     boolean esUltima
