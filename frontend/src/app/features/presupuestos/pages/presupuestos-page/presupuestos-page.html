@@ -1,271 +1,324 @@
-<section class="presupuesto-page">
+<div *ngIf="exitoMensaje()" class="lk-toast show success">
+  {{ exitoMensaje() }}
+</div>
+<div *ngIf="errorMensaje()" class="lk-toast show danger">
+  {{ errorMensaje() }}
+</div>
 
-  <!-- HEADER -->
-  <div class="page-header">
-
-    <div>
-      <h1>🛡️ Presupuestos</h1>
-
-      <p>
-        Define tu presupuesto mensual y controla tus gastos por categoría.
-      </p>
+<div class="lk-confirm-overlay" [ngClass]="{ 'show': mostrarConfirmEliminar() }">
+  <div class="lk-confirm-box">
+    <div class="lk-confirm-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+    <h3 class="lk-confirm-title">¿Desactivar límite activo?</h3>
+    <p class="lk-confirm-sub">El límite pasará a estado inactivo y quedará registrado en el historial. Esta acción no se puede deshacer.</p>
+    <div class="lk-confirm-actions">
+      <button class="btn btn-ghost" (click)="cancelarEliminar()">Cancelar</button>
+      <button class="btn btn-danger" (click)="eliminarPresupuesto()">Sí, desactivar</button>
     </div>
-
   </div>
+</div>
 
-  <!-- KPIS -->
-  <div class="stats-grid">
+<!-- Control invisible para mantener la persistencia funcional del cambio de tema sin renderizar la barra superior -->
+<div style="display: none;">
+  <button (click)="toggleTema()">
+    <i class="fa-solid" [ngClass]="temaOscuro() ? 'fa-sun' : 'fa-moon'"></i>
+  </button>
+</div>
 
-    <div class="stat-card">
+<main class="lk-main">
 
-      <span>💰 Presupuesto Total</span>
-
-      <h2>
-        S/. {{ presupuestoTotal | number:'1.2-2' }}
-      </h2>
-
-      <small>
-        Monto disponible para el mes
-      </small>
-
-    </div>
-
-    <div class="stat-card">
-
-      <span>📊 Asignado</span>
-
-      <h2>
-        S/. {{ totalAsignado | number:'1.2-2' }}
-      </h2>
-
-      <small>
-        Distribuido en categorías
-      </small>
-
-    </div>
-
-    <div class="stat-card">
-
-      <span>💵 Disponible</span>
-
-      <h2>
-        S/. {{ disponible | number:'1.2-2' }}
-      </h2>
-
-      <small>
-        Aún sin asignar
-      </small>
-
-    </div>
-
-  </div>
-
-  <!-- CONTENIDO -->
-  <div class="content-grid">
-
-    <!-- IZQUIERDA -->
-    <div class="left-panel">
-
-      <!-- PRESUPUESTO -->
-      <div class="card">
-
-        <h3>
-          1. Define tu presupuesto total
-        </h3>
-
-        <label>
-          Presupuesto mensual (S/)
-        </label>
-
-        <input
-          type="number"
-          [(ngModel)]="presupuestoTotal">
-
-        <button
-          class="btn-primary"
-          (click)="guardarPresupuesto()">
-
-          💾 Guardar Presupuesto
-
-        </button>
-
+  <section class="lk-page-header">
+    <div class="lk-page-title-row">
+      <div class="lk-page-icon"><i class="fa-solid fa-shield-halved"></i></div>
+      <div>
+        <h1 class="lk-page-title">Límites de presupuesto</h1>
+        <p class="lk-page-sub">Controla cuánto puedes gastar en un período.</p>
       </div>
+    </div>
+  </section>
 
-      <!-- CONSEJOS -->
-      <div class="card">
-
-        <h3>
-          💡 Consejos para tu presupuesto
-        </h3>
-
-        <ul>
-
-          <li>
-            Prioriza alimentación y transporte.
-          </li>
-
-          <li>
-            Reserva dinero para emergencias.
-          </li>
-
-          <li>
-            Evita asignar el 100% de tu presupuesto.
-          </li>
-
-          <li>
-            Revisa tus gastos semanalmente.
-          </li>
-
-        </ul>
-
+  <section class="lk-kpis">
+    <div class="lk-kpi-card">
+      <div class="kpi-icon" [ngClass]="presupuestoActivo() ? 'kpi-icon-' + estadoAlerta() : 'kpi-icon-primary'">
+        <i class="fa-solid fa-chart-pie"></i>
       </div>
-
+      <div class="kpi-body">
+        <div class="kpi-label">% de uso del límite</div>
+        <div class="kpi-value" [ngClass]="presupuestoActivo() ? estadoAlerta() : ''">{{ porcentajeConsumo() }}%</div>
+        <div class="kpi-sub">{{ presupuestoActivo() ? (estadoAlerta() === 'superado' ? 'Excedido' : estadoAlerta() === 'alerta' ? 'Alerta' : 'Normal') : 'Normal' }}</div>
+      </div>
     </div>
 
-    <!-- DERECHA -->
-    <div class="right-panel">
+    <div class="lk-kpi-card">
+      <div class="kpi-icon kpi-icon-success"><i class="fa-solid fa-wallet"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Margen disponible</div>
+        <div class="kpi-value success">{{ formatearMonto(margenDisponible()) }}</div>
+        <div class="kpi-sub">Disponible</div>
+      </div>
+    </div>
 
-      <!-- GRAFICO -->
-      <div class="card progress-card">
+    <div class="lk-kpi-card">
+      <div class="kpi-icon kpi-icon-warning"><i class="fa-solid fa-calendar-days"></i></div>
+      <div class="kpi-body">
+        <div class="kpi-label">Días restantes</div>
+        <div class="kpi-value" [ngClass]="{ 'danger': diasRestantes() !== null && diasRestantes()! <= 7, 'warning': diasRestantes() === null || diasRestantes()! > 7 }">
+          {{ diasRestantes() !== null ? diasRestantes() + ' días' : '—' }}
+        </div>
+        <div class="kpi-sub">Para fin de período</div>
+      </div>
+    </div>
 
-        <div
-          class="circle-progress"
-          [style.background]="
-            'conic-gradient(#22c55e 0% ' +
-            porcentajeConsumido +
-            '%, #e5e7eb ' +
-            porcentajeConsumido +
-            '% 100%)'
-          ">
+    <div class="lk-kpi-card">
+      <div class="kpi-icon" [ngClass]="presupuestoActivo() ? 'kpi-icon-' + estadoAlerta() : 'kpi-icon-success'">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <div class="kpi-body">
+        <div class="kpi-label">Estado de consumo</div>
+        <div class="kpi-value" [ngClass]="presupuestoActivo() ? estadoAlerta() : 'success'">
+          {{ presupuestoActivo() ? (estadoAlerta() === 'superado' ? 'Excedido' : estadoAlerta() === 'alerta' ? 'Alerta' : 'Normal') : 'Normal' }}
+        </div>
+        <div class="kpi-sub">Riesgo {{ presupuestoActivo() ? (estadoAlerta() === 'superado' ? 'Crítico' : estadoAlerta() === 'alerta' ? 'Moderado' : 'Bajo') : 'Bajo' }}</div>
+      </div>
+    </div>
+  </section>
 
-          <div class="circle-inner">
+  <div class="lk-grid">
 
-            <h2>
-              {{ porcentajeConsumido }}%
-            </h2>
+    <aside class="lk-sidebar">
+      <div class="lk-card" [formGroup]="formulario">
 
-            <span>
-              CONSUMIDO
-            </span>
-
+        <div class="lk-status-banner" [ngClass]="presupuestoActivo() ? 'active' : 'inactive'">
+          <div class="status-left">
+            <span class="status-dot" [ngClass]="presupuestoActivo() ? 'green' : 'yellow'"></span>
+            <div class="status-text">
+              <span class="status-label">{{ presupuestoActivo() ? (presupuestoActivo()!.nombre || 'Límite activo') : 'Sin límite activo' }}</span>
+              <span class="status-dates" *ngIf="presupuestoActivo()">
+                {{ presupuestoActivo()!.fechaInicio | date:'dd/MM/yyyy':'UTC' }} — {{ presupuestoActivo()!.fechaFin | date:'dd/MM/yyyy':'UTC' }}
+              </span>
+            </div>
           </div>
-
-        </div>
-
-      </div>
-
-      <!-- CATEGORIAS -->
-      <div class="card">
-
-        <h3>
-          2. Distribuye tu presupuesto por categorías
-        </h3>
-
-        <div class="categoria-form">
-
-          <input
-            type="text"
-            placeholder="Nombre de categoría"
-            [(ngModel)]="nuevaCategoria">
-
-          <input
-            type="number"
-            placeholder="Monto asignado"
-            [(ngModel)]="nuevoMonto">
-
-          <button
-            class="btn-primary"
-            (click)="agregarCategoria()">
-
-            ➕ Agregar
-
+          <button *ngIf="presupuestoActivo()" class="btn btn-deactivate" (click)="pedirConfirmacionEliminar()">
+            <i class="fa-solid fa-power-off"></i> Desactivar
           </button>
+        </div>
 
+        <div class="form-group">
+          <label class="form-label">Nombre del presupuesto *</label>
+          <div class="input-date-wrapper" [ngClass]="{ 'is-invalid': campoInvalido('nombre') }" style="position: relative; width: 100%;">
+            <input type="text" formControlName="nombre" class="lk-input" style="width: 100%; padding-left: 32px; box-sizing: border-box;" placeholder="Ej. Mi Presupuesto Mensual">
+            <i class="fa-solid fa-tag" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem; pointer-events: none;"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label">Monto límite mensual (S/) *</label>
+            <div class="monto-display" [ngClass]="{ 'is-invalid': campoInvalido('montoLimite') }">
+              <span class="monto-currency">S/</span>
+              <input type="number" formControlName="montoLimite" class="monto-input" min="1" placeholder="0.00">
+            </div>
+          </div>
+          <input type="range" formControlName="montoLimite" class="lk-slider" min="0" max="5000" step="50"
+                 [style.--fill]="((formulario.get('montoLimite')?.value ?? 0) / 5000) * 100 + '%'">
+          <div class="slider-bounds">
+            <span>S/ 0</span><span>S/ 5,000</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label">Porcentaje de alerta</label>
+            <span class="badge-alert" [ngClass]="formulario.get('porcentajeAlerta')?.value >= 90 ? 'danger' : formulario.get('porcentajeAlerta')?.value >= 70 ? 'warning' : 'ok'">
+              {{ formulario.get('porcentajeAlerta')?.value ?? 80 }}%
+            </span>
+          </div>
+          <input type="range" formControlName="porcentajeAlerta" class="lk-slider slider-warning" min="50" max="100" step="1"
+                 [style.--fill]="(((formulario.get('porcentajeAlerta')?.value ?? 80) - 50) / 50) * 100 + '%'">
+          <div class="slider-bounds">
+            <span>50%</span><span>100%</span>
+          </div>
+          <div class="alert-hint">
+            <i class="fa-solid fa-bell"></i>
+            <span>Recibirás una alerta al gastar {{ formatearMonto(montoAlertaCalculado()) }} ({{ formulario.get('porcentajeAlerta')?.value ?? 80 }}% de tu límite)</span>
+          </div>
+        </div>
+
+        <div class="form-dates" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; box-sizing: border-box;">
+          <div class="form-group form-group-sm" style="min-width: 0;">
+            <label class="form-label">Fecha de inicio</label>
+            <div class="input-date-wrapper" [ngClass]="{ 'is-invalid': campoInvalido('fechaInicio') }" style="position: relative; width: 100%;">
+              <input type="date" formControlName="fechaInicio" class="lk-input" style="width: 100%; padding-right: 32px; box-sizing: border-box;">
+              <i class="fa-solid fa-calendar input-date-icon" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+            </div>
+          </div>
+          <div class="form-group form-group-sm" style="min-width: 0;">
+            <label class="form-label">Fecha de fin</label>
+            <div class="input-date-wrapper" [ngClass]="{ 'is-invalid': campoInvalido('fechaFin') || formulario.errors?.['fechasInvalidas'] }" style="position: relative; width: 100%;">
+              <input type="date" formControlName="fechaFin" class="lk-input" style="width: 100%; padding-right: 32px; box-sizing: border-box;">
+              <i class="fa-solid fa-calendar input-date-icon" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none;"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-error" *ngIf="formulario.invalid && formulario.touched" style="display: flex; flex-direction: column; gap: 4px;">
+          <span *ngIf="formulario.errors?.['fechasInvalidas']">La fecha fin no puede ser anterior a la de inicio.</span>
+          <span *ngIf="campoInvalido('montoLimite')">El monto límite debe ser mayor a 0.</span>
+          <span *ngIf="campoInvalido('nombre')">El nombre del presupuesto es obligatorio (min. 3 caracteres).</span>
+        </div>
+
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>Solo puedes tener un límite activo a la vez. Al definir uno, se registrarán tus cambios en tiempo real.</span>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-block" (click)="guardarPresupuesto()" [disabled]="cargando()">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>{{ labelBotonGuardar() }}</span>
+          </button>
+          <button class="btn btn-ghost btn-block" (click)="limpiarFormulario()">Limpiar</button>
         </div>
 
       </div>
+    </aside>
 
-      <!-- TABLA -->
-      <div class="card">
+    <div class="lk-content">
 
-        <h3>
-          Desglose por categorías
-        </h3>
+      <div class="lk-card lk-gauge-card">
+        <div class="gauge-left">
+          <div class="gauge-container">
+            <svg class="gauge-svg" viewBox="0 0 120 120">
+              <circle class="gauge-track" cx="60" cy="60" r="50"/>
+              <circle class="gauge-fill" cx="60" cy="60" r="50"
+                      stroke-dasharray="314.16"
+                      [style.stroke-dashoffset]="gaugeOffset()"
+                      [style.stroke]="gaugeColor()"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-pct">{{ porcentajeConsumo() }}%</div>
+              <div class="gauge-label">consumido</div>
+            </div>
+          </div>
+        </div>
+        <div class="gauge-right">
+          <div class="gauge-stat">
+            <div class="gauge-stat-label">Has consumido</div>
+            <div class="gauge-stat-value primary">{{ formatearMonto(gastoTotalMes()) }}</div>
+            <div class="gauge-stat-sub" *ngIf="presupuestoActivo()">de tu límite de {{ formatearMonto(presupuestoActivo()!.montoLimite) }}</div>
+            <div class="gauge-stat-sub" *ngIf="!presupuestoActivo()">No has definido un límite vigente</div>
+          </div>
+          <div class="gauge-divider"></div>
+          <div class="gauge-stat">
+            <div class="gauge-stat-label">Margen disponible</div>
+            <div class="gauge-stat-value success">{{ formatearMonto(margenDisponible()) }}</div>
+            <div class="gauge-stat-badge">
+              <span class="badge" [ngClass]="'badge-' + (presupuestoActivo() ? estadoAlerta() : 'success')">{{ 100 - porcentajeConsumo() }}% restante</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <table>
+      <div class="lk-card lk-premium-card">
+        <div class="premium-header">
+          <span class="premium-badge"><i class="fa-solid fa-crown"></i> Premium</span>
+          <button class="btn btn-primary btn-sm">Desbloquear con Premium</button>
+        </div>
+        <div class="premium-body">
+          <div class="premium-title">Proyección de consumo</div>
+          <div class="premium-sub">Descubre si excederás tu límite antes de que termine el mes.</div>
+          <ul class="premium-features">
+            <li><i class="fa-solid fa-check"></i> Proyección de gasto diario</li>
+            <li><i class="fa-solid fa-check"></i> Fecha estimada de exceder el límite</li>
+            <li><i class="fa-solid fa-check"></i> Recomendaciones personalizadas</li>
+            <li><i class="fa-solid fa-check"></i> Predicción de excedente de gasto</li>
+          </ul>
+          <div class="premium-blur-overlay">
+            <div class="premium-lock">
+              <i class="fa-solid fa-lock"></i>
+              <p>Contenido exclusivo para usuarios Premium</p>
+              <button class="btn btn-primary btn-sm">Ver planes <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          <thead>
+      <div class="lk-bottom-grid">
 
-            <tr>
-
-              <th>Categoría</th>
-
-              <th>Asignado</th>
-
-              <th>Gastado</th>
-
-              <th>Progreso</th>
-
-              <th></th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            <tr
-              *ngFor="let cat of categorias; let i=index">
-
-              <td>
-                {{ cat.nombre }}
-              </td>
-
-              <td>
-                S/. {{ cat.asignado }}
-              </td>
-
-              <td>
-                S/. {{ cat.gastado }}
-              </td>
-
-              <td>
-
-                <div class="progress">
-
-                  <div
-                    class="progress-fill"
-                    [style.width.%]="
-                      calcularPorcentaje(cat)
-                    ">
+        <div class="lk-card">
+          <div class="card-header">
+            <h3 class="card-title">Desglose por categorías</h3>
+          </div>
+          <div class="breakdown-list">
+            <div class="breakdown-item" *ngFor="let cat of categorias">
+              <div class="bd-icon" [style.background]="cat.bg" [style.color]="cat.color">
+                <i class="fa-solid" [ngClass]="cat.icono"></i>
+              </div>
+              <div class="bd-info">
+                <div class="bd-row">
+                  <span class="bd-name">{{ cat.nombre }}</span>
+                  <div class="bd-right">
+                    <span class="bd-pct">{{ cat.porcentaje }}%</span>
+                    <span class="bd-amt">{{ formatearMonto(cat.monto) }}</span>
                   </div>
-
                 </div>
+                <div class="bd-bar">
+                  <div class="bd-fill" [style.width]="cat.porcentaje + '%'" [style.background]="cat.color"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="breakdown-total">
+            <span>Total consumido</span>
+            <span class="breakdown-total-val">{{ formatearMonto(gastoTotalMes()) }}</span>
+          </div>
+        </div>
 
-              </td>
-
-              <td>
-
-                <button
-                  class="btn-delete"
-                  (click)="eliminarCategoria(i)">
-
-                  🗑
-
-                </button>
-
-              </td>
-
-            </tr>
-
-          </tbody>
-
-        </table>
+        <div class="lk-card">
+          <div class="card-header">
+            <h3 class="card-title">Historial de límites</h3>
+            <button class="btn-link" (click)="toggleHistorial()">
+              {{ mostrarTodoHistorial() ? 'Ver menos' : 'Ver historial completo →' }}
+            </button>
+          </div>
+          <div class="hist-table-wrap">
+            <table class="hist-table">
+              <thead>
+                <tr>
+                  <th>Período</th>
+                  <th>Monto límite</th>
+                  <th>Consumido</th>
+                  <th>% uso</th>
+                  <th>Estado límite</th>
+                  <th>Estado consumo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let h of historialVisible()">
+                  <td class="hist-period">{{ h.periodo }}</td>
+                  <td>{{ formatearMonto(h.montoLimite) }}</td>
+                  <td>{{ formatearMonto(h.montoConsumido) }}</td>
+                  <td><strong>{{ pctHistorial(h) }}%</strong></td>
+                  <td>
+                    <span class="badge badge-inactive">Inactivo</span>
+                  </td>
+                  <td>
+                    <span class="badge badge-success" [ngClass]="'badge-' + estadoConsumoHistorial(h)">
+                      {{ estadoConsumoHistorial(h) === 'superado' ? 'Excedido' : estadoConsumoHistorial(h) === 'alerta' ? 'Alerta' : 'Normal' }}
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="historialPresupuestos().length === 0">
+                  <td colspan="6" style="text-align: center; color: var(--lk-text-muted); padding: 2rem;">
+                    No hay registros en el historial.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
       </div>
 
     </div>
-
   </div>
-
-</section>
+</main>

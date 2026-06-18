@@ -7,6 +7,7 @@
 
     <div class="logo-wrap">
 <img src="assets/avatares/figuras/panda.png" alt="Luka" class="logo-img" />    </div>
+
     <div class="brand" *ngIf="sidebarState.expanded()">
       <span class="brand-name">LUKA</span>
       <span class="brand-sub">Finanzas personales</span>
@@ -86,15 +87,15 @@
     <div class="mascot-bubble" *ngIf="showMascotMsg()">
       <p>{{ mascotMsg() }}</p>
     </div>
-  
+
         <div class="mascot-row">
 <img src="assets/avatares/figuras/panda.png" alt="Luka" class="logo-img" />      <span class="mascot-hint" *ngIf="!showMascotMsg()">¡Toca a Luka!</span>
     </div>
 
   </div>
 <article class="sidebar-premium"
-         *ngIf="sidebarState.expanded()"
-         (click)="abrirModalPlanes()">
+         *ngIf="sidebarState.expanded() && !auth.esPremium() && !auth.esPro()"
+         >
 
   <div class="premium-head">
     <i class="fa-solid fa-crown"></i>
@@ -104,11 +105,11 @@
   <p>Mejora tu experiencia con reportes avanzados y alertas inteligentes.</p>
 
   <div class="premium-actions">
-    <button type="button" class="btn-premium">
+    <button type="button" class="btn-premium" (click)="abrirModalPlanes()">
       Ver planes
     </button>
 
-    <button type="button" class="btn-support">
+    <button type="button" class="btn-support" routerLink="/ayuda" (click)="$event.stopPropagation(); onNavClick()">
       Soporte
     </button>
   </div>

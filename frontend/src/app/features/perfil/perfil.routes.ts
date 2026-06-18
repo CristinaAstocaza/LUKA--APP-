@@ -34,6 +34,20 @@ export const PERFIL_ROUTES: Routes = [
             .then(m => m.PerfilFinanciero)
       },
       {
+        path: 'financiero/logros',
+        data: {
+          title: 'Logros financieros',
+          breadcrumbs: [
+            { label: 'Perfil', route: '/perfil' },
+            { label: 'Perfil financiero', route: '/perfil/financiero' },
+            { label: 'Logros financieros' }
+          ]
+        },
+        loadComponent: () =>
+          import('./perfil-financiero/pages/perfil-logros-page/perfil-logros-page')
+            .then(m => m.PerfilLogrosPage)
+      },
+      {
         path: 'configuracion',
         data: {
           title: 'Configuración',
@@ -45,6 +59,34 @@ export const PERFIL_ROUTES: Routes = [
         loadComponent: () =>
           import('./configuracion/configuracion')
             .then(m => m.Configuracion)
+      },
+      {
+        path: 'configuracion/privacidad',
+        data: {
+          title: 'Política de privacidad',
+          breadcrumbs: [
+            { label: 'Perfil', route: '/perfil' },
+            { label: 'Configuración', route: '/perfil/configuracion' },
+            { label: 'Política de privacidad' }
+          ]
+        },
+        loadComponent: () =>
+          import('./configuracion/politica-privacidad')
+            .then(m => m.PoliticaPrivacidad)
+      },
+      {
+        path: 'configuracion/terminos',
+        data: {
+          title: 'Términos y condiciones',
+          breadcrumbs: [
+            { label: 'Perfil', route: '/perfil' },
+            { label: 'Configuración', route: '/perfil/configuracion' },
+            { label: 'Términos y condiciones' }
+          ]
+        },
+        loadComponent: () =>
+          import('./configuracion/terminos-condiciones')
+            .then(m => m.TerminosCondiciones)
       },
       {
         path: 'historial',
