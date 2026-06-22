@@ -24,6 +24,7 @@ export class GastosPage implements OnDestroy {
   private readonly stateService = inject(GastosStateService);
   private readonly iaService = inject(IaService);
 private readonly router = inject(Router);
+  private readonly pendientesStorageKey = 'luka:gastos:pendientes-locales';
   readonly sugerenciasIa = signal<string[]>([]);
   readonly clasificandoIa = signal(false);
   readonly intentosIaRestantes = computed(() => this.iaService.clasificacionesRestantes());
@@ -41,13 +42,13 @@ private readonly router = inject(Router);
   readonly gastoEditandoId = signal<string | null>(null);
   readonly gastoPendienteEliminar = signal<{ id: string; nombre: string } | null>(null);
 readonly cantidadPendientes = computed(
-  () => this.pendientesMock().length
+  () => this.gastosPendientes().length
 );
 
 readonly pendientePorPagar = computed(() => ({
   total: this.totalPendiente(),
   cantidad: this.cantidadPendientes(),
-  variacion: this.variacionPendiente()
+  variacion: this.variacionPendienteMensual()
 }));
   readonly categoria = signal('');
   readonly monto = signal('');
@@ -55,6 +56,7 @@ readonly pendientePorPagar = computed(() => ({
   readonly descripcion = signal('');
   readonly fecha = signal('');
   readonly metodoPago = signal<MetodoPago>('DIGITAL');
+  readonly registrarComoPendiente = signal(false);
   readonly etiquetas = signal<string[]>([]);
   readonly nuevaEtiqueta = signal('');
   readonly filtroTendencia = signal<'7d' | '30d' | '90d'>('30d');
@@ -82,7 +84,7 @@ readonly pendientePorPagar = computed(() => ({
     fechaVencimiento: string;
     monto: number;
     vencePronto: boolean;
-    metodoPago: 'TARJETA' | 'DIGITAL' | 'TRANSFERENCIA';
+    metodoPago: MetodoPago;
     categoriaIcono: string;
   }>>([
     {
@@ -181,14 +183,14 @@ readonly pendientePorPagar = computed(() => ({
   );
 
   readonly totalPendiente = computed(() =>
-    this.pendientesMock().reduce((acc, p) => acc + Number(p.monto || 0), 0)
+    this.gastosPendientes().reduce((acc, p) => acc + Number(p.monto || 0), 0)
   );
 
   readonly totalPagado = computed(() =>
     this.filasPagadas().filter((g) => g.estado === 'Pagado').reduce((acc, g) => acc + g.monto, 0)
   );
 
-  readonly proximoVencimiento = computed(() => this.pendientesMock().find(() => true) ?? null);
+  readonly proximoVencimiento = computed(() => this.gastosPendientes().find(() => true) ?? null);
 
   readonly gastosPorCategoria = computed(() => {
     const grupos = new Map<string, { categoria: string; total: number }>();
@@ -208,14 +210,17 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   readonly tendenciaMensual = computed(() => {
-    const meses = new Map<string, { etiqueta: string; total: number }>();
+    const meses = new Map<string, { etiqueta: string; total: number; fecha: Date }>();
     for (const g of this.filasPagadas()) {
-      const raw = g.fecha === 'Hoy' ? new Date() : new Date(`${g.fecha} ${new Date().getFullYear()}`);
-      const fecha = Number.isNaN(raw.getTime()) ? new Date() : raw;
-      const key = `${fecha.getFullYear()}-${fecha.getMonth()}`;
+      const fecha = this.parseFechaFila(g.fecha);
+      const key = this.monthKey(fecha);
       const etiqueta = fecha.toLocaleDateString('es-PE', { month: 'short' });
       const prev = meses.get(key);
-      meses.set(key, { etiqueta, total: (prev?.total ?? 0) + Number(g.monto || 0) });
+      meses.set(key, {
+        etiqueta,
+        fecha: new Date(fecha.getFullYear(), fecha.getMonth(), 1),
+        total: (prev?.total ?? 0) + Number(g.monto || 0)
+      });
     }
 
     const arr = Array.from(meses.entries())
@@ -224,6 +229,81 @@ readonly pendientePorPagar = computed(() => ({
 
     const max = Math.max(...arr.map((x) => x.total), 1);
     return arr.map((x) => ({ ...x, porcentaje: (x.total / max) * 100 }));
+  });
+
+  readonly tendenciaGastosMensuales = computed(() => {
+    const totales = new Map<string, number>();
+    for (const g of this.filasPagadas()) {
+      const fecha = this.parseFechaFila(g.fecha);
+      const key = this.monthKey(fecha);
+      totales.set(key, (totales.get(key) ?? 0) + Number(g.monto || 0));
+    }
+
+    const hoy = new Date();
+    const salida: Array<{ fecha: Date; etiqueta: string; total: number; porcentaje: number }> = [];
+    for (let i = 5; i >= 0; i--) {
+      const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      salida.push({
+        fecha,
+        etiqueta: fecha.toLocaleDateString('es-PE', { month: 'short' }),
+        total: totales.get(this.monthKey(fecha)) ?? 0,
+        porcentaje: 0
+      });
+    }
+
+    const max = Math.max(...salida.map((item) => item.total), 1);
+    return salida.map((item) => ({
+      ...item,
+      porcentaje: (item.total / max) * 100
+    }));
+  });
+
+  readonly kpiGastosLinePath = computed(() => this.buildSparklinePath(this.tendenciaGastosMensuales()));
+
+  readonly kpiGastosLineFillPath = computed(() => {
+    const line = this.kpiGastosLinePath();
+    return line ? `${line} L114 62 L6 62 Z` : '';
+  });
+
+  readonly tendenciaPendientesMensuales = computed(() => {
+    const totales = new Map<string, number>();
+    for (const pendiente of this.gastosPendientes()) {
+      const fecha = this.parseFechaFila(pendiente.fechaVencimiento);
+      const key = this.monthKey(fecha);
+      totales.set(key, (totales.get(key) ?? 0) + Number(pendiente.monto || 0));
+    }
+
+    const hoy = new Date();
+    const salida: Array<{ fecha: Date; total: number; porcentaje: number }> = [];
+    for (let i = 5; i >= 0; i--) {
+      const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
+      salida.push({
+        fecha,
+        total: totales.get(this.monthKey(fecha)) ?? 0,
+        porcentaje: 0
+      });
+    }
+
+    const max = Math.max(...salida.map((item) => item.total), 1);
+    return salida.map((item) => ({
+      ...item,
+      porcentaje: (item.total / max) * 100
+    }));
+  });
+
+  readonly kpiPendientesBars = computed(() =>
+    this.tendenciaPendientesMensuales().map((item) =>
+      item.total > 0 ? Math.max(12, Math.round(item.porcentaje)) : 0
+    )
+  );
+
+  readonly variacionPendienteMensual = computed(() => {
+    const actual = new Date();
+    const previo = new Date(actual.getFullYear(), actual.getMonth() - 1, 1);
+    const data = this.tendenciaPendientesMensuales();
+    const totalActual = data.find((item) => this.monthKey(item.fecha) === this.monthKey(actual))?.total ?? 0;
+    const totalPrevio = data.find((item) => this.monthKey(item.fecha) === this.monthKey(previo))?.total ?? 0;
+    return this.calcularVariacionMensual(totalActual, totalPrevio);
   });
 
   readonly donutCategorias = computed(() => {
@@ -289,19 +369,18 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   readonly gastoPromedioMensual = computed(() => {
-    const data = this.tendenciaMensual();
-    if (!data.length) return 0;
-    const total = data.reduce((acc, item) => acc + Number(item.total || 0), 0);
-    return total / data.length;
+    const actual = new Date();
+    const keyActual = this.monthKey(actual);
+    return this.tendenciaGastosMensuales().find((item) => this.monthKey(item.fecha) === keyActual)?.total ?? 0;
   });
 
   readonly variacionPromedioMensual = computed(() => {
-    const data = this.tendenciaMensual();
-    if (data.length < 2) return 0;
-    const actual = data[data.length - 1]?.total ?? 0;
-    const previo = data[data.length - 2]?.total ?? 0;
-    if (!previo) return 0;
-    return ((actual - previo) / previo) * 100;
+    const actual = new Date();
+    const previo = new Date(actual.getFullYear(), actual.getMonth() - 1, 1);
+    const data = this.tendenciaGastosMensuales();
+    const totalActual = data.find((item) => this.monthKey(item.fecha) === this.monthKey(actual))?.total ?? 0;
+    const totalPrevio = data.find((item) => this.monthKey(item.fecha) === this.monthKey(previo))?.total ?? 0;
+    return this.calcularVariacion(totalActual, totalPrevio);
   });
 
   readonly gastosPendientes = computed(() => this.pendientesMock());
@@ -412,6 +491,7 @@ readonly pendientePorPagar = computed(() => ({
   private txSub?: { unsubscribe: () => void };
 
   constructor() {
+    this.cargarPendientesLocales();
     this.stateService.cargarDatos();
 
     effect(() => {
@@ -420,6 +500,10 @@ readonly pendientePorPagar = computed(() => ({
       } else {
         this.usarMockVisualPagados.set(true);
       }
+    });
+
+    effect(() => {
+      this.guardarPendientesLocales(this.pendientesMock());
     });
 
     this.txSub = this.eventBus.on('TRANSACTION_MODIFIED').subscribe(() => {
@@ -619,6 +703,35 @@ readonly pendientePorPagar = computed(() => ({
       return;
     }
 
+    if (this.registrarComoPendiente()) {
+      const fechaVencimiento = this.fecha()
+        ? new Date(`${this.fecha()}T00:00:00`)
+        : new Date();
+      this.pendientesMock.update((items) => [
+        {
+          id: `pend-local-${Date.now()}`,
+          nombre: this.nombreGasto().trim(),
+          frecuencia: 'MENSUAL',
+          fechaVencimiento: fechaVencimiento.toLocaleDateString('es-PE', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          }),
+          monto: Number(this.monto()),
+          vencePronto: this.venceEnDias(fechaVencimiento, 3),
+          metodoPago: this.metodoPago(),
+          categoriaIcono: this.iconoCategoria(
+            this.categoriasDisponibles.find((cat) => cat.id === this.categoria())?.nombre ?? 'otros'
+          )
+        },
+        ...items
+      ]);
+      this.guardandoGasto.set(false);
+      this.modalAbierto.set(false);
+      this.resetFormulario();
+      return;
+    }
+
     const usuarioId = this.authService.usuario()?.id;
     if (!usuarioId) {
       this.mensajeFormulario.set('No se encontró sesión activa.');
@@ -763,6 +876,7 @@ readonly pendientePorPagar = computed(() => ({
     this.descripcion.set('');
     this.fecha.set('');
     this.metodoPago.set('DIGITAL');
+    this.registrarComoPendiente.set(false);
     this.etiquetas.set([]);
     this.nuevaEtiqueta.set('');
     this.errores.set({});
@@ -783,10 +897,130 @@ readonly pendientePorPagar = computed(() => ({
 
   private parseFechaFila(fechaTexto: string): Date {
     if (fechaTexto === 'Hoy') return new Date();
-    const normalizada = fechaTexto.toLowerCase().replace('.', '').replace('ene', 'jan').replace('abr', 'apr').replace('ago', 'aug').replace('dic', 'dec');
-    const dt = new Date(normalizada);
+    if (fechaTexto === 'Ayer') {
+      const ayer = new Date();
+      ayer.setDate(ayer.getDate() - 1);
+      return ayer;
+    }
+
+    const meses: Record<string, number> = {
+      ene: 0,
+      enero: 0,
+      feb: 1,
+      febrero: 1,
+      mar: 2,
+      marzo: 2,
+      abr: 3,
+      abril: 3,
+      may: 4,
+      mayo: 4,
+      jun: 5,
+      junio: 5,
+      jul: 6,
+      julio: 6,
+      ago: 7,
+      agosto: 7,
+      sep: 8,
+      sept: 8,
+      septiembre: 8,
+      oct: 9,
+      octubre: 9,
+      nov: 10,
+      noviembre: 10,
+      dic: 11,
+      diciembre: 11
+    };
+    const limpia = fechaTexto.toLowerCase().replace(/\./g, '').replace(/,/g, '').trim();
+    const partes = limpia.split(/\s+/);
+    const dia = Number(partes[0]);
+    const mesTexto = partes[1] ?? '';
+    const mes = meses[mesTexto];
+    const anio = Number(partes[2]) || new Date().getFullYear();
+    if (Number.isFinite(dia) && mes !== undefined) {
+      return new Date(anio, mes, dia);
+    }
+
+    const dt = new Date(fechaTexto);
     if (!Number.isNaN(dt.getTime())) return dt;
     return new Date();
+  }
+
+  private cargarPendientesLocales(): void {
+    const storage = globalThis.localStorage;
+    if (!storage) return;
+
+    try {
+      const raw = storage.getItem(this.pendientesStorageKey);
+      if (!raw) return;
+      const pendientes = JSON.parse(raw);
+      if (Array.isArray(pendientes)) {
+        this.pendientesMock.set(pendientes);
+      }
+    } catch {
+      storage.removeItem(this.pendientesStorageKey);
+    }
+  }
+
+  private guardarPendientesLocales(pendientes: Array<{
+    id: string;
+    nombre: string;
+    frecuencia: 'MENSUAL' | 'SEMANAL' | 'QUINCENAL';
+    fechaVencimiento: string;
+    monto: number;
+    vencePronto: boolean;
+    metodoPago: MetodoPago;
+    categoriaIcono: string;
+  }>): void {
+    const storage = globalThis.localStorage;
+    if (!storage) return;
+
+    try {
+      storage.setItem(this.pendientesStorageKey, JSON.stringify(pendientes));
+    } catch {
+      this.mensajeFormulario.set('No se pudo guardar el pendiente localmente.');
+    }
+  }
+
+  private venceEnDias(fecha: Date, dias: number): boolean {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const limite = new Date(hoy);
+    limite.setDate(hoy.getDate() + dias);
+    const vencimiento = new Date(fecha);
+    vencimiento.setHours(0, 0, 0, 0);
+    return vencimiento >= hoy && vencimiento <= limite;
+  }
+
+  private monthKey(fecha: Date): string {
+    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  private buildSparklinePath(data: Array<{ total: number }>): string {
+    if (!data.length) return '';
+
+    const width = 108;
+    const height = 46;
+    const x0 = 6;
+    const y0 = 8;
+    const max = Math.max(...data.map((item) => item.total), 1);
+    const step = data.length > 1 ? width / (data.length - 1) : width;
+    const points = data.map((item, index) => {
+      const x = x0 + index * step;
+      const y = y0 + height - (item.total / max) * height;
+      return { x, y };
+    });
+
+    if (points.length === 1) {
+      const point = points[0]!;
+      return `M${point.x} ${point.y} L${x0 + width} ${point.y}`;
+    }
+
+    return points.reduce((path, point, index) => {
+      if (index === 0) return `M${point.x} ${point.y}`;
+      const prev = points[index - 1]!;
+      const controlOffset = step * 0.42;
+      return `${path} C${prev.x + controlOffset} ${prev.y} ${point.x - controlOffset} ${point.y} ${point.x} ${point.y}`;
+    }, '');
   }
 
   private fechaIsoDesdeTexto(fechaTexto: string): string {
@@ -811,6 +1045,11 @@ readonly pendientePorPagar = computed(() => ({
 
   private calcularVariacion(actual: number, previo: number): number {
     if (!previo) return 0;
+    return ((actual - previo) / Math.abs(previo)) * 100;
+  }
+
+  private calcularVariacionMensual(actual: number, previo: number): number {
+    if (!previo) return actual > 0 ? 100 : 0;
     return ((actual - previo) / Math.abs(previo)) * 100;
   }
 
