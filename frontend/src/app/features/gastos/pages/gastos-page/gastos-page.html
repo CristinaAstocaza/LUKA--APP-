@@ -7,9 +7,7 @@
       </p>
     </div>
     <div class="gastos-page__hero-actions">
-      <button type="button" class="gastos-page__btn-secondary" routerLink="/gastos/historial">
-        <i class="fa-solid fa-table-list"></i> Ver historial
-      </button>
+ 
       <button type="button" class="gastos-page__btn-main" (click)="abrirModal()">
         <span aria-hidden="true">＋</span>
         Registrar gasto
@@ -17,33 +15,81 @@
     </div>
   </header>
 
-  <section class="gastos-page__kpis">
-    <article class="gastos-page__kpi gastos-page__kpi--salida">
-      <div class="gastos-page__kpi-head">
-        <span class="gastos-page__icon" aria-hidden="true"><i class="fa-solid fa-file-invoice-dollar"></i></span>
+<section class="gastos-page__kpis">
+  <article class="gastos-page__kpi gastos-page__kpi--mensual">
+    <div class="gastos-page__kpi-main">
+      <header class="gastos-page__kpi-header">
+        <span class="gastos-page__icon kpi-red">
+          <i class="fa-solid fa-wallet"></i>
+        </span>
         <p>Gastos mensuales</p>
-      </div>
+        <button type="button" class="gastos-page__kpi-menu" aria-label="Más opciones">
+          <i class="fa-solid fa-ellipsis"></i>
+        </button>
+      </header>
+
       <strong>S/ {{ gastoPromedioMensual().toFixed(2) }}</strong>
-      <small>Promedio mensual</small>
-      <em class="gastos-page__trend is-up">↑ {{ variacionPromedioMensual().toFixed(0) }}% del presupuesto utilizado</em>
-    </article>
+      <small>Mes actual</small>
 
+      <em
+        class="gastos-page__trend"
+        [ngClass]="variacionPromedioMensual() > 0 ? 'is-up' : 'is-good'">
+        <i class="fa-solid" [ngClass]="variacionPromedioMensual() > 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+        {{ variacionPromedioMensual().toFixed(0) }}% vs. mes anterior
+      </em>
+    </div>
 
-    <article class="gastos-page__kpi gastos-page__kpi--pendiente">
-      <div class="gastos-page__kpi-head">
-        <span class="gastos-page__icon" aria-hidden="true"><i class="fa-solid fa-clock"></i></span>
+    <svg class="kpi-line" viewBox="0 0 120 62" aria-hidden="true" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="kpiLineFill" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#fb7185" stop-opacity=".28" />
+          <stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path class="kpi-line__fill" [attr.d]="kpiGastosLineFillPath()" />
+      <path class="kpi-line__stroke" [attr.d]="kpiGastosLinePath()" />
+    </svg>
+  </article>
+
+  <article class="gastos-page__kpi gastos-page__kpi--pendiente">
+    <div class="gastos-page__kpi-main">
+      <header class="gastos-page__kpi-header">
+        <span class="gastos-page__icon kpi-yellow">
+          <i class="fa-regular fa-clock"></i>
+        </span>
         <p>Pendiente por pagar</p>
-      </div>
-      <strong>S/ {{ totalPendiente().toFixed(2) }}</strong>
-      <small>{{ pendientesFiltrados().length }} pendientes</small>
-      <em class="gastos-page__trend is-up">↑ {{ variacionPendiente() }}% vs mes anterior</em>
-    </article>
+        <button type="button" class="gastos-page__kpi-menu" aria-label="Más opciones">
+          <i class="fa-solid fa-ellipsis"></i>
+        </button>
+      </header>
 
-    <article class="gastos-page__kpi gastos-page__kpi--vencimiento">
-      <div class="gastos-page__kpi-head">
-        <span class="gastos-page__icon" aria-hidden="true"><i class="fa-solid fa-calendar-check"></i></span>
+      <strong>S/ {{ pendientePorPagar().total.toFixed(2) }}</strong>
+      <small>{{ pendientePorPagar().cantidad }} pendientes</small>
+
+      <em
+        class="gastos-page__trend"
+        [ngClass]="pendientePorPagar().variacion > 0 ? 'is-warning' : 'is-good'">
+        <i class="fa-solid" [ngClass]="pendientePorPagar().variacion > 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+        {{ pendientePorPagar().variacion.toFixed(0) }}% vs. mes anterior
+      </em>
+    </div>
+
+    <div class="kpi-bars" aria-hidden="true">
+      @for (bar of kpiPendientesBars(); track $index) {
+        <span [style.height.%]="bar"></span>
+      }
+    </div>
+  </article>
+
+  <article class="gastos-page__kpi gastos-page__kpi--vencimiento">
+    <div class="gastos-page__kpi-main">
+      <header class="gastos-page__kpi-header">
+        <span class="gastos-page__icon kpi-blue">
+          <i class="fa-regular fa-calendar-check"></i>
+        </span>
         <p>Próximo vencimiento</p>
-      </div>
+      </header>
+
       <strong>
         @if (proximoVencimiento(); as proximo) {
           {{ proximo.nombre }}
@@ -51,15 +97,36 @@
           Sin pagos
         }
       </strong>
+
       <small>
         @if (proximoVencimiento(); as proximo) {
-          {{ proximo.fechaVencimiento }} · S/ {{ proximo.monto.toFixed(2) }}
+          {{ proximo.fechaVencimiento }} &middot; S/ {{ proximo.monto.toFixed(2) }}
         } @else {
-          No hay vencimientos registrados
+          No hay vencimientos
         }
       </small>
-    </article>
-  </section>
+
+      <span class="kpi-badge">
+        <i class="fa-solid fa-circle"></i>
+        En 3 dÃ­as
+      </span>
+    </div>
+
+    <div class="kpi-calendar" aria-hidden="true">
+      <strong>Junio</strong>
+      <div class="kpi-calendar__week">
+        <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
+      </div>
+      <div class="kpi-calendar__days">
+        <span></span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
+        <span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span>
+        <span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span class="is-active">20</span><span>21</span>
+        <span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span>
+        <span>29</span><span>30</span>
+      </div>
+    </div>
+  </article>
+</section>
 
   <div class="gastos-page__integration-note" role="note">
     {{ bannerIntegracion() }}
@@ -119,24 +186,89 @@
     </section>
 
     <section class="gastos-page__panel gastos-page__panel--right gastos-page__panel--summary-note">
-      <header class="gastos-page__panel-header">
-        <div>
-          <h3>Historial organizado</h3>
-          <p>Revisa tus gastos con una vista más cómoda y enfocada para encontrar cada movimiento rápidamente.</p>
-        </div>
-        <span class="gastos-page__chip is-success">Vista ampliada</span>
-      </header>
+    <header class="gastos-page__panel-header">
+</header>
 
-      <img src="assets/avatares/figuras/oso_lentes.png" alt="Oso LUKA revisando historial" class="gastos-page__history-bear" />
+<div class="card">
+
+  <div class="header">
+    <div>
+      <h2>Historial organizado</h2>
+      <p>Revisa tus gastos con una vista más cómoda y enfocada para encontrar cada movimiento rápidamente.</p>
+      
+    </div>
+
+
+
+
+  <input 
+    type="date" 
+    class="filter"
+    [value]="fechaSeleccionada()"
+    (input)="fechaSeleccionada.set($any($event.target).value)" />
+
+  </div>
+
+  <!-- KPIs -->
+  <div class="stats">
+    <div class="stat">
+      <p class="label">Total gastado</p>
+      <h3>S/ 1,245.60</h3>
+      <span class="positive">↓ 8% vs. mes anterior</span>
+    </div>
+
+    <div class="stat">
+      <p class="label">Transacciones</p>
+      <h3>24</h3>
+      <span class="positive">↑ 4 vs. mes anterior</span>
+    </div>
+
+    <div class="stat">
+      <p class="label">Promedio por día</p>
+      <h3>S/ 41.52</h3>
+      <span class="positive">↓ 5% vs. mes anterior</span>
+    </div>
+  </div>
+
+  <!-- Categorías -->
+  <div class="categories">
+    <div class="cat-header">
+      <h4>Categorías principales</h4>
+    
+    </div>
+
+  <div class="category" *ngFor="let cat of categoriasUIFiltradas()">
+
+  <div class="left">
+    <div class="icon">{{cat.icon}}</div>
+    <span>{{cat.name}}</span>
+  </div> 
+
+  <div class="bar-container">
+    <div
+      class="bar"
+      [style.width.%]="cat.percent"
+      [style.background]="cat.color">
+    </div>
+  </div>
+
+  <div class="right">
+    <span>{{cat.percent}}%</span>
+    <span>{{cat.amount}}</span>
+  </div>
+
+</div>
+    </div>
+  </div>
 
       <div class="gastos-page__history-cta">
-        <i class="fa-solid fa-table-list"></i>
-        <div>
-          <strong>Ver todos mis gastos</strong>
-          <p>Entra al historial para revisar, buscar y administrar tus gastos con más espacio.</p>
-        </div>
-        <button type="button" class="gastos-page__btn-main" routerLink="/gastos/historial">Abrir historial</button>
+      
+      <button type="button" class="btn-historial" routerLink="/gastos/historial">
+  <i class="fa-solid fa-folder-open"></i>
+  Abrir historial completo
+</button>
       </div>
+      
     </section>
   </section>
 
@@ -323,6 +455,17 @@
                 <option [value]="metodo.id">{{ metodo.nombre }}</option>
               }
             </select>
+          </label>
+
+          <label class="gastos-page__pending-toggle">
+            <input
+              type="checkbox"
+              [checked]="registrarComoPendiente()"
+              (change)="registrarComoPendiente.set($any($event.target).checked)" />
+            <span>
+              <i class="fa-regular fa-clock"></i>
+              Registrar como pendiente por pagar
+            </span>
           </label>
 
           <div class="gastos-page__form-col-full gastos-page__tags-section">
