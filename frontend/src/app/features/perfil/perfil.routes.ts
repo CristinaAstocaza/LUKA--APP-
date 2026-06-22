@@ -88,7 +88,7 @@ export const PERFIL_ROUTES: Routes = [
           import('./configuracion/terminos-condiciones')
             .then(m => m.TerminosCondiciones)
       },
-      {
+    {
         path: 'historial',
         data: {
           title: 'Historial',
@@ -99,7 +99,7 @@ export const PERFIL_ROUTES: Routes = [
         },
         loadComponent: () =>
           import('./historial/historial')
-            .then(m => m.Historial)
+            .then(m => m.HistorialComponent) 
       },
       {
         path: 'transacciones',
