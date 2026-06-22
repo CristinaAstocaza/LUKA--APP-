@@ -2,20 +2,19 @@ import { Component, computed, inject, signal, effect, OnDestroy } from '@angular
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Transacciones } from '../../../../core/services/transacciones';
-import { MetodoPago, TransaccionDTO, TransaccionRequestDTO } from '../../../../core/models/financiero/transaccion.model';
+import { MetodoPago, TransaccionRequestDTO } from '../../../../core/models/financiero/transaccion.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FinancieroService } from '../../../../core/services/Financiero.service';
-import { forkJoin } from 'rxjs';
 import { AppEventBus } from '../../../../core/services/app-event-bus.service';
 import { GastosStateService } from '../../../../core/services/gastos-state.service';
 import { IaService } from '../../../../core/services/ia.service';
-
+import { Router } from '@angular/router';
 @Component({
   selector: 'app-gastos-page',
-  standalone:true,
+  standalone: true,
   imports: [CommonModule, RouterLink],
   templateUrl: './gastos-page.html',
-  styleUrl: './gastos-page.scss',
+  styleUrl: './gastos-page.scss'
 })
 export class GastosPage implements OnDestroy {
   private readonly transaccionesService = inject(Transacciones);
@@ -24,7 +23,7 @@ export class GastosPage implements OnDestroy {
   private readonly eventBus = inject(AppEventBus);
   private readonly stateService = inject(GastosStateService);
   private readonly iaService = inject(IaService);
-
+private readonly router = inject(Router);
   readonly sugerenciasIa = signal<string[]>([]);
   readonly clasificandoIa = signal(false);
   readonly intentosIaRestantes = computed(() => this.iaService.clasificacionesRestantes());
@@ -41,7 +40,15 @@ export class GastosPage implements OnDestroy {
   readonly mensajeFormulario = signal('');
   readonly gastoEditandoId = signal<string | null>(null);
   readonly gastoPendienteEliminar = signal<{ id: string; nombre: string } | null>(null);
+readonly cantidadPendientes = computed(
+  () => this.pendientesMock().length
+);
 
+readonly pendientePorPagar = computed(() => ({
+  total: this.totalPendiente(),
+  cantidad: this.cantidadPendientes(),
+  variacion: this.variacionPendiente()
+}));
   readonly categoria = signal('');
   readonly monto = signal('');
   readonly nombreGasto = signal('');
@@ -51,6 +58,8 @@ export class GastosPage implements OnDestroy {
   readonly etiquetas = signal<string[]>([]);
   readonly nuevaEtiqueta = signal('');
   readonly filtroTendencia = signal<'7d' | '30d' | '90d'>('30d');
+  readonly mesSeleccionado = signal<string>('Todos');
+  readonly fechaSeleccionada = signal<string>('');
   readonly errores = signal<Record<string, string>>({});
   readonly eliminadosIds = signal<string[]>([]);
 
@@ -65,8 +74,6 @@ export class GastosPage implements OnDestroy {
   readonly bannerIntegracion = signal(
     'Integración en curso: historial de gastos (OK). Pendientes/Recurrentes dependen de Suscripciones (falta implementar backend).'
   );
-  // TODO(backend): Implementar endpoint de Suscripciones para poblar Pendientes/Recurrentes.
-  // TODO(backend): Implementar estado de pago de suscripción para habilitar “Marcar pagado”.
 
   readonly pendientesMock = signal<Array<{
     id: string;
@@ -77,7 +84,28 @@ export class GastosPage implements OnDestroy {
     vencePronto: boolean;
     metodoPago: 'TARJETA' | 'DIGITAL' | 'TRANSFERENCIA';
     categoriaIcono: string;
-  }>>([]);
+  }>>([
+    {
+      id: 'pend-1',
+      nombre: 'Internet',
+      frecuencia: 'MENSUAL',
+      fechaVencimiento: '15/07/2025',
+      monto: 79.9,
+      vencePronto: true,
+      metodoPago: 'DIGITAL',
+      categoriaIcono: 'wifi'
+    },
+    {
+      id: 'pend-2',
+      nombre: 'Streaming',
+      frecuencia: 'MENSUAL',
+      fechaVencimiento: '20/07/2025',
+      monto: 24,
+      vencePronto: false,
+      metodoPago: 'TARJETA',
+      categoriaIcono: 'film'
+    }
+  ]);
 
   readonly pagadosMock = signal<Array<{
     id: string;
@@ -91,7 +119,34 @@ export class GastosPage implements OnDestroy {
     estado: 'Pagado' | 'Pendiente';
     icono: string;
     colorCategoria: 'comida' | 'hogar' | 'transporte' | 'servicios' | 'entretenimiento' | 'salud';
-  }>>([]);
+  }>>([
+    {
+      id: 'mock-1',
+      nombre: 'Almuerzo',
+      detalle: 'Comida corporativa',
+      categoria: 'Alimentos',
+      fecha: 'Hoy',
+      hora: '13:00',
+      monto: 24.5,
+      metodo: 'DIGITAL',
+      estado: 'Pagado',
+      icono: 'utensils',
+      colorCategoria: 'comida'
+    },
+    {
+      id: 'mock-2',
+      nombre: 'Gasolina',
+      detalle: 'Recarga semanal',
+      categoria: 'Transporte',
+      fecha: 'Ayer',
+      hora: '08:30',
+      monto: 18,
+      metodo: 'TARJETA',
+      estado: 'Pagado',
+      icono: 'bus',
+      colorCategoria: 'transporte'
+    }
+  ]);
 
   readonly usarMockVisualPagados = signal(true);
 
@@ -103,7 +158,7 @@ export class GastosPage implements OnDestroy {
           { id: 'transporte', nombre: 'Transporte' },
           { id: 'servicios', nombre: 'Servicios' },
           { id: 'hogar', nombre: 'Hogar' },
-          { id: 'otros', nombre: 'Otros' },
+          { id: 'otros', nombre: 'Otros' }
         ];
   }
 
@@ -128,9 +183,11 @@ export class GastosPage implements OnDestroy {
   readonly totalPendiente = computed(() =>
     this.pendientesMock().reduce((acc, p) => acc + Number(p.monto || 0), 0)
   );
+
   readonly totalPagado = computed(() =>
     this.filasPagadas().filter((g) => g.estado === 'Pagado').reduce((acc, g) => acc + g.monto, 0)
   );
+
   readonly proximoVencimiento = computed(() => this.pendientesMock().find(() => true) ?? null);
 
   readonly gastosPorCategoria = computed(() => {
@@ -189,27 +246,6 @@ export class GastosPage implements OnDestroy {
     this.gastosPorCategoria().reduce((acc, item) => acc + Number(item.total || 0), 0)
   );
 
-  readonly tendenciaLineal = computed(() => {
-    const data = this.tendenciaMensualFiltrada();
-    if (!data.length) {
-      return { puntos: '', etiquetas: [] as string[] };
-    }
-    const max = Math.max(...data.map((d) => d.total), 1);
-    const n = data.length;
-    const puntos = data
-      .map((item, idx) => {
-        const x = n === 1 ? 10 : 10 + (idx * 80) / (n - 1);
-        const y = 90 - ((item.total / max) * 80);
-        return `${x},${y}`;
-      })
-      .join(' ');
-
-    return {
-      puntos,
-      etiquetas: data.map((d) => d.etiqueta),
-    };
-  });
-
   readonly tendenciaMensualFiltrada = computed(() => {
     const dias = this.filtroTendencia() === '7d' ? 7 : this.filtroTendencia() === '30d' ? 30 : 90;
     const hoy = new Date();
@@ -236,20 +272,7 @@ export class GastosPage implements OnDestroy {
       });
       cursor.setDate(cursor.getDate() + step);
     }
-
     return salida;
-  });
-
-  readonly puntosTendencia = computed(() => {
-    const data = this.tendenciaMensualFiltrada();
-    if (!data.length) return [] as Array<{ x: number; y: number; etiqueta: string }>;
-    const max = Math.max(...data.map((d) => d.total), 1);
-    const n = data.length;
-    return data.map((d, idx) => {
-      const x = n === 1 ? 50 : 10 + (idx * 80) / (n - 1);
-      const y = 82 - ((d.total / max) * 54);
-      return { x, y, etiqueta: d.etiqueta };
-    });
   });
 
   readonly topDiasGasto = computed(() => {
@@ -288,43 +311,85 @@ export class GastosPage implements OnDestroy {
     const eliminados = new Set(this.eliminadosIds());
     const base = this.usarMockVisualPagados()
       ? this.pagadosMock()
-      : (() => {
-          const data = this.gastosPagados();
-          if (!data.length) {
-            return [];
-          }
-
-          return data.map((g) => {
-            const fecha = new Date(g.fechaTransaccion);
-            const categoria = g.categoria || 'Otros';
-            const { nombre, detalle } = this.parseNotas(g.notas, categoria);
-
-            return {
-              id: g.id,
-              nombre,
-              detalle,
-              categoria,
-              categoriaId: g.categoriaId,
-              fecha: fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
-              hora: fecha.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }),
-              monto: Number(g.monto || 0),
-              metodo: g.metodoPago || 'DIGITAL',
-              estado: 'Pagado' as const,
-              icono: g.categoriaIcono || this.iconoCategoria(categoria),
-              colorCategoria: this.colorCategoria(categoria),
-            };
-          });
-        })();
+      : this.gastosPagados().map((g) => {
+          const fecha = new Date(g.fechaTransaccion);
+          const categoria = g.categoria || 'Otros';
+          const { nombre, detalle } = this.parseNotas(g.notas, categoria);
+          return {
+            id: g.id,
+            nombre,
+            detalle,
+            categoria,
+            categoriaId: g.categoriaId,
+            fecha: fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+            hora: fecha.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }),
+            monto: Number(g.monto || 0),
+            metodo: g.metodoPago || 'DIGITAL',
+            estado: 'Pagado' as const,
+            icono: g.categoriaIcono || this.iconoCategoria(categoria),
+            colorCategoria: this.colorCategoria(categoria),
+          };
+        });
 
     return base.filter((g) => !eliminados.has(g.id));
+  });
+
+  readonly meses = computed(() => {
+    const mesesSet = new Set<string>();
+    for (const gasto of this.filasPagadas()) {
+      const fecha = this.parseFechaFila(gasto.fecha);
+      const mes = fecha.toLocaleDateString('es-PE', {
+        year: 'numeric',
+        month: 'long'
+      });
+      mesesSet.add(mes);
+    }
+    return Array.from(mesesSet);
+  });
+
+ readonly gastosFiltradosPorFecha = computed(() => {
+  // Si no hay fecha seleccionada → mostrar todo
+  if (!this.fechaSeleccionada()) {
+    return this.filasPagadas();
+  }
+
+  const seleccionada = new Date(this.fechaSeleccionada());
+
+  return this.filasPagadas().filter((g) => {
+    const fecha = this.parseFechaFila(g.fecha);
+
+    return (
+      fecha.getFullYear() === seleccionada.getFullYear() &&
+      fecha.getMonth() === seleccionada.getMonth() &&
+      fecha.getDate() === seleccionada.getDate()
+    );
+  });
+});
+  readonly categoriasUI = computed(() => {
+    return this.gastosPorCategoria().map((cat) => ({
+      name: cat.categoria,
+      percent: Math.round(cat.porcentaje),
+      amount: `S/ ${cat.total.toFixed(2)}`,
+      color: this.getColor(cat.categoria),
+      icon: this.getIcon(cat.categoria)
+    }));
+  });
+
+  readonly categoriasUIFiltradas = computed(() => {
+    return this.categoriasUI().map((cat) => ({
+      ...cat,
+      percent: Math.max(0, Math.min(cat.percent, 100))
+    }));
   });
 
   readonly gastosFiltradosPagados = computed(() => {
     const q = this.terminoBusqueda().trim().toLowerCase();
     const tab = this.tabActiva();
     return this.filasPagadas().filter((gasto) => {
-      const coincideBusqueda = !q || gasto.nombre.toLowerCase().includes(q) || gasto.categoria.toLowerCase().includes(q) || gasto.metodo.toLowerCase().includes(q);
-
+      const coincideBusqueda = !q ||
+        gasto.nombre.toLowerCase().includes(q) ||
+        gasto.categoria.toLowerCase().includes(q) ||
+        gasto.metodo.toLowerCase().includes(q);
       const coincideTab = tab === 'todos' || tab === 'pagados';
       return coincideBusqueda && coincideTab;
     });
@@ -344,10 +409,11 @@ export class GastosPage implements OnDestroy {
     });
   });
 
-  private txSub?: any;
+  private txSub?: { unsubscribe: () => void };
 
   constructor() {
     this.stateService.cargarDatos();
+
     effect(() => {
       if (this.stateService.gastos().length > 0) {
         this.usarMockVisualPagados.set(false);
@@ -362,9 +428,9 @@ export class GastosPage implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    if (this.txSub) {
-      this.txSub.unsubscribe();
-    }
+   this.txSub?.unsubscribe();
+ 
+
   }
 
   seleccionarTab(tab: 'todos' | 'pagados' | 'pendientes' | 'recurrentes'): void {
@@ -417,7 +483,6 @@ export class GastosPage implements OnDestroy {
     this.fecha.set(this.fechaIsoDesdeTexto(gasto.fecha));
     this.metodoPago.set(this.normalizarMetodoPago(gasto.metodo));
 
-    // Encontrar ID de categoría a partir de filas o por nombre como fallback
     let catId = (gasto as any).categoriaId || '';
     if (!catId) {
       const match = this.categoriasDisponibles.find(
@@ -426,7 +491,6 @@ export class GastosPage implements OnDestroy {
       catId = match ? match.id : '';
     }
     this.categoria.set(catId);
-
     this.modalAbierto.set(true);
   }
 
@@ -454,7 +518,7 @@ export class GastosPage implements OnDestroy {
         this.stateService.invalidarCache();
         this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
       },
-      error: () => this.mensajeFormulario.set('No se pudo eliminar el gasto.'),
+      error: () => this.mensajeFormulario.set('No se pudo eliminar el gasto.')
     });
   }
 
@@ -474,6 +538,8 @@ export class GastosPage implements OnDestroy {
     if (Object.keys(errores).length > 0) {
       return;
     }
+
+    this.guardandoGasto.set(true);
 
     const getLocalIsoString = (dateString: string): string => {
       let localDate = new Date();
@@ -513,16 +579,16 @@ export class GastosPage implements OnDestroy {
         this.usarMockVisualPagados.set(true);
         this.modalAbierto.set(false);
         this.resetFormulario();
+        this.guardandoGasto.set(false);
         return;
       }
 
       const usuarioIdEdit = this.authService.usuario()?.id;
       if (!usuarioIdEdit) {
         this.mensajeFormulario.set('No se encontró sesión activa.');
+        this.guardandoGasto.set(false);
         return;
       }
-
-
 
       const requestEdit: TransaccionRequestDTO = {
         usuarioId: usuarioIdEdit,
@@ -556,6 +622,7 @@ export class GastosPage implements OnDestroy {
     const usuarioId = this.authService.usuario()?.id;
     if (!usuarioId) {
       this.mensajeFormulario.set('No se encontró sesión activa.');
+      this.guardandoGasto.set(false);
       return;
     }
 
@@ -612,7 +679,7 @@ export class GastosPage implements OnDestroy {
       },
       error: () => {
         this.clasificandoIa.set(false);
-        const matched = ['Alimentos', 'Transporte', 'Servicios', 'Hogar', 'Salud', 'Educación', 'Entretenimiento'].filter(c =>
+        const matched = ['Alimentos', 'Transporte', 'Servicios', 'Hogar', 'Salud', 'Educación', 'Entretenimiento'].filter((c) =>
           c.toLowerCase().includes(d.toLowerCase())
         );
         this.sugerenciasIa.set(matched.length > 0 ? matched : ['Otros Gastos']);
@@ -625,13 +692,13 @@ export class GastosPage implements OnDestroy {
     if (!raw) return;
     const tag = raw.split(' ')[0];
     if (!this.etiquetas().includes(tag)) {
-      this.etiquetas.update(tags => [...tags, tag]);
+      this.etiquetas.update((tags) => [...tags, tag]);
     }
     this.nuevaEtiqueta.set('');
   }
 
   eliminarEtiqueta(tag: string): void {
-    this.etiquetas.update(tags => tags.filter(t => t !== tag));
+    this.etiquetas.update((tags) => tags.filter((t) => t !== tag));
   }
 
   confirmarCrearCategoriaGasto(nombre: string): void {
@@ -639,7 +706,7 @@ export class GastosPage implements OnDestroy {
     if (!nameTrim) return;
 
     const match = this.categoriasDisponibles.find(
-      c => c.nombre.toLowerCase() === nameTrim.toLowerCase()
+      (c) => c.nombre.toLowerCase() === nameTrim.toLowerCase()
     );
     if (match) {
       this.categoria.set(match.id);
@@ -653,7 +720,7 @@ export class GastosPage implements OnDestroy {
       tipo: 'GASTO'
     }).subscribe({
       next: (cat) => {
-        this.stateService.categorias.update(cats => [...cats, cat]);
+        this.stateService.categorias.update((cats) => [...cats, cat]);
         this.categoria.set(cat.id);
       },
       error: (err) => {
@@ -716,13 +783,7 @@ export class GastosPage implements OnDestroy {
 
   private parseFechaFila(fechaTexto: string): Date {
     if (fechaTexto === 'Hoy') return new Date();
-    const normalizada = fechaTexto
-      .toLowerCase()
-      .replace('.', '')
-      .replace('ene', 'jan')
-      .replace('abr', 'apr')
-      .replace('ago', 'aug')
-      .replace('dic', 'dec');
+    const normalizada = fechaTexto.toLowerCase().replace('.', '').replace('ene', 'jan').replace('abr', 'apr').replace('ago', 'aug').replace('dic', 'dec');
     const dt = new Date(normalizada);
     if (!Number.isNaN(dt.getTime())) return dt;
     return new Date();
@@ -774,4 +835,21 @@ export class GastosPage implements OnDestroy {
     return 'salud';
   }
 
+  private getColor(cat: string): string {
+    const key = cat.toLowerCase();
+    if (key.includes('comida')) return '#10b981';
+    if (key.includes('hogar')) return '#2563eb';
+    if (key.includes('transporte')) return '#8b5cf6';
+    if (key.includes('entreten')) return '#f97316';
+    return '#9ca3af';
+  }
+
+  private getIcon(cat: string): string {
+    const key = cat.toLowerCase();
+    if (key.includes('comida')) return '🍔';
+    if (key.includes('hogar')) return '🏠';
+    if (key.includes('transporte')) return '🚗';
+    if (key.includes('entreten')) return '🎮';
+    return '⋯';
+  }
 }
