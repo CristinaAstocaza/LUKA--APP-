@@ -64,6 +64,7 @@ readonly pendientePorPagar = computed(() => ({
   readonly fechaSeleccionada = signal<string>('');
   readonly errores = signal<Record<string, string>>({});
   readonly eliminadosIds = signal<string[]>([]);
+  readonly nowTick = signal(Date.now());
 
   readonly saldoActual = computed(() => Number(this.stateService.resumenActual()?.balance ?? 0));
   readonly totalGastadoActual = computed(() => Number(this.stateService.resumenActual()?.totalGastos ?? 0));
@@ -180,15 +181,91 @@ readonly pendientePorPagar = computed(() => ({
     this.filasPagadas().reduce((acc, gasto) => acc + Number(gasto.monto || 0), 0)
   );
 
+  readonly pendientesYRecurrentes = computed(() =>
+    this.gastosPendientes()
+      .slice()
+      .sort((a, b) => this.parseFechaVencimiento(a.fechaVencimiento).getTime() - this.parseFechaVencimiento(b.fechaVencimiento).getTime())
+  );
+
   readonly totalPendiente = computed(() =>
-    this.gastosPendientes().reduce((acc, p) => acc + Number(p.monto || 0), 0)
+    this.pendientesYRecurrentes().reduce((acc, p) => acc + Number(p.monto || 0), 0)
   );
 
   readonly totalPagado = computed(() =>
     this.filasPagadas().filter((g) => g.estado === 'Pagado').reduce((acc, g) => acc + g.monto, 0)
   );
 
-  readonly proximoVencimiento = computed(() => this.gastosPendientes().find(() => true) ?? null);
+  readonly pendientesOrdenadosPorVencimiento = computed(() => {
+    const hoy = this.inicioDia(new Date(this.nowTick()));
+    return this.gastosPendientes()
+      .map((p) => {
+        const fechaDate = this.parseFechaVencimiento(p.fechaVencimiento);
+        return {
+          ...p,
+          fechaDate,
+          diasRestantes: this.calcularDiasRestantes(fechaDate, hoy),
+        };
+      })
+      .sort((a, b) => {
+        const aVencido = a.diasRestantes < 0;
+        const bVencido = b.diasRestantes < 0;
+        if (aVencido !== bVencido) return aVencido ? 1 : -1;
+        return a.fechaDate.getTime() - b.fechaDate.getTime();
+      });
+  });
+
+  readonly proximosVencimientos = computed(() => this.pendientesOrdenadosPorVencimiento().slice(0, 3));
+  readonly proximoVencimiento = computed(() => this.proximosVencimientos()[0] ?? null);
+  readonly textoProximoVencimiento = computed(() => {
+    const proximo = this.proximoVencimiento();
+    return proximo ? this.formatoDias(proximo.diasRestantes) : 'Sin vencimientos';
+  });
+  readonly calendarioMesReferencia = computed(() => {
+    const base = this.proximoVencimiento()?.fechaDate ?? new Date(this.nowTick());
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+  readonly calendarioTitulo = computed(() =>
+    this.calendarioMesReferencia().toLocaleDateString('es-PE', {
+      month: 'long',
+      year: 'numeric',
+    })
+  );
+  readonly calendarioDias = computed(() => {
+    const mesRef = this.calendarioMesReferencia();
+    const primerDiaMes = new Date(mesRef.getFullYear(), mesRef.getMonth(), 1);
+    const offsetLunes = (primerDiaMes.getDay() + 6) % 7;
+    const diasMes = new Date(mesRef.getFullYear(), mesRef.getMonth() + 1, 0).getDate();
+    const hoy = this.inicioDia(new Date(this.nowTick()));
+    const activo = this.proximoVencimiento();
+
+    const diasConVencimiento = new Set<number>();
+    for (const pendiente of this.pendientesOrdenadosPorVencimiento()) {
+      const fecha = pendiente.fechaDate;
+      if (fecha.getFullYear() === mesRef.getFullYear() && fecha.getMonth() === mesRef.getMonth()) {
+        diasConVencimiento.add(fecha.getDate());
+      }
+    }
+
+    const items: Array<{ day: number; isToday: boolean; isDue: boolean; isActive: boolean } | null> = [];
+    for (let i = 0; i < offsetLunes; i++) items.push(null);
+
+    for (let dia = 1; dia <= diasMes; dia++) {
+      const fecha = new Date(mesRef.getFullYear(), mesRef.getMonth(), dia);
+      const isActive =
+        !!activo &&
+        activo.fechaDate.getFullYear() === fecha.getFullYear() &&
+        activo.fechaDate.getMonth() === fecha.getMonth() &&
+        activo.fechaDate.getDate() === fecha.getDate();
+
+      items.push({
+        day: dia,
+        isToday: this.inicioDia(fecha).getTime() === hoy.getTime(),
+        isDue: diasConVencimiento.has(dia),
+        isActive,
+      });
+    }
+    return items;
+  });
 
   readonly gastosPorCategoria = computed(() => {
     const grupos = new Map<string, { categoria: string; total: number }>();
@@ -305,13 +382,12 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   readonly donutCategorias = computed(() => {
-    const colores = ['#f59e0b', '#10b981', '#6366f1', '#ec4899', '#94a3b8', '#14b8a6'];
     let offset = 100;
-    return this.gastosPorCategoria().map((item, idx) => {
+    return this.gastosPorCategoria().map((item) => {
       const porcentaje = Math.max(0, Math.min(100, Number(item.porcentaje || 0)));
       const segmento = {
         ...item,
-        color: colores[idx % colores.length],
+        color: this.getColor(item.categoria),
         dasharray: `${porcentaje} ${Math.max(0, 100 - porcentaje)}`,
         dashoffset: offset,
       };
@@ -354,16 +430,50 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   readonly topDiasGasto = computed(() => {
-    const data = this.tendenciaMensualFiltrada()
-      .filter((d) => d.total > 0)
-      .sort((a, b) => b.total - a.total)
+    const dias = this.filtroTendencia() === '7d' ? 7 : this.filtroTendencia() === '30d' ? 30 : 90;
+    const hoy = new Date();
+    hoy.setHours(23, 59, 59, 999);
+    const desde = new Date(hoy);
+    desde.setDate(hoy.getDate() - (dias - 1));
+    desde.setHours(0, 0, 0, 0);
+
+    const gastosFiltrados = this.filasPagadas()
+      .map((gasto) => ({ ...gasto, fechaReal: this.parseFechaFila(gasto.fecha) }))
+      .filter((gasto) => gasto.fechaReal >= desde && gasto.fechaReal <= hoy);
+
+    const data = gastosFiltrados
+      .sort((a, b) => Number(b.monto || 0) - Number(a.monto || 0))
       .slice(0, 5);
 
-    const max = Math.max(...data.map((d) => d.total), 1);
-    return data.map((d) => ({
-      ...d,
-      porcentaje: (d.total / max) * 100,
-    }));
+    const max = Math.max(...data.map((d) => Number(d.monto || 0)), 1);
+    const promedio = gastosFiltrados.length
+      ? gastosFiltrados.reduce((acc, item) => acc + Number(item.monto || 0), 0) / gastosFiltrados.length
+      : 0;
+
+    return data.map((d) => {
+      const categoriaPrincipal = d.categoria ?? 'Sin categoría';
+      const diaSemanaRaw = d.fechaReal.toLocaleDateString('es-PE', { weekday: 'long' });
+      const diaSemana = diaSemanaRaw.charAt(0).toUpperCase() + diaSemanaRaw.slice(1);
+      const mesAbreviado = d.fechaReal.toLocaleDateString('es-PE', { month: 'short' }).replace('.', '').toUpperCase();
+      const fechaCompleta = d.fechaReal.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const total = Number(d.monto || 0);
+      const variacionPromedio = promedio > 0 ? ((total - promedio) / promedio) * 100 : 0;
+      const variacionAbs = Math.round(Math.abs(variacionPromedio));
+      return {
+        id: d.id,
+        fecha: d.fechaReal,
+        fechaCompleta,
+        total,
+        porcentaje: (total / max) * 100,
+        diaNumero: String(d.fechaReal.getDate()).padStart(2, '0'),
+        mesAbreviado,
+        diaSemana,
+        categoriaPrincipal,
+        categoriaIconoTop: this.iconoTopCategoria(categoriaPrincipal),
+        variacionPromedio,
+        comparacionPromedio: `${variacionAbs}% ${variacionPromedio >= 0 ? 'por encima' : 'por debajo'} del promedio diario`
+      };
+    });
   });
 
   readonly gastoPromedioMensual = computed(() => {
@@ -475,7 +585,7 @@ readonly pendientePorPagar = computed(() => ({
   readonly pendientesFiltrados = computed(() => {
     const q = this.terminoBusqueda().trim().toLowerCase();
     const tab = this.tabActiva();
-    return this.gastosPendientes().filter((p) => {
+    return this.pendientesYRecurrentes().filter((p) => {
       const coincideBusqueda =
         !q || p.nombre.toLowerCase().includes(q) || p.frecuencia.toLowerCase().includes(q);
       const coincideTab = tab === 'todos' || tab === 'pendientes' || tab === 'recurrentes';
@@ -487,6 +597,7 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   private txSub?: { unsubscribe: () => void };
+  private nowIntervalId?: ReturnType<typeof setInterval>;
 
   constructor() {
     this.cargarPendientesLocales();
@@ -507,12 +618,15 @@ readonly pendientePorPagar = computed(() => ({
     this.txSub = this.eventBus.on('TRANSACTION_MODIFIED').subscribe(() => {
       this.stateService.invalidarCache();
     });
+
+    this.nowIntervalId = setInterval(() => {
+      this.nowTick.set(Date.now());
+    }, 60_000);
   }
 
   ngOnDestroy(): void {
    this.txSub?.unsubscribe();
- 
-
+   if (this.nowIntervalId) clearInterval(this.nowIntervalId);
   }
 
   seleccionarTab(tab: 'todos' | 'pagados' | 'pendientes' | 'recurrentes'): void {
@@ -943,6 +1057,35 @@ readonly pendientePorPagar = computed(() => ({
     return new Date();
   }
 
+  private parseFechaVencimiento(fechaTexto: string): Date {
+    const match = fechaTexto.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (match) {
+      const dia = Number(match[1]);
+      const mes = Number(match[2]) - 1;
+      const anio = Number(match[3]);
+      return new Date(anio, mes, dia);
+    }
+    return this.parseFechaFila(fechaTexto);
+  }
+
+  private inicioDia(fecha: Date): Date {
+    const out = new Date(fecha);
+    out.setHours(0, 0, 0, 0);
+    return out;
+  }
+
+  private calcularDiasRestantes(fecha: Date, referencia: Date): number {
+    const msPorDia = 24 * 60 * 60 * 1000;
+    return Math.round((this.inicioDia(fecha).getTime() - referencia.getTime()) / msPorDia);
+  }
+
+  formatoDias(dias: number): string {
+    if (dias < 0) return `Vencido hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'}`;
+    if (dias === 0) return 'Vence hoy';
+    if (dias === 1) return 'Vence mañana';
+    return `Faltan ${dias} días`;
+  }
+
   private cargarPendientesLocales(): void {
     const storage = globalThis.localStorage;
     if (!storage) return;
@@ -1074,11 +1217,11 @@ readonly pendientePorPagar = computed(() => ({
 
   private getColor(cat: string): string {
     const key = cat.toLowerCase();
-    if (key.includes('comida')) return '#10b981';
-    if (key.includes('hogar')) return '#2563eb';
-    if (key.includes('transporte')) return '#8b5cf6';
-    if (key.includes('entreten')) return '#f97316';
-    return '#9ca3af';
+    if (key.includes('alimento') || key.includes('comida')) return '#14B8A6';
+    if (key.includes('transporte')) return '#8B5CF6';
+    if (key.includes('estudio') || key.includes('educa')) return '#4F46E5';
+    if (key.includes('ocio') || key.includes('entreten')) return '#F59E0B';
+    return '#F59E0B';
   }
 
   private getIcon(cat: string): string {
@@ -1088,5 +1231,14 @@ readonly pendientePorPagar = computed(() => ({
     if (key.includes('transporte')) return '🚗';
     if (key.includes('entreten')) return '🎮';
     return '⋯';
+  }
+
+  private iconoTopCategoria(categoria: string): string {
+    const key = categoria.toLowerCase();
+    if (key.includes('alimento') || key.includes('comida')) return 'fa-utensils';
+    if (key.includes('transporte')) return 'fa-car';
+    if (key.includes('estudio') || key.includes('educa')) return 'fa-book-open';
+    if (key.includes('entreten') || key.includes('ocio')) return 'fa-gamepad';
+    return 'fa-receipt';
   }
 }

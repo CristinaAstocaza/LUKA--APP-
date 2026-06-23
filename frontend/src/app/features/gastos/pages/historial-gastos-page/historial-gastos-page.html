@@ -13,18 +13,27 @@
   <section class="gastos-page__history-summary gastos-page__history-summary--triple">
     <article class="gastos-page__history-card gastos-page__history-card--expenses">
       <span>Total gastado</span>
-      <strong>S/ {{ totalFiltrado().toFixed(2) }}</strong>
-      <small>Resumen del periodo filtrado</small>
+      <strong>S/ {{ totalGastadoActual().toFixed(2) }}</strong>
+      <small [ngClass]="variacionTotalGastado() >= 0 ? 'is-up' : 'is-good'">
+        {{ variacionTotalGastado() >= 0 ? '↑' : '↓' }} {{ absVariacionTotalGastado().toFixed(1) }}% vs {{ nombreMesAnterior }}
+        (S/ {{ totalGastadoAnterior().toFixed(2) }})
+      </small>
     </article>
-    <article class="gastos-page__history-card">
-      <span>Transacciones</span>
-      <strong>{{ cantidadTransacciones() }}</strong>
-      <small>Movimientos visibles</small>
+    <article class="gastos-page__history-card gastos-page__history-card--transfers">
+      <span>Transferencias</span>
+      <strong>{{ transferenciasActuales() }}</strong>
+      <small [ngClass]="variacionTransferencias() >= 0 ? 'is-up' : 'is-good'">
+        {{ variacionTransferencias() >= 0 ? '↑' : '↓' }} {{ absVariacionTransferencias().toFixed(1) }}% vs {{ nombreMesAnterior }}
+        ({{ transferenciasAnteriores() }} registradas)
+      </small>
     </article>
-    <article class="gastos-page__history-card">
+    <article class="gastos-page__history-card gastos-page__history-card--average">
       <span>Promedio del día</span>
-      <strong>S/ {{ promedioPorDia().toFixed(2) }}</strong>
-      <small>Promedio por fecha con gastos</small>
+      <strong>S/ {{ promedioDiaActual().toFixed(2) }}</strong>
+      <small [ngClass]="variacionPromedioDia() >= 0 ? 'is-up' : 'is-good'">
+        {{ variacionPromedioDia() >= 0 ? '↑' : '↓' }} {{ absVariacionPromedioDia().toFixed(1) }}% vs {{ nombreMesAnterior }}
+        (S/ {{ promedioDiaAnterior().toFixed(2) }})
+      </small>
     </article>
   </section>
 

@@ -87,6 +87,21 @@ export class HistorialGastosPage implements OnDestroy {
     );
   });
 
+  readonly totalGastadoActual = computed(() => this.stateService.resumenActual()?.totalGastos ?? this.totalMesDesdeGastos(new Date().getMonth() + 1, new Date().getFullYear()));
+  readonly totalGastadoAnterior = computed(() => this.stateService.resumenAnterior()?.totalGastos ?? this.totalMesDesdeGastos(this.mesAnteriorNumero(), this.anioAnteriorNumero()));
+  readonly variacionTotalGastado = computed(() => this.calcularVariacion(this.totalGastadoActual(), this.totalGastadoAnterior()));
+  readonly absVariacionTotalGastado = computed(() => Math.abs(this.variacionTotalGastado()));
+
+  readonly transferenciasActuales = computed(() => this.contarTransferencias(this.stateService.gastos()));
+  readonly transferenciasAnteriores = computed(() => this.contarTransferencias(this.stateService.gastosMesAnterior()));
+  readonly variacionTransferencias = computed(() => this.calcularVariacion(this.transferenciasActuales(), this.transferenciasAnteriores()));
+  readonly absVariacionTransferencias = computed(() => Math.abs(this.variacionTransferencias()));
+
+  readonly promedioDiaActual = computed(() => this.promedioDiario(this.stateService.gastos(), this.totalGastadoActual()));
+  readonly promedioDiaAnterior = computed(() => this.promedioDiario(this.stateService.gastosMesAnterior(), this.totalGastadoAnterior()));
+  readonly variacionPromedioDia = computed(() => this.calcularVariacion(this.promedioDiaActual(), this.promedioDiaAnterior()));
+  readonly absVariacionPromedioDia = computed(() => Math.abs(this.variacionPromedioDia()));
+
   readonly totalFiltrado = computed(() =>
     this.gastosFiltradosPagados().reduce((acc, gasto) => acc + Number(gasto.monto || 0), 0)
   );
@@ -162,5 +177,55 @@ export class HistorialGastosPage implements OnDestroy {
     if (key.includes('hogar')) return 'hogar';
     if (key.includes('salud')) return 'salud';
     return 'entretenimiento';
+  }
+
+  get nombreMesActual(): string {
+    return this.nombreMes(new Date().getMonth() + 1);
+  }
+
+  get nombreMesAnterior(): string {
+    return this.nombreMes(this.mesAnteriorNumero());
+  }
+
+  private totalMesDesdeGastos(mes: number, anio: number): number {
+    return this.gastos().reduce((acc, gasto) => {
+      const fecha = new Date(gasto.fechaTransaccion);
+      if (fecha.getMonth() + 1 !== mes || fecha.getFullYear() !== anio) {
+        return acc;
+      }
+      return acc + Number(gasto.monto || 0);
+    }, 0);
+  }
+
+  private mesAnteriorNumero(): number {
+    return new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getMonth() + 1;
+  }
+
+  private anioAnteriorNumero(): number {
+    return new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).getFullYear();
+  }
+
+  private calcularVariacion(actual: number, anterior: number): number {
+    if (!anterior) return 0;
+    return ((actual - anterior) / anterior) * 100;
+  }
+
+  private contarTransferencias(gastos: Array<{ metodoPago?: string | null }>): number {
+    return gastos.filter((gasto) => gasto.metodoPago === 'TRANSFERENCIA').length;
+  }
+
+  private promedioDiario(gastos: Array<{ fechaTransaccion?: string }>, total: number): number {
+    const diasUnicos = new Set(
+      gastos
+        .map((gasto) => gasto.fechaTransaccion ? new Date(gasto.fechaTransaccion).toLocaleDateString('es-PE') : '')
+        .filter(Boolean)
+    ).size;
+    if (!diasUnicos) return 0;
+    return total / diasUnicos;
+  }
+
+  private nombreMes(mes: number): string {
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return meses[mes - 1] ?? '';
   }
 }

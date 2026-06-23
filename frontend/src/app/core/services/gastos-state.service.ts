@@ -1,9 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 import { Transacciones } from './transacciones';
 import { FinancieroService } from './Financiero.service';
-import { TransaccionDTO } from '../models/financiero/transaccion.model';
+import { TransaccionDTO, TransaccionFiltros } from '../models/financiero/transaccion.model';
 import { ResumenFinancieroDTO } from '../models/financiero/resumen.model';
 import { CategoriaDTO } from '../models/financiero/categoria.model';
 
@@ -13,6 +13,7 @@ import { CategoriaDTO } from '../models/financiero/categoria.model';
 export class GastosStateService {
   // ── Angular Signals for State ──
   readonly gastos = signal<TransaccionDTO[]>([]);
+  readonly gastosMesAnterior = signal<TransaccionDTO[]>([]);
   readonly resumenActual = signal<ResumenFinancieroDTO | null>(null);
   readonly resumenAnterior = signal<ResumenFinancieroDTO | null>(null);
   readonly categorias = signal<CategoriaDTO[]>([]);
@@ -60,9 +61,8 @@ export class GastosStateService {
     const llamadas: Record<string, any> = {};
 
     if (necesitaRefrescoVolatil) {
-      llamadas['historial'] = this.transaccionesService.listarHistorial({ tipo: 'GASTO', pagina: 0, tamanio: 50 }).pipe(
-        catchError(() => of({ content: [] }))
-      );
+      llamadas['historial'] = this.cargarHistorialCompleto({ tipo: 'GASTO', mes: mesActual, anio: anioActual });
+      llamadas['historialAnterior'] = this.cargarHistorialCompleto({ tipo: 'GASTO', mes: mesAnterior, anio: anioAnterior });
       llamadas['resumenActual'] = this.financieroService.getResumen(mesActual, anioActual).pipe(
         catchError(() => of(null))
       );
@@ -90,8 +90,11 @@ export class GastosStateService {
     forkJoin(llamadas).subscribe({
       next: (res: any) => {
         if (res.historial !== null) {
-          this.gastos.set(res.historial.content || []);
+          this.gastos.set(res.historial || []);
           this.ultimoRefrescoTransacciones = Date.now();
+        }
+        if (res.historialAnterior !== null) {
+          this.gastosMesAnterior.set(res.historialAnterior || []);
         }
         if (res.resumenActual !== null) {
           this.resumenActual.set(res.resumenActual);
@@ -118,5 +121,38 @@ export class GastosStateService {
   invalidarCache(): void {
     this.ultimoRefrescoTransacciones = 0;
     this.cargarDatos(true);
+  }
+
+  private cargarHistorialCompleto(filtros: Partial<TransaccionFiltros>): any {
+    const base: Partial<TransaccionFiltros> = {
+      pagina: 0,
+      tamanio: 100,
+      ...filtros
+    };
+
+    return this.transaccionesService.listarHistorial(base).pipe(
+      switchMap((primeraPagina) => {
+        const totalPaginas = primeraPagina.totalPages || 1;
+        if (totalPaginas <= 1) {
+          return of(primeraPagina.content || []);
+        }
+
+        const peticiones = Array.from({ length: totalPaginas - 1 }, (_, idx) =>
+          this.transaccionesService.listarHistorial({
+            ...base,
+            pagina: idx + 1,
+            tamanio: 100
+          })
+        );
+
+        return forkJoin(peticiones).pipe(
+          map((paginas) => [
+            ...(primeraPagina.content || []),
+            ...paginas.flatMap((pagina) => pagina.content || [])
+          ])
+        );
+      }),
+      catchError(() => of([]))
+    );
   }
 }

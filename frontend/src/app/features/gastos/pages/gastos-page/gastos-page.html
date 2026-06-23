@@ -42,8 +42,8 @@
     <svg class="kpi-line" viewBox="0 0 120 62" aria-hidden="true" preserveAspectRatio="none">
       <defs>
         <linearGradient id="kpiLineFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="#fb7185" stop-opacity=".28" />
-          <stop offset="100%" stop-color="#fb7185" stop-opacity="0" />
+          <stop offset="0%" stop-color="#14B8A6" stop-opacity=".28" />
+          <stop offset="100%" stop-color="#14B8A6" stop-opacity="0" />
         </linearGradient>
       </defs>
       <path class="kpi-line__fill" [attr.d]="kpiGastosLineFillPath()" />
@@ -100,7 +100,7 @@
 
       <small>
         @if (proximoVencimiento(); as proximo) {
-          {{ proximo.fechaVencimiento }} &middot; S/ {{ proximo.monto.toFixed(2) }}
+          {{ proximo.fechaDate | date:'dd/MM/yyyy' }} &middot; S/ {{ proximo.monto.toFixed(2) }}
         } @else {
           No hay vencimientos
         }
@@ -108,21 +108,34 @@
 
       <span class="kpi-badge">
         <i class="fa-solid fa-circle"></i>
-        En 3 dÃ­as
+        {{ textoProximoVencimiento() }}
       </span>
+
+      @if (proximosVencimientos().length > 0) {
+        <div class="kpi-next-due">
+          @for (item of proximosVencimientos(); track item.id) {
+            <div class="kpi-next-due__item">
+              <strong class="kpi-next-due__name">{{ item.nombre }}</strong>
+              <small class="kpi-next-due__meta">{{ item.fechaDate | date:'dd/MM/yyyy' }} · {{ formatoDias(item.diasRestantes) }}</small>
+            </div>
+          }
+        </div>
+      }
     </div>
 
     <div class="kpi-calendar" aria-hidden="true">
-      <strong>Junio</strong>
+      <strong>{{ calendarioTitulo() }}</strong>
       <div class="kpi-calendar__week">
         <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span>
       </div>
       <div class="kpi-calendar__days">
-        <span></span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span>
-        <span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span>
-        <span>14</span><span>15</span><span>16</span><span>17</span><span>18</span><span class="is-active">20</span><span>21</span>
-        <span>22</span><span>23</span><span>24</span><span>25</span><span>26</span><span>27</span><span>28</span>
-        <span>29</span><span>30</span>
+        @for (dia of calendarioDias(); track $index) {
+          @if (dia) {
+            <span [class.is-active]="dia.isActive" [class.is-today]="dia.isToday" [class.is-due]="dia.isDue">{{ dia.day }}</span>
+          } @else {
+            <span></span>
+          }
+        }
       </div>
     </div>
   </article>
@@ -135,15 +148,24 @@
   <section class="gastos-page__content-grid">
     <section class="gastos-page__panel gastos-page__panel--left gastos-page__panel--pending">
       <header class="gastos-page__panel-header">
-        <div>
-          <h3>Pendientes y recurrentes</h3>
-          <p>Próximos cargos programados</p>
+        <div class="gastos-page__panel-header-copy">
+          <span class="gastos-page__panel-title-icon" aria-hidden="true">
+            <i class="fa-solid fa-list-check"></i>
+          </span>
+          <div class="gastos-page__panel-header-text">
+            <h3>Pendientes y recurrentes</h3>
+            <p>Próximos cargos programados</p>
+          </div>
         </div>
         <span class="gastos-page__chip is-warning">S/ {{ totalPendiente().toFixed(2) }}</span>
       </header>
 
       @if (pendientesFiltrados().length === 0) {
         <div class="gastos-page__empty gastos-page__empty--compact">
+          <span class="gastos-page__empty-illustration" aria-hidden="true">
+            <i class="fa-regular fa-clipboard"></i>
+            <i class="fa-solid fa-circle-check"></i>
+          </span>
           <h4>No hay pendientes</h4>
           <p>Todo está al día por ahora.</p>
         </div>
@@ -263,7 +285,7 @@
 
       <div class="gastos-page__history-cta">
       
-      <button type="button" class="btn-historial" routerLink="/gastos/historial">
+     <button type="button" class="btn-historial" routerLink="/gastos/historial">
   <i class="fa-solid fa-folder-open"></i>
   Abrir historial completo
 </button>
@@ -273,7 +295,7 @@
   </section>
 
   <section class="gastos-page__analytics">
-    <article class="gastos-page__widget">
+    <article class="gastos-page__widget gastos-page__widget--categoria">
       <header><h4>Gastos por categoría</h4><span>Últimos 30 días</span></header>
       <div class="gastos-page__donut-layout">
         <div class="gastos-page__donut-wrap">
@@ -307,7 +329,7 @@
         </div>
       </div>
     </article>
-    <article class="gastos-page__widget">
+    <article class="gastos-page__widget gastos-page__widget--top-dias">
       <header>
         <h4>Top días de gasto</h4>
         <select class="gastos-page__trend-filter" [value]="filtroTendencia()" (change)="filtroTendencia.set($any($event.target).value)">
@@ -316,17 +338,40 @@
           <option value="90d">Últimos 90 días</option>
         </select>
       </header>
-      <div class="gastos-page__rank-chart">
-        @for (dia of topDiasGasto(); track dia.etiqueta) {
-          <div class="gastos-page__rank-row">
-            <div class="gastos-page__rank-meta">
-              <strong>{{ dia.etiqueta }}</strong>
-              <small>S/ {{ dia.total.toFixed(2) }}</small>
+      <div class="gastos-page__rank-list">
+        @for (dia of topDiasGasto(); track dia.id; let i = $index) {
+          <article class="gastos-page__rank-card" [class.is-top]="i === 0">
+            <div class="gastos-page__rank-mini-calendar" [class.is-top]="i === 0" [attr.title]="dia.fechaCompleta">
+              <i class="fa-solid fa-calendar-days"></i>
+              <strong>{{ dia.diaNumero }}</strong>
+              <small>{{ dia.mesAbreviado }}</small>
             </div>
-            <div class="gastos-page__rank-bar">
-              <span [style.width.%]="dia.porcentaje"></span>
+            <div class="gastos-page__rank-body">
+              <div class="gastos-page__rank-head">
+                <div class="gastos-page__rank-head-main">
+                  <span class="gastos-page__rank-tag">#{{ i + 1 }}</span>
+                  <strong class="gastos-page__rank-day">{{ dia.diaSemana }}</strong>
+                  @if (i === 0) {
+                    <span class="gastos-page__rank-badge">
+                      <i class="fa-solid fa-trophy"></i>
+                      Mayor gasto
+                    </span>
+                  }
+                </div>
+                <span class="gastos-page__rank-amount">S/ {{ dia.total.toFixed(2) }}</span>
+              </div>
+              <small class="gastos-page__rank-category">
+                <i class="fa-solid" [class]="dia.categoriaIconoTop"></i>
+                {{ dia.categoriaPrincipal }}
+              </small>
+              <div class="gastos-page__rank-progress">
+                <span [style.width.%]="dia.porcentaje"></span>
+              </div>
+              <small class="gastos-page__rank-compare">
+                {{ dia.comparacionPromedio }}
+              </small>
             </div>
-          </div>
+          </article>
         }
       </div>
     </article>
