@@ -10,11 +10,21 @@
     </button>
   </header>
 
-  <section class="gastos-page__history-summary">
+  <section class="gastos-page__history-summary gastos-page__history-summary--triple">
     <article class="gastos-page__history-card gastos-page__history-card--expenses">
-      <span>Total filtrado</span>
+      <span>Total gastado</span>
       <strong>S/ {{ totalFiltrado().toFixed(2) }}</strong>
-      <small>{{ gastosFiltradosPagados().length }} registros visibles</small>
+      <small>Resumen del periodo filtrado</small>
+    </article>
+    <article class="gastos-page__history-card">
+      <span>Transacciones</span>
+      <strong>{{ cantidadTransacciones() }}</strong>
+      <small>Movimientos visibles</small>
+    </article>
+    <article class="gastos-page__history-card">
+      <span>Promedio del día</span>
+      <strong>S/ {{ promedioPorDia().toFixed(2) }}</strong>
+      <small>Promedio por fecha con gastos</small>
     </article>
   </section>
 

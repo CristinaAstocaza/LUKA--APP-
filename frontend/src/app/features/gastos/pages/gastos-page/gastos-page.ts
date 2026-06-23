@@ -73,9 +73,7 @@ readonly pendientePorPagar = computed(() => ({
   readonly variacionGastado = computed(() => this.calcularVariacion(this.totalGastadoActual(), this.totalGastosAnterior()));
   readonly variacionSaldo = computed(() => this.calcularVariacion(this.saldoActual(), this.saldoAnterior()));
   readonly variacionPendiente = signal(0);
-  readonly bannerIntegracion = signal(
-    'Integración en curso: historial de gastos (OK). Pendientes/Recurrentes dependen de Suscripciones (falta implementar backend).'
-  );
+  readonly bannerIntegracion = signal('');
 
   readonly pendientesMock = signal<Array<{
     id: string;

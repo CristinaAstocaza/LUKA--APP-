@@ -1,0 +1,30 @@
+.registrar-gastos-page {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+}
+
+.registrar-gastos-page__header h1 {
+  margin: 0;
+}
+
+.registrar-gastos-page__header p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
+.registrar-gastos-page__actions {
+  display: flex;
+}
+
+.registrar-gastos-page__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  text-decoration: none;
+  background: var(--bg-card);
+}

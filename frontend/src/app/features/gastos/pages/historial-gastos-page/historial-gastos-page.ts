@@ -90,6 +90,13 @@ export class HistorialGastosPage implements OnDestroy {
   readonly totalFiltrado = computed(() =>
     this.gastosFiltradosPagados().reduce((acc, gasto) => acc + Number(gasto.monto || 0), 0)
   );
+  readonly cantidadTransacciones = computed(() => this.gastosFiltradosPagados().length);
+  readonly promedioPorDia = computed(() => {
+    const gastos = this.gastosFiltradosPagados();
+    if (gastos.length === 0) return 0;
+    const diasUnicos = new Set(gastos.map((g) => g.fecha)).size || 1;
+    return this.totalFiltrado() / diasUnicos;
+  });
 
   private txSub?: any;
 
