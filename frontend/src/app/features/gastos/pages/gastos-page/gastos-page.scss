@@ -936,6 +936,36 @@ box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   gap: 8px;
 }
 
+.gastos-page__pending-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.gastos-page__pending-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.gastos-page__pending-item.is-vence-pronto {
+  border-color: var(--status-warning);
+  background: color-mix(in srgb, var(--status-warning) 8%, var(--bg-card));
+  
+  .gastos-page__icon-wrap--pending {
+    background: color-mix(in srgb, var(--status-warning) 20%, #ffffff);
+    color: var(--status-warning);
+    
+    i {
+      color: var(--status-warning);
+    }
+  }
+}
+
 .gastos-page__pending-date {
   display: inline-flex;
   align-items: center;

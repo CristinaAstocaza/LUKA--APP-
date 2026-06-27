@@ -144,41 +144,58 @@
 
       @if (pendientesFiltrados().length === 0) {
         <div class="gastos-page__empty gastos-page__empty--compact">
-          <h4>No hay pendientes</h4>
-          <p>Todo está al día por ahora.</p>
+          <div style="text-align: center; padding: 30px 20px;">
+            <i class="fa-solid fa-check-circle" style="font-size: 3.5rem; color: var(--accent-primary); opacity: 0.6; margin-bottom: 16px;"></i>
+            <h4>¡Sin pendientes!</h4>
+            <p>Todas tus suscripciones están al día. Excelente.</p>
+          </div>
         </div>
       } @else {
         <div class="gastos-page__pending-list">
           @for (pendiente of pendientesFiltrados(); track pendiente.id) {
-            <article class="gastos-page__pending-item">
+            <article class="gastos-page__pending-item" [ngClass]="{'is-vence-pronto': pendiente.vencePronto}">
               <div class="gastos-page__pending-top">
                 <div class="gastos-page__pending-title-wrap">
-                  <span class="gastos-page__icon-wrap gastos-page__icon-wrap--pending" aria-hidden="true">
+                  <span class="gastos-page__icon-wrap gastos-page__icon-wrap--pending" [ngClass]="{'is-warning': pendiente.vencePronto}" aria-hidden="true">
                     <i class="fa-solid" [ngClass]="'fa-' + pendiente.categoriaIcono"></i>
                   </span>
-                  <h4>{{ pendiente.nombre }}</h4>
-                  <p>{{ pendiente.frecuencia }} · {{ pendiente.metodoPago }}</p>
+                  <div>
+                    <h4>{{ pendiente.nombre }}</h4>
+                    <p>{{ pendiente.frecuencia }} • {{ pendiente.metodoPago }}</p>
+                  </div>
                 </div>
                 <span class="gastos-page__pending-amount">S/ {{ pendiente.monto.toFixed(2) }}</span>
               </div>
 
-              <div class="gastos-page__pending-bottom">
-                <span class="gastos-page__pending-date">
-                  <i class="fa-solid fa-calendar-days"></i>
-                  {{ pendiente.fechaVencimiento }}
-                </span>
+              <div class="gastos-page__pending-footer">
+                <div class="gastos-page__pending-meta">
+                  <span class="gastos-page__pending-date">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    {{ pendiente.fechaVencimiento }}
+                  </span>
 
-                @if (pendiente.vencePronto) {
-                  <span class="gastos-page__badge is-warning">Vence pronto</span>
-                } @else {
-                  <span class="gastos-page__badge is-soft">Programado</span>
-                }
+                  @if (pendiente.vencePronto) {
+                    <span class="gastos-page__badge is-warning">
+                      <i class="fa-solid fa-exclamation-triangle"></i>
+                      Vence pronto
+                    </span>
+                  } @else {
+                    <span class="gastos-page__badge is-soft">
+                      <i class="fa-solid fa-calendar-check"></i>
+                      Programado
+                    </span>
+                  }
+                </div>
+
+                <button 
+                  type="button" 
+                  class="gastos-page__btn-mark" 
+                  (click)="marcarPendienteComoPagado(pendiente.id)"
+                  title="Registrar como pagado">
+                  <i class="fa-solid fa-circle-check"></i>
+                  Pagar
+                </button>
               </div>
-
-              <button type="button" class="gastos-page__btn-mark" (click)="marcarPendienteComoPagado(pendiente.id)">
-                <i class="fa-solid fa-circle-check"></i>
-                Marcar pagado
-              </button>
             </article>
           }
         </div>
