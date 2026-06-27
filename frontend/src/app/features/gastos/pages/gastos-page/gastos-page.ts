@@ -397,7 +397,7 @@ readonly pendientePorPagar = computed(() => ({
         year: 'numeric' 
       }),
       monto: sus.monto,
-      vencePronto: sus.diasParaVencimiento <= 5,
+      vencePronto: (sus.diasParaVencimiento ?? 100) <= 5,
       metodoPago: 'DIGITAL' as MetodoPago,
       categoriaIcono: this.iconoCategoriaSuscripcion(sus.categoria)
     }));
