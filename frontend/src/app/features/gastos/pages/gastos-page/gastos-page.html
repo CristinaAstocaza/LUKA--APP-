@@ -203,89 +203,79 @@
     </section>
 
     <section class="gastos-page__panel gastos-page__panel--right gastos-page__panel--summary-note">
-    <header class="gastos-page__panel-header">
-</header>
+      <header class="gastos-page__panel-header">
+        <div>
+          <h3>Resumen del mes</h3>
+          <p>Análisis de tus gastos actuales</p>
+        </div>
+      </header>
 
-<div class="card">
+      <div class="gastos-page__summary-content">
+        <!-- KPIs del mes actual -->
+        <div class="gastos-page__quick-stats">
+          <div class="quick-stat">
+            <span class="label">Gastado</span>
+            <strong>S/ {{ (totalGastadoActual() || 0).toFixed(2) }}</strong>
+            <small class="trend" [ngClass]="variacionGastado() > 0 ? 'is-up' : 'is-good'">
+              <i class="fa-solid" [ngClass]="variacionGastado() > 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+              {{ Math.abs(variacionGastado()).toFixed(0) }}%
+            </small>
+          </div>
 
-  <div class="header">
-    <div>
-      <h2>Historial organizado</h2>
-      <p>Revisa tus gastos con una vista más cómoda y enfocada para encontrar cada movimiento rápidamente.</p>
-      
-    </div>
+          <div class="quick-stat">
+            <span class="label">Saldo</span>
+            <strong>S/ {{ (saldoActual() || 0).toFixed(2) }}</strong>
+            <small class="trend" [ngClass]="variacionSaldo() > 0 ? 'is-good' : 'is-up'">
+              <i class="fa-solid" [ngClass]="variacionSaldo() > 0 ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+              {{ Math.abs(variacionSaldo()).toFixed(0) }}%
+            </small>
+          </div>
 
+          <div class="quick-stat">
+            <span class="label">Pendientes</span>
+            <strong>S/ {{ totalPendiente().toFixed(2) }}</strong>
+            <small style="color: var(--status-warning); font-weight: 600;">
+              <i class="fa-solid fa-exclamation-triangle"></i>
+              {{ cantidadPendientes() }} cuotas
+            </small>
+          </div>
+        </div>
 
+        <!-- Últimas transacciones -->
+        <div class="gastos-page__recent-transactions">
+          <h4>Últimos gastos</h4>
+          <div class="transaction-list">
+            @if (gastosFiltradosPagados().length === 0) {
+              <p style="text-align: center; color: var(--text-muted); padding: 20px 0;">
+                No hay transacciones aún
+              </p>
+            } @else {
+              @for (gasto of gastosFiltradosPagados().slice(0, 5); track gasto.id) {
+                <div class="transaction-item">
+                  <div class="tx-left">
+                    <div class="tx-icon" [ngClass]="'is-' + gasto.colorCategoria">
+                      <i class="fa-solid" [ngClass]="'fa-' + gasto.icono"></i>
+                    </div>
+                    <div class="tx-info">
+                      <strong>{{ gasto.nombre }}</strong>
+                      <small>{{ gasto.fecha }}</small>
+                    </div>
+                  </div>
+                  <span class="tx-amount">- S/ {{ gasto.monto.toFixed(2) }}</span>
+                </div>
+              }
+            }
+          </div>
+        </div>
 
-
-  <input 
-    type="date" 
-    class="filter"
-    [value]="fechaSeleccionada()"
-    (input)="fechaSeleccionada.set($any($event.target).value)" />
-
-  </div>
-
-  <!-- KPIs -->
-  <div class="stats">
-    <div class="stat">
-      <p class="label">Total gastado</p>
-      <h3>S/ 1,245.60</h3>
-      <span class="positive">↓ 8% vs. mes anterior</span>
-    </div>
-
-    <div class="stat">
-      <p class="label">Transacciones</p>
-      <h3>24</h3>
-      <span class="positive">↑ 4 vs. mes anterior</span>
-    </div>
-
-    <div class="stat">
-      <p class="label">Promedio por día</p>
-      <h3>S/ 41.52</h3>
-      <span class="positive">↓ 5% vs. mes anterior</span>
-    </div>
-  </div>
-
-  <!-- Categorías -->
-  <div class="categories">
-    <div class="cat-header">
-      <h4>Categorías principales</h4>
-    
-    </div>
-
-  <div class="category" *ngFor="let cat of categoriasUIFiltradas()">
-
-  <div class="left">
-    <div class="icon">{{cat.icon}}</div>
-    <span>{{cat.name}}</span>
-  </div> 
-
-  <div class="bar-container">
-    <div
-      class="bar"
-      [style.width.%]="cat.percent"
-      [style.background]="cat.color">
-    </div>
-  </div>
-
-  <div class="right">
-    <span>{{cat.percent}}%</span>
-    <span>{{cat.amount}}</span>
-  </div>
-
-</div>
-    </div>
-  </div>
-
-      <div class="gastos-page__history-cta">
-      
-      <button type="button" class="btn-historial" routerLink="/gastos/historial">
-  <i class="fa-solid fa-folder-open"></i>
-  Abrir historial completo
-</button>
+        <!-- Botón para ver más -->
+        <div class="gastos-page__history-cta">
+          <button type="button" class="btn-historial" routerLink="/gastos/historial">
+            <i class="fa-solid fa-arrow-right"></i>
+            Ver historial completo
+          </button>
+        </div>
       </div>
-      
     </section>
   </section>
 

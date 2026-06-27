@@ -27,6 +27,9 @@ export class GastosPage implements OnDestroy {
 private readonly suscripcionService = inject(SuscripcionGastosService);
 private readonly router = inject(Router);
   private readonly pendientesStorageKey = 'luka:gastos:pendientes-locales';
+  
+// Exponerlo para usarlo en el template
+readonly Math = Math;
   readonly sugerenciasIa = signal<string[]>([]);
   readonly clasificandoIa = signal(false);
   readonly intentosIaRestantes = computed(() => this.iaService.clasificacionesRestantes());
