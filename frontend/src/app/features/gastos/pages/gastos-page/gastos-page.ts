@@ -8,6 +8,7 @@ import { FinancieroService } from '../../../../core/services/Financiero.service'
 import { AppEventBus } from '../../../../core/services/app-event-bus.service';
 import { GastosStateService } from '../../../../core/services/gastos-state.service';
 import { IaService } from '../../../../core/services/ia.service';
+import { SuscripcionGastosService } from '../../../../core/services/suscripcion-gastos.service';
 import { Router } from '@angular/router';
 @Component({
   selector: 'app-gastos-page',
@@ -23,8 +24,12 @@ export class GastosPage implements OnDestroy {
   private readonly eventBus = inject(AppEventBus);
   private readonly stateService = inject(GastosStateService);
   private readonly iaService = inject(IaService);
+private readonly suscripcionService = inject(SuscripcionGastosService);
 private readonly router = inject(Router);
   private readonly pendientesStorageKey = 'luka:gastos:pendientes-locales';
+  
+// Exponerlo para usarlo en el template
+readonly Math = Math;
   readonly sugerenciasIa = signal<string[]>([]);
   readonly clasificandoIa = signal(false);
   readonly intentosIaRestantes = computed(() => this.iaService.clasificacionesRestantes());
@@ -74,7 +79,7 @@ readonly pendientePorPagar = computed(() => ({
   readonly variacionSaldo = computed(() => this.calcularVariacion(this.saldoActual(), this.saldoAnterior()));
   readonly variacionPendiente = signal(0);
   readonly bannerIntegracion = signal(
-    'Integración en curso: historial de gastos (OK). Pendientes/Recurrentes dependen de Suscripciones (falta implementar backend).'
+    'Sistema de gastos integrado: historial de transacciones, pendientes y suscripciones activas'
   );
 
   readonly pendientesMock = signal<Array<{
@@ -383,7 +388,23 @@ readonly pendientePorPagar = computed(() => ({
     return this.calcularVariacion(totalActual, totalPrevio);
   });
 
-  readonly gastosPendientes = computed(() => this.pendientesMock());
+  readonly gastosPendientes = computed(() => {
+    // Usar datos reales del servicio de suscripciones
+    return this.suscripcionService.suscripcionesProximas().map(sus => ({
+      id: sus.id,
+      nombre: sus.nombre,
+      frecuencia: sus.frecuencia as 'MENSUAL' | 'SEMANAL' | 'QUINCENAL',
+      fechaVencimiento: new Date(sus.proximoVencimiento).toLocaleDateString('es-PE', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      }),
+      monto: sus.monto,
+      vencePronto: (sus.diasParaVencimiento ?? 100) <= 5,
+      metodoPago: 'DIGITAL' as MetodoPago,
+      categoriaIcono: this.iconoCategoriaSuscripcion(sus.categoria)
+    }));
+  });
   readonly gastosPagados = computed(() => this.gastos());
 
   readonly filasPagadas = computed(() => {
@@ -526,29 +547,44 @@ readonly pendientePorPagar = computed(() => ({
   }
 
   marcarPendienteComoPagado(id: string): void {
-    const pendiente = this.pendientesMock().find((p) => p.id === id);
+    const pendiente = this.gastosPendientes().find((p) => p.id === id);
     if (!pendiente) {
       return;
     }
 
-    this.pendientesMock.set(this.pendientesMock().filter((p) => p.id !== id));
-    this.pagadosMock.update((items) => [
-      {
-        id: `mock-${pendiente.id}`,
-        nombre: pendiente.nombre,
-        detalle: 'Suscripción recurrente',
-        categoria: 'Servicios',
-        fecha: 'Hoy',
-        hora: 'Ahora',
+    // Si es una suscripción real del backend
+    if (!id.startsWith('pend-local')) {
+      const usuarioId = this.authService.usuario()?.id;
+      if (!usuarioId) {
+        this.mensajeFormulario.set('No se encontró sesión activa.');
+        return;
+      }
+
+      // Registrar la transacción de pago
+      const request: TransaccionRequestDTO = {
+        usuarioId,
+        nombreCliente: this.authService.usuario()?.nombreUsuario ?? 'Cliente',
         monto: pendiente.monto,
-        metodo: pendiente.metodoPago,
-        estado: 'Pagado',
-        icono: 'circle-check',
-        colorCategoria: 'servicios',
-      },
-      ...items,
-    ]);
-    this.usarMockVisualPagados.set(true);
+        tipo: 'GASTO',
+        categoriaId: 'suscripciones',
+        fechaTransaccion: new Date().toISOString(),
+        metodoPago: pendiente.metodoPago,
+        notas: `${pendiente.nombre} - Suscripción pagada|Pago de suscripción recurrente`,
+        descripcion: `Pago de suscripción: ${pendiente.nombre}`,
+        etiquetas: 'suscripcion,pagado'
+      };
+
+      this.transaccionesService.registrar(request).subscribe({
+        next: () => {
+          this.eventBus.emit({ type: 'TRANSACTION_CREATED' });
+          this.stateService.invalidarCache();
+          this.mensajeFormulario.set(`✓ ${pendiente.nombre} marcado como pagado`);
+        },
+        error: () => {
+          this.mensajeFormulario.set('Error al registrar el pago de la suscripción.');
+        }
+      });
+    }
   }
 
   abrirModal(): void {
@@ -1061,6 +1097,18 @@ readonly pendientePorPagar = computed(() => ({
     if (key.includes('servicio')) return 'wifi';
     if (key.includes('entreten')) return 'film';
     if (key.includes('salud')) return 'briefcase-medical';
+    return 'receipt';
+  }
+
+  private iconoCategoriaSuscripcion(categoria: string): string {
+    const key = categoria.toLowerCase();
+    if (key.includes('leisure') || key.includes('entretenimiento')) return 'film';
+    if (key.includes('home') || key.includes('hogar')) return 'house';
+    if (key.includes('health') || key.includes('salud')) return 'briefcase-medical';
+    if (key.includes('transport') || key.includes('auto')) return 'bus';
+    if (key.includes('study') || key.includes('educacion')) return 'graduation-cap';
+    if (key.includes('food') || key.includes('comida')) return 'utensils';
+    if (key.includes('subscription') || key.includes('suscripcion')) return 'credit-card';
     return 'receipt';
   }
 

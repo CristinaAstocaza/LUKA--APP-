@@ -936,6 +936,212 @@ box-shadow: 0 10px 25px rgba(0,0,0,0.15);
   gap: 8px;
 }
 
+.gastos-page__pending-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+
+.gastos-page__pending-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.gastos-page__pending-item.is-vence-pronto {
+  border-color: var(--status-warning);
+  background: color-mix(in srgb, var(--status-warning) 8%, var(--bg-card));
+  
+  .gastos-page__icon-wrap--pending {
+    background: color-mix(in srgb, var(--status-warning) 20%, #ffffff);
+    color: var(--status-warning);
+    
+    i {
+      color: var(--status-warning);
+    }
+  }
+}
+
+// Nuevos estilos para el panel de resumen
+.gastos-page__summary-content {
+  display: grid;
+  gap: 16px;
+  padding: 12px;
+}
+
+.gastos-page__quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.quick-stat {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--accent-primary) 3%, var(--bg-card));
+  text-align: center;
+  
+  .label {
+    display: block;
+    font-size: .75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  strong {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+
+  .trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: .75rem;
+    font-weight: 600;
+    
+    &.is-good {
+      color: var(--status-success);
+    }
+    
+    &.is-up {
+      color: var(--status-danger);
+    }
+  }
+}
+
+.gastos-page__recent-transactions {
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+  
+  h4 {
+    margin: 0 0 10px;
+    font-size: .95rem;
+    color: var(--text-primary);
+  }
+}
+
+.transaction-list {
+  display: grid;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--accent-primary) 40%, transparent);
+    border-radius: 999px;
+  }
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent-primary) 2%, var(--bg-card));
+  transition: background 0.2s ease;
+  
+  &:hover {
+    background: color-mix(in srgb, var(--accent-primary) 6%, var(--bg-card));
+  }
+}
+
+.tx-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tx-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: .85rem;
+  
+  &.is-comida {
+    background: color-mix(in srgb, #f59e0b 20%, var(--bg-card));
+    color: #d97706;
+  }
+  
+  &.is-hogar {
+    background: color-mix(in srgb, #10b981 20%, var(--bg-card));
+    color: #059669;
+  }
+  
+  &.is-transporte {
+    background: color-mix(in srgb, #6366f1 20%, var(--bg-card));
+    color: #4f46e5;
+  }
+  
+  &.is-servicios {
+    background: color-mix(in srgb, #3b82f6 20%, var(--bg-card));
+    color: #1d4ed8;
+  }
+  
+  &.is-entretenimiento {
+    background: color-mix(in srgb, #f97316 20%, var(--bg-card));
+    color: #ea580c;
+  }
+  
+  &.is-salud {
+    background: color-mix(in srgb, #ef4444 20%, var(--bg-card));
+    color: #dc2626;
+  }
+}
+
+.tx-info {
+  min-width: 0;
+  
+  strong {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  small {
+    display: block;
+    font-size: .7rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+}
+
+.tx-amount {
+  font-weight: 700;
+  color: var(--status-danger);
+  white-space: nowrap;
+  font-size: .85rem;
+}
+
 .gastos-page__pending-date {
   display: inline-flex;
   align-items: center;
