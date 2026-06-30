@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.servicios;
+package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaDatosPersonales;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudDatosPersonales;
@@ -135,7 +135,8 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
                 e.getGenero(), e.getEdad(), e.getTelefono(),
                 e.getFotoPerfilUrl(),
                 e.getPais(), e.getCiudad(), e.getDatosCompletos(),
-                e.getFechaCreacion(), e.getFechaActualizacion());
+                e.getFechaCreacion(), e.getFechaActualizacion(),
+                e.getFechaNacimiento());
     }
 
     // =========================================================================
@@ -184,6 +185,11 @@ public class ServicioDatosPersonalesImpl implements ServicioDatosPersonales {
         }
         if (d.ciudad() != null) {
             e.setCiudad(d.ciudad());
+        }
+        if (d.fechaNacimiento() != null) {
+            e.setFechaNacimiento(d.fechaNacimiento());
+            // Calculate age automatically on the backend
+            e.setEdad(java.time.Period.between(d.fechaNacimiento(), java.time.LocalDate.now()).getYears());
         }
     }
 }

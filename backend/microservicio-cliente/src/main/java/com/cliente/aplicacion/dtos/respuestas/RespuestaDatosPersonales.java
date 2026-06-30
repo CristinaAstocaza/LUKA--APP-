@@ -19,5 +19,6 @@ public record RespuestaDatosPersonales(
         String        ciudad,
         Boolean       datosCompletos,
         LocalDateTime fechaCreacion,
-        LocalDateTime fechaActualizacion
+        LocalDateTime fechaActualizacion,
+        java.time.LocalDate fechaNacimiento
 ) {}

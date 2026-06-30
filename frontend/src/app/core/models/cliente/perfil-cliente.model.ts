@@ -8,6 +8,7 @@ export interface SolicitudDatosPersonales {
   fotoPerfilUrl?: string;
   pais?: string;
   ciudad?: string;
+  fechaNacimiento?: string;
 }
 
 export interface RespuestaDatosPersonales {
@@ -23,6 +24,7 @@ export interface RespuestaDatosPersonales {
   datosCompletos: boolean;
   fechaCreacion: string;
   fechaActualizacion: string;
+  fechaNacimiento?: string;
 }
 
 export interface SolicitudPerfilFinanciero {

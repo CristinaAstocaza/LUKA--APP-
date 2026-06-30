@@ -64,6 +64,9 @@ public class DatosPersonales {
     @Column(length = 100)
     private String ciudad;
 
+    @Column(name = "fecha_nacimiento")
+    private java.time.LocalDate fechaNacimiento;
+
     @Column(name = "datos_completos", nullable = false)
     @Builder.Default
     private Boolean datosCompletos = false;
@@ -92,7 +95,10 @@ public class DatosPersonales {
             && apellidos != null && !apellidos.isBlank()
             && dni       != null && !dni.isBlank()
             && telefono  != null && !telefono.isBlank()
-            && ciudad    != null && !ciudad.isBlank();
+            && pais      != null && !pais.isBlank()
+            && ciudad    != null && !ciudad.isBlank()
+            && genero    != null && !genero.isBlank()
+            && fechaNacimiento != null;
     }
 
     /** Nombre completo para uso en auditoría y logs.

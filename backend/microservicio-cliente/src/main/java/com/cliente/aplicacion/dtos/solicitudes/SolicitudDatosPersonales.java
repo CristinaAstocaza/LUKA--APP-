@@ -35,5 +35,7 @@ public record SolicitudDatosPersonales(
         String pais,
 
         @Size(max = 100, message = "La ciudad no puede superar los 100 caracteres")
-        String ciudad
+        String ciudad,
+
+        java.time.LocalDate fechaNacimiento
 ) {}

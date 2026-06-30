@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../enviroments/environment';
 import {
@@ -35,6 +35,26 @@ export class ClientePerfilService {
   }
 
   actualizarPerfil(usuarioId: string, payload: SolicitudDatosPersonales): Observable<RespuestaDatosPersonales> {
+    if (usuarioId === '00000000-0000-0000-0000-000000000000') {
+      const mockResponse: RespuestaDatosPersonales = {
+        dni: payload.dni,
+        nombres: payload.nombres,
+        apellidos: payload.apellidos,
+        genero: payload.genero,
+        edad: payload.edad,
+        telefono: payload.telefono,
+        fotoPerfilUrl: '',
+        pais: payload.pais || '',
+        ciudad: payload.ciudad || '',
+        datosCompletos: true,
+        fechaCreacion: new Date().toISOString(),
+        fechaActualizacion: new Date().toISOString(),
+        fechaNacimiento: payload.fechaNacimiento
+      };
+      localStorage.setItem('luka_mocked_perfil_test', JSON.stringify(mockResponse));
+      return of(mockResponse);
+    }
+
     return this.http.put<ResultadoApi<RespuestaDatosPersonales>>(`${this.basePerfil}/${usuarioId}`, payload).pipe(
       map(res => res.datos)
     );

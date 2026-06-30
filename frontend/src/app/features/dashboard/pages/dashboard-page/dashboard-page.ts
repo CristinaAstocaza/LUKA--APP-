@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BalancesCard } from '../../components/balances-card/balances-card';
@@ -6,6 +6,7 @@ import { Chart } from '../../components/chart/chart';
 import { DashboardStateService } from '../../../../core/services/dashboard-state.service';
 import { AppEventBus } from '../../../../core/services/app-event-bus.service';
 import { Subscription } from 'rxjs';
+import { ModalCompletarPerfil } from '../../../perfil/components/modal-completar-perfil/modal-completar-perfil';
 
 interface Transaccion {
   id: string;
@@ -21,11 +22,15 @@ interface Transaccion {
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, BalancesCard, Chart],
+  imports: [CommonModule, FormsModule, BalancesCard, Chart, ModalCompletarPerfil],
   templateUrl: './dashboard-page.html',
   styleUrls: ['./dashboard-page.scss']
 })
 export class DashboardPage implements OnInit, OnDestroy {
+  readonly mostrarModalPerfilObligatorio = computed(() => {
+    const perfil = this.stateService.perfil();
+    return perfil && perfil.datosCompletos === false;
+  });
   // Configuración de Filtros
   filtroTiempo: string = '30';
   terminoBusqueda: string = '';

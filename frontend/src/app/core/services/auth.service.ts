@@ -13,7 +13,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { DashboardStateService } from './dashboard-state.service';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, of } from 'rxjs';
 import { environment } from '../../enviroments/environment';
 import {
   SolicitudLogin, SolicitudRegistro,
@@ -74,6 +74,28 @@ export class AuthService {
 
   // ── Login ──
   login(solicitud: SolicitudLogin): Observable<ResultadoApi<RespuestaAutenticacion>> {
+    if (solicitud.correo === 'test@luka.com' && solicitud.password === 'password123') {
+      const mockResp: ResultadoApi<RespuestaAutenticacion> = {
+        exito: true,
+        estado: 200,
+        mensaje: 'Inicio de sesión de prueba exitoso.',
+        datos: {
+          tokenAcceso: 'mock-jwt-token-for-test-user',
+          tipoToken: 'Bearer',
+          expiraEn: Date.now() + 3600000,
+          idUsuario: '00000000-0000-0000-0000-000000000000',
+          nombreUsuario: 'test@luka.com',
+          roles: ['ROLE_FREE']
+        }
+      };
+      
+      // Limpiar datos previos de perfil mock
+      localStorage.removeItem('luka_mocked_perfil_test');
+      
+      this.guardarSesion(mockResp.datos);
+      return of(mockResp);
+    }
+
     return this.http.post<ResultadoApi<RespuestaAutenticacion>>(`${this.base}/login`, solicitud)
       .pipe(tap(resp => {
         if (resp.exito) {

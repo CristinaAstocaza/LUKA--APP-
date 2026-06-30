@@ -74,6 +74,28 @@ export class DashboardStateService {
       error: (err) => {
         // Fallback a mock si falla el BFF
         console.warn('[DashboardStateService] Fallback a mock de resumen:', err);
+        
+        // Cargar perfil mockeado si iniciamos sesión con el usuario de prueba
+        const rawUser = localStorage.getItem('luka_usuario');
+        if (rawUser && rawUser.includes('test@luka.com')) {
+          const mockedProfileStr = localStorage.getItem('luka_mocked_perfil_test');
+          if (mockedProfileStr) {
+            this.perfil.set(JSON.parse(mockedProfileStr));
+          } else {
+            this.perfil.set({
+              dni: '',
+              nombres: '',
+              apellidos: '',
+              genero: '',
+              edad: 0,
+              telefono: '',
+              pais: '',
+              ciudad: '',
+              datosCompletos: false
+            });
+          }
+        }
+
         const hoy = new Date();
         const factorMes = (hoy.getMonth() + 1) * 230;
         const totalIngresos = 3800 + (factorMes % 1500);
