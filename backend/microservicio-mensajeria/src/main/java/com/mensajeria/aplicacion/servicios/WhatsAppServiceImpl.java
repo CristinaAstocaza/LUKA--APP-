@@ -1,4 +1,4 @@
-﻿package com.mensajeria.aplicacion.servicios;
+package com.mensajeria.aplicacion.servicios;
 
 import com.mensajeria.aplicacion.excepciones.MensajeriaExternaException;
 import com.mensajeria.aplicacion.puertos.IWhatsAppService;
@@ -15,11 +15,11 @@ import com.mensajeria.infraestructura.configuracion.PropiedadesTwilio;
 import java.util.Map;
 
 /**
- * ImplementaciÃ³n del servicio de WhatsApp usando Twilio.
+ * Implementación del servicio de WhatsApp usando Twilio.
  *
- * <p>A partir de la v1.2.0 el envÃ­o se realiza a travÃ©s del
+ * <p>A partir de la v1.2.0 el envío se realiza a través del
  * <strong>Messaging Service SID</strong> ({@code TWILIO_MESSAGING_SERVICE_SID}),
- * eliminando la dependencia de un nÃºmero de WhatsApp fijo como origen.
+ * eliminando la dependencia de un número de WhatsApp fijo como origen.
  * Twilio gestiona el enrutamiento internamente.</p>
  *
  * @version 1.2.0
@@ -43,32 +43,32 @@ public class WhatsAppServiceImpl implements IWhatsAppService, CanalNotificacionS
     }
 
     /**
-     * EnvÃ­a un cÃ³digo de verificaciÃ³n por WhatsApp aprovechando la ventana de 24 horas.
+     * Envía un código de verificación por WhatsApp aprovechando la ventana de 24 horas.
      *
-     * <p>Utiliza {@code MessagingServiceSid} si estÃ¡ configurado (producciÃ³n);
-     * de lo contrario, cae de forma degradada al nÃºmero estÃ¡tico {@code whatsapp.from}
+     * <p>Utiliza {@code MessagingServiceSid} si está configurado (producción);
+     * de lo contrario, cae de forma degradada al número estático {@code whatsapp.from}
      * para entornos locales sin Messaging Service.</p>
      *
-     * @param targetPhone NÃºmero del cliente en formato internacional (ej: {@code +51943455686})
-     * @param token       CÃ³digo de verificaciÃ³n generado por el sistema
-     * @return El SID del mensaje generado por Twilio si el envÃ­o fue exitoso
+     * @param targetPhone Número del cliente en formato internacional (ej: {@code +51943455686})
+     * @param token       Código de verificación generado por el sistema
+     * @return El SID del mensaje generado por Twilio si el envío fue exitoso
      */
     public String sendVerificationCode(String targetPhone, String token) {
         if (!esNumeroValido(targetPhone)) {
-            log.error("[WHATSAPP] Formato de telÃ©fono invÃ¡lido: {}. Se requiere E.164 (ej. +51943455686)", targetPhone);
+            log.error("[WHATSAPP] Formato de teléfono inválido: {}. Se requiere E.164 (ej. +51943455686)", targetPhone);
             throw new com.mensajeria.aplicacion.excepciones.TelefonoInvalidoException(
-                "El nÃºmero " + targetPhone + " no tiene el formato internacional requerido."
+                "El número " + targetPhone + " no tiene el formato internacional requerido."
             );
         }
 
         try {
             String messageBody = String.format(
-                "Luka App: Tu cÃ³digo de verificaciÃ³n es [%s]. Expira en 5 minutos. No lo compartas con nadie.",
+                "Luka App: Tu código de verificación es [%s]. Expira en 5 minutos. No lo compartas con nadie.",
                 token
             );
 
             String formattedPhone = targetPhone.startsWith("+") ? targetPhone : "+" + targetPhone;
-            // Twilio requiere el prefijo "whatsapp:" en el nÃºmero destino
+            // Twilio requiere el prefijo "whatsapp:" en el número destino
             String whatsappDest = "whatsapp:" + formattedPhone;
 
             String sandboxWhatsappFrom = propiedadesTwilio.getSandboxWhatsappFrom();
@@ -77,14 +77,14 @@ public class WhatsAppServiceImpl implements IWhatsAppService, CanalNotificacionS
 
             if (StringUtils.hasText(sandboxWhatsappFrom)) {
                 String fromWhatsapp = "whatsapp:" + sandboxWhatsappFrom;
-                log.info("[WHATSAPP] Usando Sandbox con remitente explÃ­cito: {}", fromWhatsapp);
+                log.info("[WHATSAPP] Usando Sandbox con remitente explícito: {}", fromWhatsapp);
                 message = Message.creator(
                         new PhoneNumber(whatsappDest),
                         new PhoneNumber(fromWhatsapp),
                         messageBody
                 ).create();
             } else if (StringUtils.hasText(messagingServiceSid)) {
-                // Modo producciÃ³n: Messaging Service gestiona el nÃºmero de origen
+                // Modo producción: Messaging Service gestiona el número de origen
                 log.info("[WHATSAPP] Usando MessagingServiceSid: {}", messagingServiceSid);
                 message = Message.creator(
                         new PhoneNumber(whatsappDest),
@@ -92,9 +92,9 @@ public class WhatsAppServiceImpl implements IWhatsAppService, CanalNotificacionS
                         messageBody
                 ).create();
             } else {
-                // Modo fallback: nÃºmero de WhatsApp estÃ¡tico (desarrollo local)
+                // Modo fallback: número de WhatsApp estático (desarrollo local)
                 String fromWhatsapp = "whatsapp:" + propiedadesTwilio.getWhatsapp().getFrom();
-                log.warn("[WHATSAPP] MessagingServiceSid no configurado. Usando nÃºmero estÃ¡tico: {}", fromWhatsapp);
+                log.warn("[WHATSAPP] MessagingServiceSid no configurado. Usando número estático: {}", fromWhatsapp);
                 message = Message.creator(
                         new PhoneNumber(whatsappDest),
                         new PhoneNumber(fromWhatsapp),
@@ -102,18 +102,18 @@ public class WhatsAppServiceImpl implements IWhatsAppService, CanalNotificacionS
                 ).create();
             }
 
-            log.info("[WHATSAPP] Mensaje de verificaciÃ³n enviado con Ã©xito. SID: {}", message.getSid());
+            log.info("[WHATSAPP] Mensaje de verificación enviado con éxito. SID: {}", message.getSid());
             return message.getSid();
 
         } catch (Exception e) {
-            log.error("[WHATSAPP] Error al enviar el token de validaciÃ³n por WhatsApp a {}: {}", targetPhone, e.getMessage());
-            throw new MensajeriaExternaException("Fallo en el envÃ­o de la notificaciÃ³n de seguridad por WhatsApp", e.getMessage());
+            log.error("[WHATSAPP] Error al enviar el token de validación por WhatsApp a {}: {}", targetPhone, e.getMessage());
+            throw new MensajeriaExternaException("Fallo en el envío de la notificación de seguridad por WhatsApp", e.getMessage());
         }
     }
 
     @Override
     public void enviarMensajeTemplate(String telefono, String plantilla, Map<String, String> variables) {
-        // Como ya no se usan plantillas, redirigimos la lÃ³gica a sendVerificationCode.
+        // Como ya no se usan plantillas, redirigimos la lógica a sendVerificationCode.
         // Asumimos que el token es la primera variable (ej. "1").
         String token = variables != null ? variables.getOrDefault("1", "DESCONOCIDO") : "DESCONOCIDO";
         this.sendVerificationCode(telefono, token);

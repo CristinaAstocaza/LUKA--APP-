@@ -1,11 +1,11 @@
-﻿package com.libreria.comun.utilidades;
+package com.libreria.comun.utilidades;
 
 import com.libreria.comun.seguridad.DetallesUsuario;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.util.UUID;
 
 /**
- * Utilidad para acceder de forma simplificada a la informaciÃ³n del usuario autenticado.
+ * Utilidad para acceder de forma simplificada a la información del usuario autenticado.
  * 
  */
 public final class UtilidadSeguridad {
@@ -13,7 +13,7 @@ public final class UtilidadSeguridad {
     private UtilidadSeguridad() {}
 
     /**
-     * Obtiene el UUID del usuario actualmente autenticado en el hilo de la peticiÃ³n.
+     * Obtiene el UUID del usuario actualmente autenticado en el hilo de la petición.
      * 
      * @return UUID del usuario.
      * @throws ClassCastException si el principal no es del tipo DetallesUsuario.
@@ -27,7 +27,7 @@ public final class UtilidadSeguridad {
     }
 
     /**
-     * Obtiene el correo electrÃ³nico del usuario autenticado.
+     * Obtiene el correo electrónico del usuario autenticado.
      * 
      * @return String email.
      */

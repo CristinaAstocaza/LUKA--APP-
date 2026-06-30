@@ -1,4 +1,4 @@
-﻿package com.libreria.comun.seguridad;
+package com.libreria.comun.seguridad;
 
 
 import lombok.AllArgsConstructor;
@@ -14,11 +14,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * ImplementaciÃ³n estandarizada de {@link UserDetails} para LUKA APP.
+ * Implementación estandarizada de {@link UserDetails} para LUKA APP.
  * <p>
- * Este objeto actÃºa como el principal de seguridad en toda la plataforma. 
- * Contiene la identidad bÃ¡sica (email) y metadatos crÃ­ticos como el {@code usuarioId} 
- * extraÃ­do del token JWT, permitiendo realizar validaciones de propiedad de recursos 
+ * Este objeto actúa como el principal de seguridad en toda la plataforma. 
+ * Contiene la identidad básica (email) y metadatos críticos como el {@code usuarioId} 
+ * extraído del token JWT, permitiendo realizar validaciones de propiedad de recursos 
  * en cualquier microservicio.
  * </p>
  * 
@@ -29,10 +29,10 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class DetallesUsuario implements UserDetails {
 
-    /** Identificador Ãºnico del usuario en formato UUID. */
+    /** Identificador único del usuario en formato UUID. */
     private final UUID usuarioId;
     
-    /** Correo electrÃ³nico del usuario (utilizado como username). */
+    /** Correo electrónico del usuario (utilizado como username). */
     private final String email;
     
     /** Lista de permisos o roles asignados (ej. ROLE_USER, ROLE_ADMIN). */
@@ -41,7 +41,7 @@ public class DetallesUsuario implements UserDetails {
     /**
      * Convierte la lista de strings de roles en autoridades reconocidas por Spring Security.
      * 
-     * @return ColecciÃ³n de autoridades otorgadas.
+     * @return Colección de autoridades otorgadas.
      */
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -61,7 +61,7 @@ public class DetallesUsuario implements UserDetails {
     }
 
     /**
-     * Devuelve el correo electrÃ³nico del usuario.
+     * Devuelve el correo electrónico del usuario.
      * 
      * @return email.
      */

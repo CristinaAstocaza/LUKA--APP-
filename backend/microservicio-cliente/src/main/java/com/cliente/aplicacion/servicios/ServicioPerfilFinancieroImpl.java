@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.servicios;
+package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaPerfilFinanciero;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudPerfilFinanciero;
@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * LÃ³gica de negocio para el perfil financiero del cliente.
+ * Lógica de negocio para el perfil financiero del cliente.
  * 
  * @version 1.1.0
  */
@@ -73,7 +73,7 @@ public class ServicioPerfilFinancieroImpl implements ServicioPerfilFinanciero {
     }
 
     /**
-     * Consulta interna del perfil financiero sin validaciÃ³n de JWT (uso para Facade).
+     * Consulta interna del perfil financiero sin validación de JWT (uso para Facade).
      */
     @Override
     @Transactional(readOnly = true)
@@ -108,7 +108,6 @@ public class ServicioPerfilFinancieroImpl implements ServicioPerfilFinanciero {
     private RespuestaPerfilFinanciero convertirADTO(PerfilFinanciero e) {
         return new RespuestaPerfilFinanciero(
                 e.getOcupacion(),
-                e.getIngresoMensual(), e.getEstiloVida(), e.getTonoIA(),
-                e.getFechaCreacion(), e.getFechaActualizacion());
+                e.getIngresoMensual(), e.getEstiloVida(), e.getTonoIA());
     }
 }

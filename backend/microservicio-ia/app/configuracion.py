@@ -8,7 +8,6 @@ Cambios v5 (alineación con ecosystem):
   - Variables de RabbitMQ renombradas a SPRING_RABBITMQ_* (estándar compartido)
   - Variables de Redis mapeadas desde SPRING_DATA_REDIS_* / REDIS_*
   - Variables de BD mapeadas desde SPRING_DATASOURCE_* (usuario/password)
-  - Eureka controlado por EUREKA_CLIENT_ENABLED (mismo que los ms Java)
   - Entorno controlado por SPRING_PROFILES_ACTIVE
 ══════════════════════════════════════════════════════════════════════════════
 """
@@ -42,6 +41,12 @@ class Configuracion(BaseSettings):
     )
 
     jwt_algoritmo: str = "HS256"
+
+    luka_internal_token: str = Field(
+        default="",
+        validation_alias="LUKA_INTERNAL_TOKEN",
+        description="Token de seguridad para llamadas internas inter-servicio.",
+    )
 
     # ══════════════════════════════════════════════════════════════════════════
     # URLs DE MICROSERVICIOS JAVA

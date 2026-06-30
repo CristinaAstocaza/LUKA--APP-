@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.infraestructura.configuracion;
+package com.nucleo.financiero.infraestructura.configuracion;
 
 import com.libreria.comun.mensajeria.NombresExchange;
 import com.libreria.comun.mensajeria.NombresCola;
@@ -9,11 +9,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * ConfiguraciÃ³n de infraestructura de RabbitMQ para el NÃºcleo Financiero.
+ * Configuración de infraestructura de RabbitMQ para el Núcleo Financiero.
  * <p>
- * Centraliza la definiciÃ³n de exchanges, colas y bindings del mÃ³dulo,
- * asegurando la implementaciÃ³n de estrategias de resiliencia mediante Dead Letter Queues (DLQ).
- * Utiliza la infraestructura de conexiÃ³n y serializaciÃ³n JSON provista por ConfiguracionRabbitBase.
+ * Centraliza la definición de exchanges, colas y bindings del módulo,
+ * asegurando la implementación de estrategias de resiliencia mediante Dead Letter Queues (DLQ).
+ * Utiliza la infraestructura de conexión y serialización JSON provista por ConfiguracionRabbitBase.
  * </p>
  *
  * @version 1.3.0
@@ -44,7 +44,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     // =========================================================================
-    // COLAS PRINCIPALES (Integradas con la LibrerÃ­a)
+    // COLAS PRINCIPALES (Integradas con la Librería)
     // =========================================================================
 
     @Bean

@@ -1,10 +1,10 @@
-﻿package com.cliente.aplicacion.excepciones;
+package com.cliente.aplicacion.excepciones;
 
 import com.libreria.comun.excepciones.ExcepcionRecursoNoEncontrado;
 import java.util.UUID;
 
 /**
- * ExcepciÃ³n lanzada cuando no se encuentran los datos personales.
+ * Excepción lanzada cuando no se encuentran los datos personales.
  * 
  * @version 1.1.0
  */

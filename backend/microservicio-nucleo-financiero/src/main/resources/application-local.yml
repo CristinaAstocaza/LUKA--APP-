@@ -1,20 +1,38 @@
+# ---------------------------------------------------------------------------------------------------------------------
+#    SERVER: Puerto y configuración de red local
+# ---------------------------------------------------------------------------------------------------------------------
 server:
   port: 8085
 
+# ---------------------------------------------------------------------------------------------------------------------
+#    SPRING: Configuración general, perfiles e importación de .env.local
+# ---------------------------------------------------------------------------------------------------------------------
 spring:
+  config:
+    import: "optional:file:../.env.local[.properties]"
+
+# ---------------------------------------------------------------------------------------------------------------------
+#    DATASOURCE: Conexión y credenciales de PostgreSQL local
+# ---------------------------------------------------------------------------------------------------------------------
   datasource:
-    url: jdbc:postgresql://127.0.0.1:5432/db_luka_financiero
-    username: postgres
-    password: adminUTP
-  jpa:
-    hibernate:
-      ddl-auto: update
+    url: ${SPRING_DATASOURCE_URL_FINANCIERO:jdbc:postgresql://localhost:5432/db_microservicio_financiero}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:adminUTP}
+
+# ---------------------------------------------------------------------------------------------------------------------
+#    RABBITMQ: Broker de mensajería asíncrona y topologías
+# ---------------------------------------------------------------------------------------------------------------------
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
+    connection-name: ${spring.application.name}
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME:guest}
+    password: ${SPRING_RABBITMQ_PASSWORD:guest}
+    virtual-host: ${SPRING_RABBITMQ_VIRTUAL_HOST:/}
+
+# ---------------------------------------------------------------------------------------------------------------------
+#    DATA: Configuración de base de datos de Redis
+# ---------------------------------------------------------------------------------------------------------------------
   data:
     redis:
       repositories:
@@ -22,6 +40,23 @@ spring:
   cache:
     type: none
 
-eureka:
-  client:
-    enabled: false
+# ---------------------------------------------------------------------------------------------------------------------
+#    LUKA: Credenciales JWT de seguridad local
+# ---------------------------------------------------------------------------------------------------------------------
+luka:
+  jwt:
+    clave-secreta: ${JWT_SECRET_KEY:}
+    expiracion-ms: 86400000
+
+
+---
+# Desactivar discovery y eureka
+spring:
+  cloud:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    discovery:
+      enabled: false

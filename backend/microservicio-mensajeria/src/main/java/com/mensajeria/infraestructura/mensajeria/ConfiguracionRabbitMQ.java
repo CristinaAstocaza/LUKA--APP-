@@ -1,4 +1,4 @@
-﻿package com.mensajeria.infraestructura.mensajeria;
+package com.mensajeria.infraestructura.mensajeria;
 
 import com.libreria.comun.mensajeria.NombresCola;
 import com.libreria.comun.mensajeria.NombresExchange;
@@ -13,14 +13,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * ConfiguraciÃ³n de RabbitMQ para el microservicio de mensajerÃ­a.
+ * Configuración de RabbitMQ para el microservicio de mensajería.
  * <p>
- * Define la topologÃ­a especÃ­fica de este servicio:
+ * Define la topología específica de este servicio:
  * <ul>
  * <li>Exchange principal: {@code exchange.mensajeria} (TopicExchange).</li>
  * <li>Cola OTP: {@code cola.mensajeria.otp.generar}, durable, con DLQ
  * configurada.</li>
- * <li>Dead Letter Queue: {@code cola.mensajeria.error} â€” recibe mensajes que
+ * <li>Dead Letter Queue: {@code cola.mensajeria.error} — recibe mensajes que
  * fallan 3 veces consecutivas.</li>
  * </ul>
  * </p>
@@ -31,42 +31,42 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ConfiguracionRabbitMQ {
 
-    // â”€â”€ Exchanges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    /** Exchange de auditorÃ­a compartido con otros microservicios del ecosistema. */
+    // ── Exchanges ─────────────────────────────────────────────────────────────
+    /** Exchange de auditoría compartido con otros microservicios del ecosistema. */
     public static final String EXCHANGE_AUDITORIA = "exchange.auditoria";
 
-    /** Exchange propio del microservicio de mensajerÃ­a. */
+    /** Exchange propio del microservicio de mensajería. */
     public static final String EXCHANGE_MENSAJERIA = "exchange.mensajeria";
 
-    /** Exchange de error (Dead Letter) al que se envÃ­an mensajes no procesables. */
+    /** Exchange de error (Dead Letter) al que se envían mensajes no procesables. */
     public static final String EXCHANGE_ERROR = "exchange.mensajeria.error";
 
-    // â”€â”€ Colas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    /** Cola principal de generaciÃ³n de OTPs. */
+    // ── Colas ─────────────────────────────────────────────────────────────────
+    /** Cola principal de generación de OTPs. */
     public static final String COLA_OTP_GENERAR = NombresCola.MENSAJERIA_OTP_GENERAR;
 
     /** Cola de errores (DLQ) donde llegan mensajes con 3 fallos consecutivos. */
     public static final String COLA_ERROR = NombresCola.MENSAJERIA_ERROR;
 
-    /** Cola para envÃ­o asÃ­ncrono de emails transaccionales. */
+    /** Cola para envío asíncrono de emails transaccionales. */
     public static final String COLA_EMAIL_ENVIAR = NombresCola.MENSAJERIA_EMAIL_ENVIAR;
 
-    /** Cola para envÃ­o asÃ­ncrono de SMS. */
+    /** Cola para envío asíncrono de SMS. */
     public static final String COLA_SMS_ENVIAR = NombresCola.MENSAJERIA_SMS_ENVIAR;
 
-    // â”€â”€ Routing Keys â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    /** Routing key para solicitudes de generaciÃ³n de OTP. */
+    // ── Routing Keys ──────────────────────────────────────────────────────────
+    /** Routing key para solicitudes de generación de OTP. */
     public static final String RK_OTP_GENERAR = "mensaje.otp.generar";
 
-    /** Routing key para errores y reenvÃ­os a la DLQ. */
+    /** Routing key para errores y reenvíos a la DLQ. */
     public static final String RK_ERROR = "mensaje.error";
 
-    // â”€â”€ Exchanges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Exchanges ─────────────────────────────────────────────────────────────
 
     /**
-     * Exchange principal de mensajerÃ­a del microservicio.
+     * Exchange principal de mensajería del microservicio.
      *
-     * @return {@link TopicExchange} durable con enrutamiento por patrÃ³n.
+     * @return {@link TopicExchange} durable con enrutamiento por patrón.
      */
     @Bean
     public TopicExchange exchangeMensajeria() {
@@ -75,7 +75,7 @@ public class ConfiguracionRabbitMQ {
 
     /**
      * Exchange de error (Dead Letter Exchange) al que RabbitMQ re-enruta
-     * mensajes rechazados despuÃ©s de agotar los reintentos.
+     * mensajes rechazados después de agotar los reintentos.
      *
      * @return {@link TopicExchange} durable para mensajes fallidos.
      */
@@ -84,12 +84,12 @@ public class ConfiguracionRabbitMQ {
         return new TopicExchange(EXCHANGE_ERROR);
     }
 
-    // â”€â”€ Colas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Colas ─────────────────────────────────────────────────────────────────
 
     /**
-     * Cola principal de OTP con polÃ­tica de Dead Letter configurada.
-     * Los mensajes rechazados 3 veces son re-enrutados automÃ¡ticamente a
-     * {@code cola.mensajeria.error} para anÃ¡lisis posterior.
+     * Cola principal de OTP con política de Dead Letter configurada.
+     * Los mensajes rechazados 3 veces son re-enrutados automáticamente a
+     * {@code cola.mensajeria.error} para análisis posterior.
      *
      * @return {@link Queue} durable con {@code x-dead-letter-exchange} y
      *         {@code x-max-requeue-limit = 3}.
@@ -105,9 +105,9 @@ public class ConfiguracionRabbitMQ {
 
     /**
      * Dead Letter Queue donde aterrizan los mensajes que fallaron 3 veces.
-     * Permite inspecciÃ³n manual, alertas y eventual reintento controlado.
+     * Permite inspección manual, alertas y eventual reintento controlado.
      *
-     * @return {@link Queue} durable sin ninguna polÃ­tica adicional de DLQ.
+     * @return {@link Queue} durable sin ninguna política adicional de DLQ.
      */
     @Bean
     public Queue colaError() {
@@ -115,7 +115,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Cola durable para el envÃ­o asÃ­ncrono de correos electrÃ³nicos transaccionales.
+     * Cola durable para el envío asíncrono de correos electrónicos transaccionales.
      *
      * @return {@link Queue} durable enlazada al exchange principal.
      */
@@ -129,7 +129,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Cola durable para el envÃ­o asÃ­ncrono de SMS.
+     * Cola durable para el envío asíncrono de SMS.
      *
      * @return {@link Queue} durable enlazada al exchange principal.
      */
@@ -142,10 +142,10 @@ public class ConfiguracionRabbitMQ {
                 .build();
     }
 
-    // â”€â”€ Bindings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Bindings ──────────────────────────────────────────────────────────────
 
     /**
-     * Enlaza la cola OTP al exchange principal con la routing key de generaciÃ³n.
+     * Enlaza la cola OTP al exchange principal con la routing key de generación.
      *
      * @param colaOtpGenerar     Cola declarada por {@link #colaOtpGenerar()}.
      * @param exchangeMensajeria Exchange declarado por
@@ -164,8 +164,8 @@ public class ConfiguracionRabbitMQ {
 
     /**
      * Enlaza la cola de Email al exchange principal.
-     * Los mensajes enviados con la routing key "mensaje.email.enviar" llegarÃ¡n
-     * aquÃ­.
+     * Los mensajes enviados con la routing key "mensaje.email.enviar" llegarán
+     * aquí.
      */
     @Bean
     public Binding bindingEmailEnviar(
@@ -179,7 +179,7 @@ public class ConfiguracionRabbitMQ {
 
     /**
      * Enlaza la cola de SMS al exchange principal.
-     * Los mensajes enviados con la routing key "mensaje.sms.enviar" llegarÃ¡n aquÃ­.
+     * Los mensajes enviados con la routing key "mensaje.sms.enviar" llegarán aquí.
      */
     @Bean
     public Binding bindingSmsEnviar(
@@ -218,7 +218,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Define la cola de pagos exitosos especÃ­fica de mensajerÃ­a.
+     * Define la cola de pagos exitosos específica de mensajería.
      */
     @Bean
     public Queue queuePagosExitososMensajeria() {
@@ -226,7 +226,7 @@ public class ConfiguracionRabbitMQ {
     }
 
     /**
-     * Realiza el enlace entre la cola de pagos de mensajerÃ­a y el exchange de pagos.
+     * Realiza el enlace entre la cola de pagos de mensajería y el exchange de pagos.
      */
     @Bean
     public Binding bindingPagosMensajeria(

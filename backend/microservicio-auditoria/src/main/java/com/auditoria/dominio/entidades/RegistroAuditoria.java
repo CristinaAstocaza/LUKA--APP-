@@ -1,4 +1,4 @@
-﻿package com.auditoria.dominio.entidades;
+package com.auditoria.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -11,14 +11,14 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 /**
- * Entidad de persistencia que representa un registro de auditorÃ­a general en el
+ * Entidad de persistencia que representa un registro de auditoría general en el
  * sistema.
  * <p>
  * Esta clase mapea la tabla {@code registros_auditoria} y se utiliza para
  * capturar eventos significativos realizados por los usuarios en los distintos
- * mÃ³dulos de <b>Luka App</b>.
- * Incluye optimizaciones a nivel de base de datos mediante Ã­ndices para mejorar
- * la velocidad de bÃºsqueda por mÃ³dulo, fecha y usuario.
+ * módulos de <b>Luka App</b>.
+ * Incluye optimizaciones a nivel de base de datos mediante índices para mejorar
+ * la velocidad de búsqueda por módulo, fecha y usuario.
  * </p>
  * 
  * @version 1.1.0
@@ -38,7 +38,7 @@ import java.util.UUID;
 public class RegistroAuditoria {
 
     /**
-     * Identificador Ãºnico universal (UUID) del registro de auditorÃ­a.
+     * Identificador único universal (UUID) del registro de auditoría.
      */
     @Id
     @GeneratedValue
@@ -46,55 +46,55 @@ public class RegistroAuditoria {
     private UUID id;
 
     /**
-     * Identificador Ãºnico (UUID) del usuario que realizÃ³ la acciÃ³n.
+     * Identificador único (UUID) del usuario que realizó la acción.
      */
     @Column(name = "usuario_id", nullable = false)
     private UUID usuarioId;
 
     /**
-     * DescripciÃ³n breve de la acciÃ³n realizada (ej. "INICIO_SESION",
+     * Descripción breve de la acción realizada (ej. "INICIO_SESION",
      * "CREACION_USUARIO").
      */
     @Column(name = "accion", nullable = false, length = 100)
     private String accion;
 
     /**
-     * Nombre del mÃ³dulo o microservicio donde se originÃ³ el evento.
+     * Nombre del módulo o microservicio donde se originó el evento.
      */
     @Column(name = "modulo", nullable = false, length = 100)
     private String modulo;
 
     /**
-     * DirecciÃ³n IP desde la cual se realizÃ³ la peticiÃ³n. Soporta formatos IPv4 e
+     * Dirección IP desde la cual se realizó la petición. Soporta formatos IPv4 e
      * IPv6.
      */
     @Column(name = "ip_origen", length = 45)
     private String ipOrigen;
 
     /**
-     * Identificador de correlaciÃ³n Ãºnico para el seguimiento de la peticiÃ³n de extremo a extremo.
+     * Identificador de correlación único para el seguimiento de la petición de extremo a extremo.
      */
     @Column(name = "correlation_id", length = 100)
     private String correlationId;
 
     /**
-     * InformaciÃ³n adicional detallada sobre el evento en formato de texto libre o
+     * Información adicional detallada sobre el evento en formato de texto libre o
      * JSON.
      */
     @Column(name = "detalles", columnDefinition = "TEXT")
     private String detalles;
 
     /**
-     * Fecha en la que se registrÃ³ el evento de auditorÃ­a.
+     * Fecha en la que se registró el evento de auditoría.
      */
     @Column(name = "fecha_hora", nullable = false)
     private LocalDate fechaHora;
 
     /**
-     * MÃ©todo de ciclo de vida de JPA ejecutado antes de persistir la entidad.
+     * Método de ciclo de vida de JPA ejecutado antes de persistir la entidad.
      * <p>
      * Garantiza que el campo {@code fechaHora} siempre tenga un valor si no se
-     * proporcionÃ³ uno manualmente.
+     * proporcionó uno manualmente.
      * </p>
      */
     @PrePersist

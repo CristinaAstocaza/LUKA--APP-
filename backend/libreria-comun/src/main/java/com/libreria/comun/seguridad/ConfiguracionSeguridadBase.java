@@ -1,6 +1,7 @@
-﻿package com.libreria.comun.seguridad;
+package com.libreria.comun.seguridad;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -11,10 +12,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * ConfiguraciÃ³n base de seguridad para el ecosistema LUKA APP.
+ * Configuración base de seguridad para el ecosistema LUKA APP.
  * <p>
  * Proporciona los cimientos de una arquitectura Stateless: 1. Deshabilita CSRF
  * y sesiones (Stateless). 2. Configura el Punto de Entrada para errores 401 en
@@ -34,12 +37,20 @@ public abstract class ConfiguracionSeguridadBase {
     protected FiltroAutenticacionInterna filtroAutenticacionInterna;
 
     /**
-     * Define la configuraciÃ³n comÃºn de la cadena de filtros. Los microservicios
-     * deben llamar a este mÃ©todo y aÃ±adir sus rutas especÃ­ficas.
+     * Orígenes CORS permitidos en producción, separados por coma.
+     * Si no se define, el método {@code corsConfigurationSource()} usa el
+     * fallback de localhost para desarrollo local.
+     */
+    @Value("${CORS_ALLOWED_ORIGINS:}")
+    private String corsAllowedOriginsEnv;
+
+    /**
+     * Define la configuración común de la cadena de filtros. Los microservicios
+     * deben llamar a este método y añadir sus rutas específicas.
      *
-     * @param http ConfiguraciÃ³n de seguridad de Spring.
+     * @param http Configuración de seguridad de Spring.
      * @return {@link SecurityFilterChain} configurado.
-     * @throws Exception Si ocurre un error en la configuraciÃ³n.
+     * @throws Exception Si ocurre un error en la configuración.
      */
     protected HttpSecurity configurarAutorizacion(HttpSecurity http) throws Exception {
         return http
@@ -47,19 +58,29 @@ public abstract class ConfiguracionSeguridadBase {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(puntoEntradaJwt))
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' *;"))
+                )
                 .addFilterBefore(filtroJwt, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(filtroAutenticacionInterna, FiltroJwt.class);
     }
 
     /**
-     * ConfiguraciÃ³n de CORS permitiendo orÃ­genes de desarrollo.
-     * @return 
+     * Configuración de CORS dinámica.
+     * <p>
+     * Lee la variable de entorno {@code CORS_ALLOWED_ORIGINS} (lista separada
+     * por comas). Si no está definida o está vacía, usa el conjunto de
+     * orígenes localhost como fallback para el entorno de desarrollo local.
+     * </p>
+     *
+     * @return {@link CorsConfigurationSource} configurado.
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permitir orÃ­genes de desarrollo comunes
-        configuration.setAllowedOrigins(List.of(
+
+        List<String> origenesLocalhostFallback = List.of(
                 "http://localhost:8081",
                 "http://localhost:8082",
                 "http://localhost:8083",
@@ -69,11 +90,24 @@ public abstract class ConfiguracionSeguridadBase {
                 "http://localhost:61274",
                 "http://localhost:4200",
                 "http://localhost:4201",
-                "http://localhost:61878", // Puerto dinÃ¡mico detectado
-                "http://localhost:5173" // Vite
-        ));
+                "http://localhost:61878",
+                "http://localhost:5173"
+        );
+
+        List<String> origenes;
+        if (corsAllowedOriginsEnv != null && !corsAllowedOriginsEnv.isBlank()) {
+            origenes = Arrays.stream(corsAllowedOriginsEnv.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toList());
+        } else {
+            origenes = origenesLocalhostFallback;
+        }
+
+        configuration.setAllowedOrigins(origenes);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With",
+                "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
@@ -84,8 +118,8 @@ public abstract class ConfiguracionSeguridadBase {
     }
 
     /**
-     * Bean de codificaciÃ³n de contraseÃ±as Ãºnico para toda la plataforma. Se usa
-     * BCrypt con fuerza 12 para mÃ¡xima seguridad.
+     * Bean de codificación de contraseñas único para toda la plataforma. Se usa
+     * BCrypt con fuerza 12 para máxima seguridad.
      *
      * @return password
      */

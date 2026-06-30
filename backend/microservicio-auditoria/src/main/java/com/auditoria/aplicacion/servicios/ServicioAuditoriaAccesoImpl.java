@@ -1,4 +1,4 @@
-﻿package com.auditoria.aplicacion.servicios;
+package com.auditoria.aplicacion.servicios;
 
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaAcceso;
 import com.auditoria.aplicacion.puertos.ServicioSeguridadAuditoria;
@@ -19,10 +19,10 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * ImplementaciÃ³n del servicio de auditorÃ­a de acceso.
+ * Implementación del servicio de auditoría de acceso.
  * <p>
  * Gestiona el ciclo de vida de los registros de acceso y colabora con el
- * servicio de seguridad para la detecciÃ³n de anomalÃ­as.
+ * servicio de seguridad para la detección de anomalías.
  * </p>
  * 
  */
@@ -56,7 +56,7 @@ public class ServicioAuditoriaAccesoImpl implements ServicioAuditoriaAcceso {
                 .build();
         AuditoriaAcceso guardado = repositorio.save(Objects.requireNonNull(entidad));
 
-        // Si es un fallo, delegamos la lÃ³gica de bloqueo al servicio de seguridad
+        // Si es un fallo, delegamos la lógica de bloqueo al servicio de seguridad
         if (dto.estado() == EstadoEvento.FALLO) {
             servicioSeguridad.verificarIntentoFallido(dto.ipOrigen());
         }
@@ -88,7 +88,7 @@ public class ServicioAuditoriaAccesoImpl implements ServicioAuditoriaAcceso {
     }
 
     /**
-     * Mapea la entidad de persistencia al DTO de auditorÃ­a de acceso.
+     * Mapea la entidad de persistencia al DTO de auditoría de acceso.
      */
     private EventoAccesoDTO convertirADTO(AuditoriaAcceso e) {
         return new EventoAccesoDTO(

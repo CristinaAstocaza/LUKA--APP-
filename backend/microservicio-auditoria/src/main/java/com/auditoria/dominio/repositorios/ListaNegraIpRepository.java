@@ -1,4 +1,4 @@
-﻿package com.auditoria.dominio.repositorios;
+package com.auditoria.dominio.repositorios;
 
 import com.auditoria.dominio.entidades.ListaNegraIp;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repositorio para la gestiÃ³n de IPs bloqueadas por seguridad.
+ * Repositorio para la gestión de IPs bloqueadas por seguridad.
  * Utilizado por el Gateway para filtrar peticiones maliciosas en tiempo real.
  * 
  * @version 1.2.0
@@ -23,8 +23,8 @@ public interface ListaNegraIpRepository extends JpaRepository<ListaNegraIp, UUID
     /**
      * Busca un registro de bloqueo que no haya expirado para la IP dada.
      * 
-     * @param ip    DirecciÃ³n IP a consultar.
-     * @param ahora Momento actual de validaciÃ³n.
+     * @param ip    Dirección IP a consultar.
+     * @param ahora Momento actual de validación.
      * @return Optional con el registro si el bloqueo sigue vigente.
      */
     @Query("""
@@ -37,7 +37,7 @@ public interface ListaNegraIpRepository extends JpaRepository<ListaNegraIp, UUID
             @Param("ahora") LocalDateTime ahora);
 
     /**
-     * Elimina de forma masiva los registros cuya fecha de expiraciÃ³n ha pasado.
+     * Elimina de forma masiva los registros cuya fecha de expiración ha pasado.
      * 
      * @param ahora Fecha actual para determinar la caducidad.
      * @return Total de registros eliminados.
@@ -50,9 +50,9 @@ public interface ListaNegraIpRepository extends JpaRepository<ListaNegraIp, UUID
     /**
      * Valida la existencia de un bloqueo activo (permanente o temporal).
      * 
-     * @param ip    DirecciÃ³n IP a verificar.
-     * @param ahora Momento actual de validaciÃ³n.
-     * @return Verdadero si la IP estÃ¡ actualmente en la lista negra.
+     * @param ip    Dirección IP a verificar.
+     * @param ahora Momento actual de validación.
+     * @return Verdadero si la IP está actualmente en la lista negra.
      */
     @Query("""
             SELECT COUNT(l) > 0 FROM ListaNegraIp l

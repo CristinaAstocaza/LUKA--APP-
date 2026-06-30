@@ -1,4 +1,4 @@
-﻿package com.auditoria.infraestructura.tareas;
+package com.auditoria.infraestructura.tareas;
 
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaAcceso;
 import com.auditoria.aplicacion.puertos.ServicioSeguridadAuditoria;
@@ -9,11 +9,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * Tarea programada para la limpieza y mantenimiento periÃ³dico de registros
- * de auditorÃ­a y bloqueos de seguridad.
+ * Tarea programada para la limpieza y mantenimiento periódico de registros
+ * de auditoría y bloqueos de seguridad.
  * <p>
- * Centraliza la programaciÃ³n de tareas programadas cumpliendo con el
- * principio de responsabilidad Ãºnica (SRP), delegando la ejecuciÃ³n a los
+ * Centraliza la programación de tareas programadas cumpliendo con el
+ * principio de responsabilidad única (SRP), delegando la ejecución a los
  * respectivos servicios.
  * </p>
  * 
@@ -35,7 +35,7 @@ public class TareaLimpiezaAuditoria {
      */
     @Scheduled(fixedRate = 3600000)
     public void limpiarBloqueosExpirados() {
-        log.info("[TAREA-PROGRAMADA] Iniciando limpieza periÃ³dica de bloqueos de IP expirados...");
+        log.info("[TAREA-PROGRAMADA] Iniciando limpieza periódica de bloqueos de IP expirados...");
         try {
             servicioSeguridad.limpiarBloqueosExpirados();
         } catch (Exception e) {
@@ -44,12 +44,12 @@ public class TareaLimpiezaAuditoria {
     }
 
     /**
-     * Tarea programada para purgar de manera automÃ¡tica los accesos antiguos.
+     * Tarea programada para purgar de manera automática los accesos antiguos.
      * Se ejecuta de forma diaria (cada 24 horas).
      */
     @Scheduled(fixedRate = 86400000)
     public void limpiarAccesosAntiguos() {
-        log.info("[TAREA-PROGRAMADA] Iniciando purga programada de registros de acceso anteriores a {} dÃ­as...", diasRetencion);
+        log.info("[TAREA-PROGRAMADA] Iniciando purga programada de registros de acceso anteriores a {} días...", diasRetencion);
         try {
             servicioAcceso.limpiarRegistrosAntiguos(diasRetencion);
         } catch (Exception e) {

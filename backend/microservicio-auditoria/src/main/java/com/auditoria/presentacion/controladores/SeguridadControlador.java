@@ -1,4 +1,4 @@
-﻿package com.auditoria.presentacion.controladores;
+package com.auditoria.presentacion.controladores;
 
 import com.auditoria.aplicacion.dtos.RespuestaVerificacionIpDTO;
 import com.auditoria.aplicacion.puertos.ServicioSeguridadAuditoria;
@@ -17,7 +17,7 @@ import java.util.List;
  * Controlador REST que expone las operaciones de seguridad y defensa
  * perimetral.
  * <p>
- * Proporciona endpoints crÃ­ticos para la evaluaciÃ³n de amenazas en tiempo real.
+ * Proporciona endpoints críticos para la evaluación de amenazas en tiempo real.
  * Principalmente utilizado por el API Gateway para consultar si una IP origen
  * se encuentra en la lista negra antes de permitir el enrutamiento de
  * peticiones.
@@ -34,16 +34,16 @@ public class SeguridadControlador {
     private final ServicioSeguridadAuditoria servicioSeguridad;
 
     /**
-     * Verifica el estado actual de una direcciÃ³n IP frente a la lista negra.
+     * Verifica el estado actual de una dirección IP frente a la lista negra.
      * <p>
      * Este endpoint es consultado de manera intensiva por el Gateway. Retorna un
-     * DTO que indica si la IP estÃ¡ libre o si tiene un bloqueo activo (y hasta
-     * cuÃ¡ndo).
+     * DTO que indica si la IP está libre o si tiene un bloqueo activo (y hasta
+     * cuándo).
      * </p>
      * 
-     * @param ip DirecciÃ³n IP a consultar.
+     * @param ip Dirección IP a consultar.
      * @return {@link ResponseEntity} conteniendo el {@link ResultadoApi} con los
-     *         datos de verificaciÃ³n.
+     *         datos de verificación.
      */
     @GetMapping("/verificar-ip/{ip}")
     public ResponseEntity<ResultadoApi<RespuestaVerificacionIpDTO>> verificarIp(@PathVariable String ip) {
@@ -52,16 +52,16 @@ public class SeguridadControlador {
         return ResponseEntity.ok(
                 ResultadoApi.exito(
                         respuesta,
-                        "VerificaciÃ³n de estado de IP completada.", null));
+                        "Verificación de estado de IP completada.", null));
     }
 
     /**
      * Recupera la lista paginada de todos los bloqueos e historial en la lista negra.
      * Acceso restringido a administradores.
      * 
-     * @param pagina  NÃºmero de pÃ¡gina (0 por defecto).
-     * @param tamanio Cantidad de registros por pÃ¡gina (20 por defecto, mÃ¡x 100).
-     * @return {@link ResponseEntity} con el {@link ResultadoApi} y la paginaciÃ³n estÃ¡ndar.
+     * @param pagina  Número de página (0 por defecto).
+     * @param tamanio Cantidad de registros por página (20 por defecto, máx 100).
+     * @return {@link ResponseEntity} con el {@link ResultadoApi} y la paginación estándar.
      */
     @GetMapping("/lista-negra")
     public ResponseEntity<ResultadoApi<List<ListaNegraIp>>> listarBloqueos(
@@ -77,18 +77,18 @@ public class SeguridadControlador {
         return ResponseEntity.ok(
                 ResultadoApi.exito(
                         metadata.contenido(),
-                        "Listado de lista negra de IP recuperado con Ã©xito.",
+                        "Listado de lista negra de IP recuperado con éxito.",
                         metadata));
     }
 
     /**
-     * Bloquea manualmente una direcciÃ³n IP por motivos de seguridad.
+     * Bloquea manualmente una dirección IP por motivos de seguridad.
      * Acceso restringido a administradores.
      * 
-     * @param ip      DirecciÃ³n IP a bloquear.
-     * @param motivo  RazÃ³n descriptiva del bloqueo.
-     * @param minutos DuraciÃ³n del bloqueo en minutos (opcional).
-     * @return Respuesta de Ã©xito.
+     * @param ip      Dirección IP a bloquear.
+     * @param motivo  Razón descriptiva del bloqueo.
+     * @param minutos Duración del bloqueo en minutos (opcional).
+     * @return Respuesta de éxito.
      */
     @PostMapping("/lista-negra/bloquear")
     public ResponseEntity<ResultadoApi<Void>> bloquearIp(
@@ -105,11 +105,11 @@ public class SeguridadControlador {
     }
 
     /**
-     * Desbloquea manualmente una direcciÃ³n IP previamente bloqueada.
+     * Desbloquea manualmente una dirección IP previamente bloqueada.
      * Acceso restringido a administradores.
      * 
-     * @param ip DirecciÃ³n IP a desbloquear.
-     * @return Respuesta de Ã©xito.
+     * @param ip Dirección IP a desbloquear.
+     * @return Respuesta de éxito.
      */
     @DeleteMapping("/lista-negra/desbloquear")
     public ResponseEntity<ResultadoApi<Void>> desbloquearIp(@RequestParam String ip) {
@@ -117,7 +117,7 @@ public class SeguridadControlador {
         return ResponseEntity.ok(
                 ResultadoApi.exito(
                         null,
-                        String.format("IP %s desbloqueada manualmente con Ã©xito.", ip),
+                        String.format("IP %s desbloqueada manualmente con éxito.", ip),
                         null));
     }
 }

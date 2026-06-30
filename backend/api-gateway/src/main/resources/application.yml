@@ -1,0 +1,19 @@
+# ---------------------------------------------------------------------------------------------------------------------
+#                            SPRING: Configuración general, perfiles e importación de .env
+# ---------------------------------------------------------------------------------------------------------------------
+spring:
+  profiles:
+    active: local
+
+
+---
+# Desactivar discovery y eureka
+spring:
+  cloud:
+    discovery:
+      enabled: false
+
+management:
+  health:
+    discovery:
+      enabled: false

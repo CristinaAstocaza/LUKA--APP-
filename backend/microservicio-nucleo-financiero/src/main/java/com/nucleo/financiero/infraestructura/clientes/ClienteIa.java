@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.infraestructura.clientes;
+package com.nucleo.financiero.infraestructura.clientes;
 
 import com.libreria.comun.dtos.RespuestaIaDTO;
 import com.libreria.comun.dtos.SolicitudIaDTO;
@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 /**
- * Cliente Feign para la comunicaciÃ³n con el motor de Inteligencia Artificial (Python/FastAPI).
+ * Cliente Feign para la comunicación con el motor de Inteligencia Artificial (Python/FastAPI).
  * <p>
- * Este cliente facilita la integraciÃ³n sÃ­ncrona con el servicio de IA para obtener
+ * Este cliente facilita la integración síncrona con el servicio de IA para obtener
  * recomendaciones financieras en tiempo real.
  * </p>
  * 
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface ClienteIa {
 
     /**
-     * EnvÃ­a una solicitud de anÃ¡lisis financiero al motor de IA.
+     * Envía una solicitud de análisis financiero al motor de IA.
      * 
      * @param solicitud DTO enriquecido con el historial y contexto del usuario.
      * @return DTO con el consejo generado por Gemini.

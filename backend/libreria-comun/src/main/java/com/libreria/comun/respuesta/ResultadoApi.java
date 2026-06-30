@@ -1,4 +1,4 @@
-﻿package com.libreria.comun.respuesta;
+package com.libreria.comun.respuesta;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.libreria.comun.enums.CodigoError;
@@ -8,23 +8,23 @@ import java.util.List;
 /**
  * Envoltura universal para todas las respuestas de la plataforma LUKA APP.
  * <p>
- * Esta clase garantiza un contrato Ãºnico entre el backend y los consumidores
+ * Esta clase garantiza un contrato único entre el backend y los consumidores
  * (Frontend/IA), permitiendo manejar de forma consistente tanto respuestas
  * exitosas como errores. Utiliza anotaciones de Jackson para omitir campos
  * nulos.
  * </p>
  *
  * @param <T>         Tipo de dato que contiene la respuesta exitosa.
- * @param exito       Indica si la operaciÃ³n fue satisfactoria.
- * @param estado      CÃ³digo de estado HTTP (ej. 200, 201, 404, 500).
- * @param error       Etiqueta semÃ¡ntica del error (ej.
+ * @param exito       Indica si la operación fue satisfactoria.
+ * @param estado      Código de estado HTTP (ej. 200, 201, 404, 500).
+ * @param error       Etiqueta semántica del error (ej.
  *                    "USUARIO_NO_REGISTRADO").
- * @param mensaje     Mensaje descriptivo en espaÃ±ol para el usuario final.
- * @param datos       Carga Ãºtil de la respuesta (solo en caso de Ã©xito).
- * @param detalles    Lista de errores especÃ­ficos (principalmente para
+ * @param mensaje     Mensaje descriptivo en español para el usuario final.
+ * @param datos       Carga útil de la respuesta (solo en caso de éxito).
+ * @param detalles    Lista de errores específicos (principalmente para
  *                    validaciones).
- * @param ruta        URI del endpoint que originÃ³ la respuesta.
- * @param marcaTiempo Momento exacto en que se generÃ³ la respuesta.
+ * @param ruta        URI del endpoint que originó la respuesta.
+ * @param marcaTiempo Momento exacto en que se generó la respuesta.
  *
  * @version 1.1.0
  */
@@ -41,15 +41,15 @@ public record ResultadoApi<T>(
         LocalDateTime marcaTiempo) {
 
     // =========================================================================
-    // FÃBRICAS DE Ã‰XITO (HTTP 2xx)
+    // FÁBRICAS DE ÉXITO (HTTP 2xx)
     // =========================================================================
     /**
-     * Crea una respuesta de Ã©xito estÃ¡ndar (HTTP 200 OK) con datos y mensaje.
+     * Crea una respuesta de éxito estándar (HTTP 200 OK) con datos y mensaje.
      *
      * @param <T>     Tipo de dato.
-     * @param datos   Carga Ãºtil de la respuesta.
-     * @param mensaje DescripciÃ³n de la operaciÃ³n exitosa.
-     * @param pagina  InformaciÃ³n de paginaciÃ³n si aplica.
+     * @param datos   Carga útil de la respuesta.
+     * @param mensaje Descripción de la operación exitosa.
+     * @param pagina  Información de paginación si aplica.
      * @return Instancia de ResultadoApi parametrizada.
      */
     public static <T> ResultadoApi<T> exito(T datos, String mensaje, Paginacion<?> pagina) {
@@ -57,11 +57,11 @@ public record ResultadoApi<T>(
     }
 
     /**
-     * Crea una respuesta de Ã©xito estÃ¡ndar (HTTP 200 OK) con datos y mensaje.
+     * Crea una respuesta de éxito estándar (HTTP 200 OK) con datos y mensaje.
      *
      * @param <T>     Tipo de dato.
-     * @param datos   Carga Ãºtil de la respuesta.
-     * @param mensaje DescripciÃ³n de la operaciÃ³n exitosa.
+     * @param datos   Carga útil de la respuesta.
+     * @param mensaje Descripción de la operación exitosa.
      * @return Instancia de ResultadoApi parametrizada.
      */
     public static <T> ResultadoApi<T> exito(T datos, String mensaje) {
@@ -69,22 +69,22 @@ public record ResultadoApi<T>(
     }
 
     /**
-     * Crea una respuesta de Ã©xito estÃ¡ndar (HTTP 200 OK) solo con datos.
+     * Crea una respuesta de éxito estándar (HTTP 200 OK) solo con datos.
      *
      * @param <T>   Tipo de dato.
-     * @param datos Carga Ãºtil de la respuesta.
+     * @param datos Carga útil de la respuesta.
      * @return Instancia de ResultadoApi parametrizada.
      */
     public static <T> ResultadoApi<T> exito(T datos) {
-        return exito(datos, "OperaciÃ³n realizada con Ã©xito", null);
+        return exito(datos, "Operación realizada con éxito", null);
     }
 
     /**
-     * Crea una respuesta de Ã©xito para creaciÃ³n de recursos (HTTP 201 Created).
+     * Crea una respuesta de éxito para creación de recursos (HTTP 201 Created).
      *
      * @param <T>     Tipo de dato.
-     * @param datos   El recurso reciÃ©n creado.
-     * @param mensaje ConfirmaciÃ³n de creaciÃ³n.
+     * @param datos   El recurso recién creado.
+     * @param mensaje Confirmación de creación.
      * @return Instancia de ResultadoApi con estado 201.
      */
     public static <T> ResultadoApi<T> creado(T datos, String mensaje) {
@@ -92,8 +92,8 @@ public record ResultadoApi<T>(
     }
 
     /**
-     * Crea una respuesta de Ã©xito para solicitudes aceptadas pero no procesadas
-     * aÃºn (HTTP 202 Accepted). Ãštil para tareas asÃ­ncronas o colas.
+     * Crea una respuesta de éxito para solicitudes aceptadas pero no procesadas
+     * aún (HTTP 202 Accepted). Útil para tareas asíncronas o colas.
      *
      * @param mensaje Estado del proceso aceptado.
      * @return Instancia de ResultadoApi con estado 202.
@@ -103,9 +103,9 @@ public record ResultadoApi<T>(
     }
 
     /**
-     * Crea una respuesta de Ã©xito sin contenido (HTTP 204 No Content).
+     * Crea una respuesta de éxito sin contenido (HTTP 204 No Content).
      *
-     * @param mensaje DescripciÃ³n de la operaciÃ³n (ej. eliminaciÃ³n exitosa).
+     * @param mensaje Descripción de la operación (ej. eliminación exitosa).
      * @return Instancia de ResultadoApi con estado 204.
      */
     public static ResultadoApi<Void> sinContenido(String mensaje) {
@@ -113,14 +113,14 @@ public record ResultadoApi<T>(
     }
 
     // =========================================================================
-    // FÃBRICAS DE ERROR BASADAS EN ENUM (RECOMENDADAS)
+    // FÁBRICAS DE ERROR BASADAS EN ENUM (RECOMENDADAS)
     // =========================================================================
     /**
-     * Crea una falla utilizando el catÃ¡logo oficial de errores de LUKA APP.
+     * Crea una falla utilizando el catálogo oficial de errores de LUKA APP.
      *
-     * @param <T>     Tipo genÃ©rico (usualmente {@code Void}).
+     * @param <T>     Tipo genérico (usualmente {@code Void}).
      * @param cod     Constante del Enum {@link CodigoError}.
-     * @param mensaje Mensaje especÃ­fico del error.
+     * @param mensaje Mensaje específico del error.
      * @param ruta    URI solicitada.
      * @return Instancia de ResultadoApi parametrizada como error.
      */
@@ -130,14 +130,14 @@ public record ResultadoApi<T>(
     }
 
     /**
-     * Crea una falla con lista de detalles especÃ­ficos utilizando el Enum
-     * oficial. Ideal para errores de validaciÃ³n de negocio.
+     * Crea una falla con lista de detalles específicos utilizando el Enum
+     * oficial. Ideal para errores de validación de negocio.
      *
-     * @param <T>      Tipo genÃ©rico.
+     * @param <T>      Tipo genérico.
      * @param cod      Constante del Enum {@link CodigoError}.
      * @param mensaje  Mensaje general del error.
      * @param ruta     URI solicitada.
-     * @param detalles Lista de strings con detalles tÃ©cnicos o de campo.
+     * @param detalles Lista de strings con detalles técnicos o de campo.
      * @return Instancia de ResultadoApi con lista de detalles poblada.
      */
     public static <T> ResultadoApi<T> fallaConDetalles(CodigoError cod, String mensaje, String ruta,
@@ -147,13 +147,13 @@ public record ResultadoApi<T>(
     }
 
     // =========================================================================
-    // FÃBRICAS DE ERROR GENÃ‰RICAS (FLEXIBILIDAD)
+    // FÁBRICAS DE ERROR GENÉRICAS (FLEXIBILIDAD)
     // =========================================================================
     /**
-     * Crea una respuesta de error estÃ¡ndar usando tipos primitivos.
+     * Crea una respuesta de error estándar usando tipos primitivos.
      *
-     * @param <T>     Tipo genÃ©rico.
-     * @param estado  CÃ³digo de estado HTTP manual.
+     * @param <T>     Tipo genérico.
+     * @param estado  Código de estado HTTP manual.
      * @param error   Etiqueta de error manual.
      * @param mensaje Mensaje descriptivo.
      * @param ruta    URI solicitada.
@@ -167,8 +167,8 @@ public record ResultadoApi<T>(
      * Crea una respuesta de error enriquecida con detalles usando tipos
      * primitivos.
      *
-     * @param <T>      Tipo genÃ©rico.
-     * @param estado   CÃ³digo de estado HTTP manual.
+     * @param <T>      Tipo genérico.
+     * @param estado   Código de estado HTTP manual.
      * @param error    Etiqueta de error manual.
      * @param mensaje  Mensaje descriptivo.
      * @param ruta     URI solicitada.

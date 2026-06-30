@@ -17,6 +17,7 @@ Cambios respecto a v3:
 
 import logging
 import threading
+import os
 import asyncio
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -36,7 +37,7 @@ from app.mensajeria.outbox_scheduler import OutboxScheduler
 from app.mensajeria.escuchador_sincronizacion_ia import EscuchadorSincronizacionIA
 from app.mensajeria.escuchador_cambio_datos_ia import EscuchadorCambioDatosIA
 from app.routers import analisis, dashboard
-from app.persistencia.database import inicializar_db
+from app.persistencia.postgres.database import inicializar_db
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -112,12 +113,15 @@ def _iniciar_escuchadores_adicionales() -> None:
     try:
         import redis
         try:
+            redis_ssl = os.getenv("REDIS_SSL", "true").lower() == "true"
             redis_client = redis.Redis(
                 host=config.redis_host,
                 port=config.redis_port,
                 db=config.redis_db,
                 password=config.redis_password or None,
                 decode_responses=True,
+                ssl=redis_ssl,
+                ssl_cert_reqs=None,
             )
             redis_client.ping()
         except Exception as conn_err:
@@ -130,6 +134,8 @@ def _iniciar_escuchadores_adicionales() -> None:
                     db=config.redis_db,
                     password=None,
                     decode_responses=True,
+                    ssl=redis_ssl,
+                    ssl_cert_reqs=None,
                 )
                 redis_client.ping()
             else:
@@ -253,6 +259,17 @@ app = FastAPI(
 )
 
 # ── MIDDLEWARES ───────────────────────────────────────────────────────────────
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
 app.add_middleware(TraceabilityMiddleware)
 
 app.description = """
@@ -283,11 +300,24 @@ El sistema separa claramente dos responsabilidades:
 """
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CORS: Permitir todas las orígenes en desarrollo, restringir en producción
+# CORS: Permitir orígenes configurados en desarrollo, restringir en producción
 # ══════════════════════════════════════════════════════════════════════════════
+allow_origins = [
+    "http://localhost:3000",
+    "http://localhost:4200",
+    "http://localhost:5173",
+]
+if config.es_produccion:
+    frontend_url = os.getenv("FRONTEND_URL", "")
+    cors_extra = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    origins_list = [o.strip() for o in cors_extra.split(",") if o.strip()]
+    if frontend_url:
+        origins_list.append(frontend_url)
+    allow_origins = origins_list if origins_list else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"] if not config.es_produccion else [],
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

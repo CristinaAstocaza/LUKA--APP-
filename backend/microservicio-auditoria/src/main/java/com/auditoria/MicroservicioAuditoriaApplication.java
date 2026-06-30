@@ -1,4 +1,4 @@
-﻿package com.auditoria;
+package com.auditoria;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -6,11 +6,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Clase principal y punto de entrada para el microservicio de auditorÃ­a.
+ * Clase principal y punto de entrada para el microservicio de auditoría.
  * <p>
  * Este servicio forma parte del ecosistema de <b>Luka App</b> y tiene como
  * objetivo
- * centralizar, procesar y almacenar los eventos de auditorÃ­a (accesos y
+ * centralizar, procesar y almacenar los eventos de auditoría (accesos y
  * transacciones)
  * distribuidos por toda la arquitectura de microservicios.
  * </p>
@@ -19,11 +19,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Configuraciones clave:
  * </p>
  * <ul>
- * <li>{@code @EnableScheduling}: Permite la ejecuciÃ³n de tareas programadas,
+ * <li>{@code @EnableScheduling}: Permite la ejecución de tareas programadas,
  * como el procesamiento de colas o limpieza de logs.</li>
  * <li>{@code @ComponentScan}: Configurado para incluir los paquetes de la
  * {@code libreria-comun},
- * asegurando la inyecciÃ³n de DTOs y componentes compartidos.</li>
+ * asegurando la inyección de DTOs y componentes compartidos.</li>
  * </ul>
  *
  * @version 1.1.0

@@ -1,4 +1,4 @@
-﻿package com.libreria.comun.respuesta;
+package com.libreria.comun.respuesta;
 
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -10,13 +10,13 @@ import org.springframework.data.domain.Page;
  * en un formato simplificado y consistente para el consumo desde el Frontend.
  * </p>
  * 
- * @param <T>            Tipo de los elementos contenidos en la pÃ¡gina.
- * @param contenido      Lista de elementos de la pÃ¡gina actual.
- * @param numeroPagina   Ãndice de la pÃ¡gina actual (basado en cero).
- * @param tamaÃ±oPagina   Cantidad de elementos solicitados por pÃ¡gina.
+ * @param <T>            Tipo de los elementos contenidos en la página.
+ * @param contenido      Lista de elementos de la página actual.
+ * @param numeroPagina   Índice de la página actual (basado en cero).
+ * @param tamañoPagina   Cantidad de elementos solicitados por página.
  * @param totalElementos Cantidad total de registros existentes en la base de datos.
- * @param totalPaginas   Cantidad total de pÃ¡ginas disponibles.
- * @param esUltima       Indica si la pÃ¡gina actual es la Ãºltima de la colecciÃ³n.
+ * @param totalPaginas   Cantidad total de páginas disponibles.
+ * @param esUltima       Indica si la página actual es la última de la colección.
  * 
  */
 public record Paginacion<T>(
@@ -31,7 +31,7 @@ public record Paginacion<T>(
      * Convierte una instancia de {@code Page} de Spring Data a nuestro formato {@code Pagina}.
      * 
      * @param <T>  Tipo de dato.
-     * @param page Objeto de paginaciÃ³n de Spring Data.
+     * @param page Objeto de paginación de Spring Data.
      * @return Una nueva instancia de {@code Pagina} con los metadatos mapeados.
      */
     public static <T> Paginacion<T> desde(Page<T> page) {

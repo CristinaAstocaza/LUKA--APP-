@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.servicios;
+package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaMetaAhorro;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudMetaAhorro;
@@ -27,7 +27,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * LÃ³gica de negocio para la gestiÃ³n de metas de ahorro.
+ * Lógica de negocio para la gestión de metas de ahorro.
  * 
  * @version 1.2.0
  */
@@ -46,6 +46,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
         MetaAhorro meta = MetaAhorro.builder()
                 .usuarioId(usuarioIdToken)
                 .nombre(solicitud.nombre())
+                .proposito(solicitud.proposito())
                 .montoObjetivo(solicitud.montoObjetivo())
                 .montoActual(solicitud.montoActual() != null ? solicitud.montoActual() : BigDecimal.ZERO)
                 .fechaLimite(solicitud.fechaLimite())
@@ -57,7 +58,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
 
         publicadorAuditoria.publicarEventoExitoso(EventoAuditoriaDTO.crear(
                 usuarioIdToken, "META_AHORRO_CREADA", "MS-CLIENTE", ipOrigen,
-                String.format("Meta creada: '%s' â€” objetivo: S/ %.2f", guardada.getNombre(), guardada.getMontoObjetivo())));
+                String.format("Meta creada: '%s' — objetivo: S/ %.2f", guardada.getNombre(), guardada.getMontoObjetivo())));
 
         eventPublisher.publishEvent(new EventoContextoActualizado(usuarioIdToken, "META_AHORRO_CREADA"));
         return convertirADTO(guardada);
@@ -68,7 +69,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
     public RespuestaMetaAhorro actualizarMeta(UUID metaId, UUID usuarioIdToken, SolicitudMetaAhorro solicitud, String ipOrigen) {
         MetaAhorro meta = obtenerYValidarPropiedad(metaId, usuarioIdToken);
         
-        meta.setNombre(solicitud.nombre());
+        // El nombre y propósito no se actualizan según las reglas de negocio
         meta.setMontoObjetivo(solicitud.montoObjetivo());
         meta.setFechaLimite(solicitud.fechaLimite());
         
@@ -101,7 +102,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
         if (recienCompletada) {
             publicadorAuditoria.publicarTransaccionExitosa(EventoTransaccionalDTO.crear(
                     usuarioIdToken, metaId, "MS-CLIENTE", "META_AHORRO",
-                    String.format("Â¡Meta '%s' alcanzada! S/ %.2f de S/ %.2f", actualizada.getNombre(), actualizada.getMontoActual(), actualizada.getMontoObjetivo()),
+                    String.format("¡Meta '%s' alcanzada! S/ %.2f de S/ %.2f", actualizada.getNombre(), actualizada.getMontoActual(), actualizada.getMontoObjetivo()),
                     montoAnterior + "", actualizada.getMontoActual() + ""));
         } else {
             publicadorAuditoria.publicarTransaccionExitosa(EventoTransaccionalDTO.crear(
@@ -125,7 +126,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
     @Override
     @Transactional(readOnly = true)
     public Paginacion<RespuestaMetaAhorro> listarActivas(UUID usuarioIdToken, Pageable pageable) {
-        Page<RespuestaMetaAhorro> page = repositorio.findMetasActivasOrdenadas(usuarioIdToken, pageable)
+        Page<RespuestaMetaAhorro> page = repositorio.findByUsuarioIdAndCompletadaFalseAndActivaTrue(usuarioIdToken, pageable)
                 .map(this::convertirADTO);
         return Paginacion.desde(page);
     }
@@ -170,7 +171,7 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
             throw new ExcepcionAccesoDenegado();
         }
         if (!meta.getActiva()) {
-            throw new MetaNoEncontradaException(metaId); // Si estÃ¡ desactivada, es como si no existiera
+            throw new MetaNoEncontradaException(metaId); // Si está desactivada, es como si no existiera
         }
         return meta;
     }
@@ -181,6 +182,6 @@ public class ServicioMetaAhorroImpl implements ServicioMetaAhorro {
                 m.getMontoObjetivo(), m.getMontoActual(),
                 m.calcularPorcentajeProgreso(),
                 m.getFechaLimite(), m.getCompletada(),
-                m.getFechaCreacion(), m.getFechaActualizacion());
+                m.getProposito());
     }
 }

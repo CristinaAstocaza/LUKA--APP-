@@ -1,11 +1,11 @@
-﻿package com.auditoria.aplicacion.dtos;
+package com.auditoria.aplicacion.dtos;
 
 import java.time.LocalDateTime;
 
 /**
  * Respuesta del endpoint GET /verificar-ip/{ip}.
  * <p>
-    DTO de respuesta de consulta del Gateway para decidir si rechaza o permite la peticiÃ³n.
+    DTO de respuesta de consulta del Gateway para decidir si rechaza o permite la petición.
  * </p>
  * 
  * @param ip              IP del usuario que esta realizando la peticion.

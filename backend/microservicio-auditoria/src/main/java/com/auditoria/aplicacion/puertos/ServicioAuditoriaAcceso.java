@@ -1,4 +1,4 @@
-﻿package com.auditoria.aplicacion.puertos;
+package com.auditoria.aplicacion.puertos;
 
 import com.libreria.comun.dtos.EventoAccesoDTO;
 import org.springframework.data.domain.Page;
@@ -6,10 +6,10 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 /**
- * Interfaz de puerto para la gestiÃ³n de auditorÃ­as de acceso.
+ * Interfaz de puerto para la gestión de auditorías de acceso.
  * <p>
  * Se encarga exclusivamente de la persistencia, consulta y mantenimiento 
- * de los registros de inicio de sesiÃ³n y actividad de usuarios.
+ * de los registros de inicio de sesión y actividad de usuarios.
  * </p>
  * 
  * @since 2026-05
@@ -17,7 +17,7 @@ import java.util.UUID;
 public interface ServicioAuditoriaAcceso {
 
     /**
-     * Registra un nuevo intento de acceso (Ã©xito o fallo).
+     * Registra un nuevo intento de acceso (éxito o fallo).
      * 
      * @param dto Datos del intento de acceso.
      * @return El registro persistido en formato DTO.
@@ -27,24 +27,24 @@ public interface ServicioAuditoriaAcceso {
     /**
      * Recupera una lista paginada de todos los accesos registrados.
      * 
-     * @param paginacion ConfiguraciÃ³n de pÃ¡gina y tamaÃ±o.
-     * @return PÃ¡gina de registros de acceso.
+     * @param paginacion Configuración de página y tamaño.
+     * @return Página de registros de acceso.
      */
     Page<EventoAccesoDTO> listarTodo(Pageable paginacion);
 
     /**
-     * Filtra los registros de acceso de un usuario especÃ­fico.
+     * Filtra los registros de acceso de un usuario específico.
      * 
-     * @param usuarioId Identificador Ãºnico del usuario.
-     * @param paginacion ConfiguraciÃ³n de paginaciÃ³n.
-     * @return PÃ¡gina de registros asociados al usuario.
+     * @param usuarioId Identificador único del usuario.
+     * @param paginacion Configuración de paginación.
+     * @return Página de registros asociados al usuario.
      */
     Page<EventoAccesoDTO> listarPorUsuario(UUID usuarioId, Pageable paginacion);
 
     /**
-     * Purga registros de acceso que superen la antigÃ¼edad permitida por la polÃ­tica de retenciÃ³n.
+     * Purga registros de acceso que superen la antigüedad permitida por la política de retención.
      * 
-     * @param diasAntiguedad Cantidad de dÃ­as hacia atrÃ¡s para mantener.
+     * @param diasAntiguedad Cantidad de días hacia atrás para mantener.
      * @return Cantidad de registros eliminados.
      */
     int limpiarRegistrosAntiguos(int diasAntiguedad);

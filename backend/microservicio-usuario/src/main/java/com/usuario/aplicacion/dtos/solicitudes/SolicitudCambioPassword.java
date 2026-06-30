@@ -1,4 +1,4 @@
-﻿package com.usuario.aplicacion.dtos.solicitudes;
+package com.usuario.aplicacion.dtos.solicitudes;
 
 import com.usuario.dominio.validaciones.ValidarPassword;
 import jakarta.validation.constraints.NotBlank;
@@ -8,10 +8,10 @@ import jakarta.validation.constraints.NotBlank;
  */
 // En com.usuario.aplicacion.dtos
 public record SolicitudCambioPassword(
-        @NotBlank(message = "La contraseÃ±a es obligatoria")
+        @NotBlank(message = "La contraseña es obligatoria")
         String passwordActual,
         
-        @NotBlank(message = "La contraseÃ±a es obligatoria")
+        @NotBlank(message = "La contraseña es obligatoria")
         
         @ValidarPassword
         String nuevoPassword,

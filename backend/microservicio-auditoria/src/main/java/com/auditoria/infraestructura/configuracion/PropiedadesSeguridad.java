@@ -1,4 +1,4 @@
-﻿package com.auditoria.infraestructura.configuracion;
+package com.auditoria.infraestructura.configuracion;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Propiedades de configuraciÃ³n para las polÃ­ticas de seguridad y defensa perimetral.
+ * Propiedades de configuración para las políticas de seguridad y defensa perimetral.
  * <p>
  * Reemplaza el uso disperso de {@code @Value} por un modelo tipado e inyectable.
  * </p>
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 public class PropiedadesSeguridad {
 
     /**
-     * NÃºmero mÃ¡ximo de intentos fallidos antes de bloquear la IP.
+     * Número máximo de intentos fallidos antes de bloquear la IP.
      */
     private int maxIntentosFallidos = 3;
 
@@ -30,7 +30,7 @@ public class PropiedadesSeguridad {
     private long ventanaMinutos = 10;
 
     /**
-     * DuraciÃ³n del bloqueo automÃ¡tico (en minutos).
+     * Duración del bloqueo automático (en minutos).
      */
     private long bloqueoMinutos = 60;
 }

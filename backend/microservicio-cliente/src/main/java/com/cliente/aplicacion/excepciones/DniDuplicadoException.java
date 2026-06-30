@@ -1,9 +1,9 @@
-﻿package com.cliente.aplicacion.excepciones;
+package com.cliente.aplicacion.excepciones;
 
 import com.libreria.comun.excepciones.ExcepcionConflicto;
 
 /**
- * ExcepciÃ³n lanzada cuando se intenta registrar un DNI ya existente.
+ * Excepción lanzada cuando se intenta registrar un DNI ya existente.
  * 
  * @version 1.1.0
  */

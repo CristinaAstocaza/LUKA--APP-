@@ -1,4 +1,4 @@
-﻿package com.auditoria.infraestructura.mensajeria;
+package com.auditoria.infraestructura.mensajeria;
 
 import com.libreria.comun.mensajeria.PublicadorEventosBase;
 import com.libreria.comun.dtos.EventoAccesoDTO;
@@ -10,10 +10,10 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Publicador especializado de eventos para el Microservicio de AuditorÃ­a.
+ * Publicador especializado de eventos para el Microservicio de Auditoría.
  * <p>
  * Extiende de {@link PublicadorEventosBase} para reutilizar la infraestructura
- * de mensajerÃ­a asÃ­ncrona de la librerÃ­a comÃºn, facilitando el reporte de accesos y trazabilidad transaccional.
+ * de mensajería asíncrona de la librería común, facilitando el reporte de accesos y trazabilidad transaccional.
  * </p>
  * 
  * @version 1.5
@@ -32,33 +32,33 @@ public class PublicadorAuditoria extends PublicadorEventosBase {
     }
 
     /**
-     * Reporta un intento de inicio de sesiÃ³n de forma asÃ­ncrona.
+     * Reporta un intento de inicio de sesión de forma asíncrona.
      * <p>
-     * Utiliza la lÃ³gica de enrutamiento base para dirigir el mensaje a
+     * Utiliza la lógica de enrutamiento base para dirigir el mensaje a
      * la cola de accesos con la etiqueta "exito" o "fallo", "bloqueado","logout".
      * </p>
      * 
-     * @param dto Datos del evento de acceso (contrato de la librerÃ­a).
+     * @param dto Datos del evento de acceso (contrato de la librería).
      */
     public void registrarAcceso(EventoAccesoDTO dto, EstadoEvento estado) {
         this.publicarAcceso(dto, estado);
     }
 
     /**
-     * Reporta un evento de forma asÃ­ncrona.
+     * Reporta un evento de forma asíncrona.
      * <p>
-     * Utiliza la lÃ³gica de enrutamiento base para dirigir el mensaje a
+     * Utiliza la lógica de enrutamiento base para dirigir el mensaje a
      * la cola de eventos con la etiqueta "fallo" o "exito".
      * </p>
      * 
-     * @param dto Datos del evento de acceso (contrato de la librerÃ­a).
+     * @param dto Datos del evento de acceso (contrato de la librería).
      */
     public void registrarEvento(EventoAuditoriaDTO dto) {
         this.publicarEvento(dto, "exito");
     }
 
     /**
-     * Reporta la creaciÃ³n de un nuevo registro transaccional.
+     * Reporta la creación de un nuevo registro transaccional.
      * 
      * @param dto     Datos del cambio transaccional.
      * @param entidad Nombre de la entidad (ej: "usuario", "auditoria").

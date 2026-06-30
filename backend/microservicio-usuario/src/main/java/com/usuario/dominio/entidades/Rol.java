@@ -1,4 +1,4 @@
-﻿package com.usuario.dominio.entidades;
+package com.usuario.dominio.entidades;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -28,13 +28,13 @@ public class Rol {
     private UUID id;
 
     /**
-     * Nombre del rol. ConvenciÃ³n Spring Security: prefijo ROLE_.
+     * Nombre del rol. Convención Spring Security: prefijo ROLE_.
      */
     @Column(nullable = false, unique = true, length = 50)
     private String nombre;
 
     // -------------------------------------------------------------------------
-    // Enum de referencia para uso seguro en cÃ³digo
+    // Enum de referencia para uso seguro en código
     // -------------------------------------------------------------------------
     public enum NombreRol {
         ROLE_ADMIN,

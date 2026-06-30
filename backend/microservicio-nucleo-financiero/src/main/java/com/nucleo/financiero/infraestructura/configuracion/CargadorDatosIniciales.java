@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.infraestructura.configuracion;
+package com.nucleo.financiero.infraestructura.configuracion;
 
 import com.nucleo.financiero.dominio.entidades.Categoria;
 import com.nucleo.financiero.dominio.entidades.Categoria.TipoMovimiento;
@@ -10,11 +10,11 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Cargador de datos iniciales para el entorno de ejecuciÃ³n.
+ * Cargador de datos iniciales para el entorno de ejecución.
  * <p>
- * Implementa {@link CommandLineRunner} para insertar un catÃ¡logo base de categorÃ­as
+ * Implementa {@link CommandLineRunner} para insertar un catálogo base de categorías
  * financieras (Ingresos/Gastos) si no existen previamente en la base de datos.
- * Esto asegura que el sistema tenga una base operativa mÃ­nima al iniciar.
+ * Esto asegura que el sistema tenga una base operativa mínima al iniciar.
  * </p>
  * 
  */
@@ -28,16 +28,16 @@ public class CargadorDatosIniciales implements CommandLineRunner {
     private record DefinicionCategoria(String nombre, String descripcion, String icono, TipoMovimiento tipo) {}
 
     private static final List<DefinicionCategoria> CATEGORIAS_DEFAULT = List.of(
-        new DefinicionCategoria("AlimentaciÃ³n",            "Supermercado, restaurantes y comida",     "utensils",        TipoMovimiento.GASTO),
+        new DefinicionCategoria("Alimentación",            "Supermercado, restaurantes y comida",     "utensils",        TipoMovimiento.GASTO),
         new DefinicionCategoria("Transporte",              "Gasolina, taxi, bus, peajes",             "car",             TipoMovimiento.GASTO),
         new DefinicionCategoria("Vivienda",                "Alquiler, hipoteca, servicios del hogar", "home",            TipoMovimiento.GASTO),
-        new DefinicionCategoria("Salud",                   "MÃ©dicos, farmacia, seguros de salud",     "heart-pulse",     TipoMovimiento.GASTO),
-        new DefinicionCategoria("EducaciÃ³n",               "Cursos, libros, colegiaturas",            "graduation-cap",  TipoMovimiento.GASTO),
+        new DefinicionCategoria("Salud",                   "Médicos, farmacia, seguros de salud",     "heart-pulse",     TipoMovimiento.GASTO),
+        new DefinicionCategoria("Educación",               "Cursos, libros, colegiaturas",            "graduation-cap",  TipoMovimiento.GASTO),
         new DefinicionCategoria("Entretenimiento",         "Cine, juegos, salidas",                   "gamepad-2",       TipoMovimiento.GASTO),
         new DefinicionCategoria("Suscripciones Streaming", "Netflix, Spotify, Disney+, etc.",         "play-circle",     TipoMovimiento.GASTO),
-        new DefinicionCategoria("Suscripciones",           "Pagos de suscripciones y membresÃ­as",      "credit-card",     TipoMovimiento.GASTO),
+        new DefinicionCategoria("Suscripciones",           "Pagos de suscripciones y membresías",      "credit-card",     TipoMovimiento.GASTO),
         new DefinicionCategoria("Ropa y Calzado",          "Vestimenta y accesorios",                 "shirt",           TipoMovimiento.GASTO),
-        new DefinicionCategoria("TecnologÃ­a",              "Dispositivos, software, gadgets",         "laptop",          TipoMovimiento.GASTO),
+        new DefinicionCategoria("Tecnología",              "Dispositivos, software, gadgets",         "laptop",          TipoMovimiento.GASTO),
         new DefinicionCategoria("Viajes",                  "Vuelos, hoteles, vacaciones",             "plane",           TipoMovimiento.GASTO),
         new DefinicionCategoria("Otros Gastos",            "Gastos no categorizados",                 "circle-ellipsis", TipoMovimiento.GASTO),
         new DefinicionCategoria("Salario",                 "Ingreso mensual principal",               "briefcase",       TipoMovimiento.INGRESO),
@@ -61,7 +61,7 @@ public class CargadorDatosIniciales implements CommandLineRunner {
                 creadas++;
             }
         }
-        if (creadas > 0) log.info("---- {} CATEGORÃAS DEFAULT CREADAS ----", creadas);
-        else log.info("---- CATEGORÃAS DEFAULT: ya existen, sin cambios ----");
+        if (creadas > 0) log.info("---- {} CATEGORÍAS DEFAULT CREADAS ----", creadas);
+        else log.info("---- CATEGORÍAS DEFAULT: ya existen, sin cambios ----");
     }
 }

@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.presentacion.controladores;
+package com.nucleo.financiero.presentacion.controladores;
 
 import com.libreria.comun.dtos.RespuestaIaDTO;
 import com.libreria.comun.dtos.SolicitudIaDTO;
@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Controlador REST para la interacciÃ³n con el motor de Inteligencia Artificial
+ * Controlador REST para la interacción con el motor de Inteligencia Artificial
  * (LUKA-IA).
  * <p>
  * Este controlador expone endpoints para solicitar consejos financieros
  * personalizados
  * basados en el comportamiento transaccional del usuario. Utiliza el contrato
  * {@link IServicioIa}
- * para delegar el procesamiento analÃ­tico.
+ * para delegar el procesamiento analítico.
  * </p>
  *
  * @version 1.2.2
@@ -37,17 +37,17 @@ public class IaController {
     private final IServicioIa servicioIa;
 
     /**
-     * Consulta al motor de IA para obtener un consejo financiero estratÃ©gico.
+     * Consulta al motor de IA para obtener un consejo financiero estratégico.
      * <p>
      * El flujo de negocio incluye:
-     * 1. ExtracciÃ³n de la IP del cliente para auditorÃ­a.
-     * 2. RecuperaciÃ³n del contexto financiero del usuario.
-     * 3. GeneraciÃ³n de prompt dinÃ¡mico y consulta a Gemini.
-     * 4. Registro del evento en el microservicio de auditorÃ­a vÃ­a RabbitMQ.
+     * 1. Extracción de la IP del cliente para auditoría.
+     * 2. Recuperación del contexto financiero del usuario.
+     * 3. Generación de prompt dinámico y consulta a Gemini.
+     * 4. Registro del evento en el microservicio de auditoría vía RabbitMQ.
      * </p>
      * 
      * @param solicitud      Datos de la consulta (usuarioId, contexto opcional).
-     * @param servletRequest PeticiÃ³n HTTP para extracciÃ³n de metadatos (IP).
+     * @param servletRequest Petición HTTP para extracción de metadatos (IP).
      * @return ResponseEntity con {@link ResultadoApi} conteniendo la respuesta de
      *         la IA.
      */

@@ -1,4 +1,4 @@
-﻿package com.mensajeria.aplicacion.servicios;
+package com.mensajeria.aplicacion.servicios;
 
 import com.mensajeria.aplicacion.puertos.ISmsService;
 import com.mensajeria.aplicacion.servicios.canales.CanalNotificacionStrategy;
@@ -14,12 +14,12 @@ import org.springframework.lang.NonNull;
 import com.mensajeria.infraestructura.configuracion.PropiedadesTwilio;
 
 /**
- * ImplementaciÃ³n concreta de {@link ISmsService} que usa el SDK de Twilio.
+ * Implementación concreta de {@link ISmsService} que usa el SDK de Twilio.
  *
- * <p>A partir de la v1.2.0 el origen del mensaje se gestiona a travÃ©s del
+ * <p>A partir de la v1.2.0 el origen del mensaje se gestiona a través del
  * <strong>Messaging Service SID</strong> ({@code TWILIO_MESSAGING_SERVICE_SID}),
- * eliminando la dependencia de un nÃºmero fijo. Twilio selecciona dinÃ¡micamente
- * el nÃºmero de envÃ­o con la estrategia configurada en el Messaging Service.</p>
+ * eliminando la dependencia de un número fijo. Twilio selecciona dinámicamente
+ * el número de envío con la estrategia configurada en el Messaging Service.</p>
  *
  * @version 1.2.0
  */
@@ -44,18 +44,18 @@ public class SmsServiceImpl implements ISmsService, CanalNotificacionStrategy {
     /**
      * {@inheritDoc}
      *
-     * <p>Utiliza {@code MessagingServiceSid} si estÃ¡ configurado (producciÃ³n);
-     * de lo contrario, cae de forma degradada al nÃºmero estÃ¡tico {@code phone.number}
+     * <p>Utiliza {@code MessagingServiceSid} si está configurado (producción);
+     * de lo contrario, cae de forma degradada al número estático {@code phone.number}
      * para entornos locales sin Messaging Service.</p>
      *
-     * @param telefono NÃºmero destino en formato E.164 (ej. {@code +51987654321}).
-     * @param codigo   CÃ³digo OTP de 6 dÃ­gitos a enviar al usuario.
+     * @param telefono Número destino en formato E.164 (ej. {@code +51987654321}).
+     * @param codigo   Código OTP de 6 dígitos a enviar al usuario.
      */
     @Override
     public void enviarCodigoVerificacion(String telefono, String codigo) {
         try {
             String texto = String.format(
-                "Tu cÃ³digo de verificaciÃ³n LUKA es: %s%nVÃ¡lido por 10 minutos. No lo compartas.",
+                "Tu código de verificación LUKA es: %s%nVálido por 10 minutos. No lo compartas.",
                 codigo
             );
 
@@ -63,7 +63,7 @@ public class SmsServiceImpl implements ISmsService, CanalNotificacionStrategy {
             Message msg;
 
             if (StringUtils.hasText(messagingServiceSid)) {
-                // Modo producciÃ³n: Messaging Service gestiona el nÃºmero de origen
+                // Modo producción: Messaging Service gestiona el número de origen
                 log.info("[SMS] Usando MessagingServiceSid: {}", messagingServiceSid);
                 msg = Message.creator(
                         new PhoneNumber(telefono),
@@ -71,9 +71,9 @@ public class SmsServiceImpl implements ISmsService, CanalNotificacionStrategy {
                         texto
                 ).create();
             } else {
-                // Modo fallback: nÃºmero estÃ¡tico (desarrollo local)
+                // Modo fallback: número estático (desarrollo local)
                 String fromNumber = propiedadesTwilio.getPhone().getNumber();
-                log.warn("[SMS] MessagingServiceSid no configurado. Usando nÃºmero estÃ¡tico: {}", fromNumber);
+                log.warn("[SMS] MessagingServiceSid no configurado. Usando número estático: {}", fromNumber);
                 msg = Message.creator(
                         new PhoneNumber(telefono),
                         new PhoneNumber(fromNumber),
@@ -83,15 +83,15 @@ public class SmsServiceImpl implements ISmsService, CanalNotificacionStrategy {
             log.info("[SMS] OTP enviado a {}. SID: {}", telefono, msg.getSid());
         } catch (Exception e) {
             log.error("[SMS] Error enviando OTP a {}: {}", telefono, e.getMessage());
-            throw new RuntimeException("Error al enviar SMS vÃ­a Twilio: " + e.getMessage());
+            throw new RuntimeException("Error al enviar SMS vía Twilio: " + e.getMessage());
         }
     }
 
     /**
      * {@inheritDoc}
      *
-     * @param telefono NÃºmero de telÃ©fono a validar.
-     * @return {@code true} si sigue el patrÃ³n {@code +[cÃ³digo_paÃ­s][9-14 dÃ­gitos]}.
+     * @param telefono Número de teléfono a validar.
+     * @return {@code true} si sigue el patrón {@code +[código_país][9-14 dígitos]}.
      */
     @Override
     public boolean esNumeroValido(String telefono) {

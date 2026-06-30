@@ -1,10 +1,10 @@
-﻿package com.cliente.aplicacion.excepciones;
+package com.cliente.aplicacion.excepciones;
 
 import com.libreria.comun.excepciones.ExcepcionRecursoNoEncontrado;
 import java.util.UUID;
 
 /**
- * ExcepciÃ³n lanzada cuando no se encuentra una meta de ahorro.
+ * Excepción lanzada cuando no se encuentra una meta de ahorro.
  * 
  * @version 1.1.0
  */

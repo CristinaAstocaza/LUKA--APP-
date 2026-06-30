@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.servicios;
+package com.cliente.aplicacion.servicios;
 
 import com.libreria.comun.dtos.ContextoEstrategicoIADTO;
 import com.libreria.comun.dtos.ContextoUsuarioDTO;
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.cliente.infraestructura.mensajeria.PublicadorSincronizacionIA;
 
 /**
- * Servicio que consolida la informaciÃ³n del cliente mediante el patrÃ³n Facade
+ * Servicio que consolida la información del cliente mediante el patrón Facade
  * orquestando llamadas a otros servicios.
  * 
  * @version 1.3.0
@@ -50,12 +50,12 @@ public class ServicioContextoImpl implements ServicioContexto {
     @Override
     @Transactional(readOnly = true)
     public ContextoEstrategicoIADTO obtenerContextoFinanciero(UUID usuarioId) {
-        log.debug("Construyendo contexto estratÃ©gico ligero para IA, usuarioId={}", usuarioId);
+        log.debug("Construyendo contexto estratégico ligero para IA, usuarioId={}", usuarioId);
 
         // 1. Obtener el contexto completo consolidado
         ContextoUsuarioDTO completo = obtenerContextoCompleto(usuarioId);
 
-        // 2. Recuperar nombres a travÃ©s de la capa de servicio (Facade)
+        // 2. Recuperar nombres a través de la capa de servicio (Facade)
         RespuestaDatosPersonales datos = servicioDatosPersonales.consultarInterno(usuarioId);
         String nombres = (datos != null && datos.nombres() != null) ? datos.nombres() : "Usuario";
 
@@ -88,7 +88,7 @@ public class ServicioContextoImpl implements ServicioContexto {
             }
         }
 
-        // 5. LÃ­mite de Gasto
+        // 5. Límite de Gasto
         Integer alertaGasto = (completo.getLimiteGlobal() != null)
                         ? completo.getLimiteGlobal().getPorcentajeAlerta()
                         : 80;
@@ -130,7 +130,7 @@ public class ServicioContextoImpl implements ServicioContexto {
             redisTemplate.opsForValue().set(redisKey, objectMapper.writeValueAsString(contexto),
                     java.time.Duration.ofHours(1));
 
-            // Publicar a RabbitMQ para sincronizaciÃ³n en tiempo real con ms-ia (sÃ­ncronamente en hilo seguro)
+            // Publicar a RabbitMQ para sincronización en tiempo real con ms-ia (síncronamente en hilo seguro)
             publicadorSincronizacionIA.publicarActualizacionContexto(usuarioId, contexto);
         } catch (Exception e) {
             log.error("Error al refrescar contexto en Redis para usuarioId={}", usuarioId, e);

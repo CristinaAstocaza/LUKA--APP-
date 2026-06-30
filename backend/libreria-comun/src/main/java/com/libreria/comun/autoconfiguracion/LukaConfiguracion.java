@@ -10,6 +10,9 @@ import com.libreria.comun.seguridad.FiltroAutenticacionInterna;
 import com.libreria.comun.seguridad.InterceptorFeignSeguridad;
 import com.libreria.comun.utilidades.CalculadorFechasStrategy;
 import com.libreria.comun.utilidades.CalculadorFechasCalendario;
+import com.libreria.comun.utilidades.CalculadorFechasSemanal;
+import com.libreria.comun.utilidades.CalculadorFechasQuincenal;
+import com.libreria.comun.utilidades.CalculadorFechasAnual;
 import com.libreria.comun.utilidades.CalculadorFechasDiasHabiles;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -22,6 +25,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -41,6 +45,7 @@ import org.springframework.context.annotation.Import;
  * errores.
  * </p>
  */
+@Slf4j
 @AutoConfiguration
 @org.springframework.boot.autoconfigure.AutoConfigureBefore(name = "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration")
 @Import(ControladorSaludCustom.class)
@@ -63,6 +68,19 @@ public class LukaConfiguracion {
 
     @Value("${spring.rabbitmq.virtual-host:/}")
     private String rabbitVirtualHost;
+
+    /**
+     * Habilita SSL/TLS para la conexión con RabbitMQ (CloudAMQP puerto 5671).
+     * Se activa mediante la variable de entorno {@code SPRING_RABBITMQ_SSL_ENABLED}.
+     */
+    @Value("${spring.rabbitmq.ssl.enabled:false}")
+    private boolean rabbitSslEnabled;
+
+    /**
+     * Protocolo TLS a usar. Por defecto TLSv1.2, compatible con CloudAMQP.
+     */
+    @Value("${spring.rabbitmq.ssl.algorithm:TLSv1.2}")
+    private String rabbitSslAlgorithm;
 
     // --- SEGURIDAD ---
 
@@ -131,13 +149,31 @@ public class LukaConfiguracion {
         }
 
         @Bean
-        @ConditionalOnMissingBean
+        @ConditionalOnMissingBean(name = "calculadorFechasCalendario")
         public CalculadorFechasStrategy calculadorFechasCalendario() {
             return new CalculadorFechasCalendario();
         }
 
         @Bean
-        @ConditionalOnMissingBean
+        @ConditionalOnMissingBean(name = "calculadorFechasSemanal")
+        public CalculadorFechasStrategy calculadorFechasSemanal() {
+            return new CalculadorFechasSemanal();
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(name = "calculadorFechasQuincenal")
+        public CalculadorFechasStrategy calculadorFechasQuincenal() {
+            return new CalculadorFechasQuincenal();
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(name = "calculadorFechasAnual")
+        public CalculadorFechasStrategy calculadorFechasAnual() {
+            return new CalculadorFechasAnual();
+        }
+
+        @Bean
+        @ConditionalOnMissingBean(name = "calculadorFechasDiasHabiles")
         public CalculadorFechasStrategy calculadorFechasDiasHabiles() {
             return new CalculadorFechasDiasHabiles();
         }
@@ -154,6 +190,17 @@ public class LukaConfiguracion {
         factory.setPassword(rabbitPassword);
         factory.setVirtualHost(rabbitVirtualHost);
         factory.setConnectionNameStrategy(cf -> applicationName);
+
+        if (rabbitSslEnabled) {
+            try {
+                factory.getRabbitConnectionFactory().useSslProtocol(rabbitSslAlgorithm);
+                log.info("[LUKA-LIB] RabbitMQ SSL habilitado con protocolo: {}", rabbitSslAlgorithm);
+            } catch (Exception e) {
+                log.error("[LUKA-LIB] Error al configurar SSL para RabbitMQ: {}", e.getMessage());
+                throw new IllegalStateException("No se pudo configurar SSL para RabbitMQ", e);
+            }
+        }
+
         return factory;
     }
 
@@ -202,8 +249,7 @@ public class LukaConfiguracion {
                         .version("1.0.0")
                         .description("API auto-documentada del componente **" + prettyAppName + "** para el ecosistema SaaS de gestión financiera LUKA.")
                         .contact(new Contact()
-                                .name("Paulo Moron - Cloud Architect")
-                                .email("paulo@luka-financial.com")
+                                .email("lukaapp2026@lgmail.com")
                                 .url("https://luka-financial.com"))
                         .license(new License()
                                 .name("Apache 2.0")

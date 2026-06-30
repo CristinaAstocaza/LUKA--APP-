@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.aplicacion.servicios;
+package com.nucleo.financiero.aplicacion.servicios;
 
 import com.libreria.comun.dtos.ContextoUsuarioDTO;
 import com.libreria.comun.dtos.RespuestaIaDTO;
@@ -16,11 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * ImplementaciÃ³n de {@link IServicioIa} para la interacciÃ³n con el ecosistema de Inteligencia Artificial.
+ * Implementación de {@link IServicioIa} para la interacción con el ecosistema de Inteligencia Artificial.
  * <p>
- * Coordina la recuperaciÃ³n de contexto del cliente, el enriquecimiento de solicitudes
- * y la comunicaciÃ³n con el motor de IA basado en Python. AdemÃ¡s, registra la actividad
- * analÃ­tica en el sistema de auditorÃ­a.
+ * Coordina la recuperación de contexto del cliente, el enriquecimiento de solicitudes
+ * y la comunicación con el motor de IA basado en Python. Además, registra la actividad
+ * analítica en el sistema de auditoría.
  * </p>
  *
  * @version 1.3.0
@@ -43,7 +43,7 @@ public class ServicioIaImpl implements IServicioIa {
 
         log.info("Iniciando proceso de IA para el usuario: {} desde IP: {}", solicitud.getUsuarioId(), ipCliente);
 
-        // 1. Obtener contexto completo del cliente (Datos personales, perfil, metas, lÃ­mites)
+        // 1. Obtener contexto completo del cliente (Datos personales, perfil, metas, límites)
         ContextoUsuarioDTO contextoEnriquecido = clienteContexto.obtenerContexto(solicitud.getUsuarioId());
 
         // 2. Re-construir la solicitud enriquecida con el contexto recuperado
@@ -66,15 +66,15 @@ public class ServicioIaImpl implements IServicioIa {
                     .build();
         }
 
-        // 3. Llamada sÃ­ncrona al microservicio de IA (Python - FastAPI) vÃ­a Feign
-        log.debug("Enviando solicitud enriquecida a Python para anÃ¡lisis...");
+        // 3. Llamada síncrona al microservicio de IA (Python - FastAPI) vía Feign
+        log.debug("Enviando solicitud enriquecida a Python para análisis...");
         RespuestaIaDTO respuesta = clienteIa.analizarFinanzas(solicitudFinal);
 
-        // 4. Registro AsÃ­ncrono en AuditorÃ­a vÃ­a RabbitMQ
+        // 4. Registro Asíncrono en Auditoría vía RabbitMQ
         publicadorAuditoria.publicarAcceso(
                 solicitudFinal.getUsuarioId(),
                 "CONSULTA_IA",
-                "AnÃ¡lisis generado con contexto: " + (solicitudFinal.getModuloSolicitado() != null
+                "Análisis generado con contexto: " + (solicitudFinal.getModuloSolicitado() != null
                 ? solicitudFinal.getModuloSolicitado() : "TRANSACCION_RECIENTE"),
                 ipCliente
         );

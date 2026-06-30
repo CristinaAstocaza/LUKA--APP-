@@ -1,4 +1,4 @@
-﻿package com.pagos;
+package com.pagos;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,7 +11,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 /**
  * Clase principal del Microservicio de Pagos.
  * <p>
- * Gestiona la integraciÃ³n con Stripe, suscripciones y procesamiento de pagos
+ * Gestiona la integración con Stripe, suscripciones y procesamiento de pagos
  * dentro del ecosistema LUKA APP.
  * </p>
  * 

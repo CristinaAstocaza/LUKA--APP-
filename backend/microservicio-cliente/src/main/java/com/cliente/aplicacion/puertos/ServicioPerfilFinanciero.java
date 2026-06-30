@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.puertos;
+package com.cliente.aplicacion.puertos;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaPerfilFinanciero;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudPerfilFinanciero;
@@ -20,7 +20,7 @@ public interface ServicioPerfilFinanciero {
     RespuestaPerfilFinanciero consultar(UUID usuarioIdRuta, UUID usuarioIdToken);
 
     /**
-     * Consulta interna del perfil financiero sin validaciÃ³n de JWT (uso para Facade).
+     * Consulta interna del perfil financiero sin validación de JWT (uso para Facade).
      */
     RespuestaPerfilFinanciero consultarInterno(UUID usuarioId);
 }

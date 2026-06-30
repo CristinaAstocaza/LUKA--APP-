@@ -1,4 +1,4 @@
-﻿package com.auditoria.presentacion.controladores;
+package com.auditoria.presentacion.controladores;
 
 import com.auditoria.aplicacion.puertos.ServicioAuditoriaAcceso;
 import com.libreria.comun.dtos.EventoAccesoDTO;
@@ -16,10 +16,10 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Controlador de presentaciÃ³n para la gestiÃ³n de auditorÃ­as de acceso.
+ * Controlador de presentación para la gestión de auditorías de acceso.
  * <p>
- * Expone endpoints para la consulta de registros de inicio de sesiÃ³n y actividad,
- * integrando el estÃ¡ndar de respuestas {@link ResultadoApi} y metadatos de {@link Paginacion}.
+ * Expone endpoints para la consulta de registros de inicio de sesión y actividad,
+ * integrando el estándar de respuestas {@link ResultadoApi} y metadatos de {@link Paginacion}.
  * </p>
  * 
  * @version 1.3
@@ -35,9 +35,9 @@ public class AuditoriaAccesoControlador {
     /**
      * Recupera la lista paginada de todos los eventos de acceso registrados en el sistema.
      * 
-     * @param pagina  NÃºmero de pÃ¡gina (0 por defecto).
-     * @param tamanio Cantidad de registros (20 por defecto, mÃ¡x 100).
-     * @return {@link ResponseEntity} con el {@link ResultadoApi} y metadatos de paginaciÃ³n.
+     * @param pagina  Número de página (0 por defecto).
+     * @param tamanio Cantidad de registros (20 por defecto, máx 100).
+     * @return {@link ResponseEntity} con el {@link ResultadoApi} y metadatos de paginación.
      */
     @GetMapping
     public ResponseEntity<ResultadoApi<List<EventoAccesoDTO>>> listarTodo(
@@ -52,17 +52,17 @@ public class AuditoriaAccesoControlador {
         return ResponseEntity.ok(
             ResultadoApi.exito(
                 metadata.contenido(), 
-                "CatÃ¡logo de accesos recuperado exitosamente.", 
+                "Catálogo de accesos recuperado exitosamente.", 
                 metadata
             )
         );
     }
 
     /**
-     * Busca los registros de acceso asociados a un usuario especÃ­fico.
+     * Busca los registros de acceso asociados a un usuario específico.
      * 
-     * @param usuarioId Identificador Ãºnico del usuario (UUID).
-     * @param pagina    NÃºmero de pÃ¡gina solicitado.
+     * @param usuarioId Identificador único del usuario (UUID).
+     * @param pagina    Número de página solicitado.
      * @return {@link ResponseEntity} con el resultado paginado para el usuario indicado.
      */
     @GetMapping("/usuario/{usuarioId}")

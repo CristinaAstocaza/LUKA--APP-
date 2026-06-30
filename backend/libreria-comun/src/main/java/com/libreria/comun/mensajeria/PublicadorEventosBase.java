@@ -1,4 +1,4 @@
-﻿package com.libreria.comun.mensajeria;
+package com.libreria.comun.mensajeria;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,8 +14,8 @@ import com.libreria.comun.enums.EstadoEvento;
 /**
  * Publicador centralizado de eventos para LUKA APP.
  * <p>
- * Proporciona mÃ©todos especÃ­ficos para los flujos mÃ¡s comunes (AuditorÃ­a, IA)
- * asegurando que se respete la topologÃ­a de Topic Exchange.
+ * Proporciona métodos específicos para los flujos más comunes (Auditoría, IA)
+ * asegurando que se respete la topología de Topic Exchange.
  * </p>
  * 
  */
@@ -27,11 +27,11 @@ public class PublicadorEventosBase {
     private final RabbitTemplate rabbitTemplate;
 
     /**
-     * Publica eventos de acceso (Login, Logout, Fallos) de forma asÃ­ncrona.
+     * Publica eventos de acceso (Login, Logout, Fallos) de forma asíncrona.
      * Enruta a: exchange.auditoria -> auditoria.acceso.[accion]
      * 
      * @param dto    Contrato de datos de acceso.
-     * @param estado EStado de la acciÃ³n (ej: "login", "fallo", "logout").
+     * @param estado EStado de la acción (ej: "login", "fallo", "logout").
      */
     @Async
     public void publicarAcceso(Object dto, EstadoEvento estado) {
@@ -40,15 +40,15 @@ public class PublicadorEventosBase {
     }
 
     /**
-     * Publica otros tipos de eventos (Recuperacion, Pagos, Descargas) de forma asÃ­ncrona.
-     * Enruta a: exchange.auditoria -> auditoria.evento.[accion]
-     * 
-     * @param dto    Contrato de datos de acceso.
-     * @param accion Etiqueta de la acciÃ³n (ej: "login", "fallo", "logout").
+     * Publica otros tipos de eventos (Recuperacion, Pagos, Descargas) de forma asíncrona.
+     * Enruta a: exchange.auditoria -&gt; auditoria.evento.[accion]
+     *
+     * @param dto    Contrato de datos del evento.
+     * @param accion Etiqueta de la acción (ej: "recuperacion", "descarga", "pago").
      */
     @Async
     public void publicarEvento(Object dto, String accion) {
-        String rk = "auditoria.evento" + accion.toLowerCase();
+        String rk = "auditoria.evento." + accion.toLowerCase();
         enviar(NombresExchange.AUDITORIA, rk, dto);
     }
 
@@ -56,7 +56,7 @@ public class PublicadorEventosBase {
      * Publica eventos de trazabilidad transaccional.
      * Enruta a: exchange.auditoria -> auditoria.transaccion.[entidad]
      * 
-     * @param dto     Contrato de datos de la transacciÃ³n.
+     * @param dto     Contrato de datos de la transacción.
      * @param entidad Nombre de la entidad afectada (ej: "cliente", "cuenta").
      */
     @Async
@@ -66,23 +66,23 @@ public class PublicadorEventosBase {
     }
 
     /**
-     * EnvÃ­a solicitudes de anÃ¡lisis al microservicio de IA (Python).
+     * Envía solicitudes de análisis al microservicio de IA (Python).
      * 
-     * @param dto Solicitud de anÃ¡lisis.
+     * @param dto Solicitud de análisis.
      */
     public void solicitarAnalisisIA(Object dto) {
         enviar(NombresExchange.IA, RoutingKeys.IA_ANALISIS_SOLICITAR, dto);
     }
 
     /**
-     * Publica una actualizaciÃ³n del contexto de cliente para sincronizaciÃ³n en tiempo real.
+     * Publica una actualización del contexto de cliente para sincronización en tiempo real.
      * <p>
-     * Enruta a: exchange.cliente.actualizaciones â†’ cliente.perfil.actualizado.
+     * Enruta a: exchange.cliente.actualizaciones → cliente.perfil.actualizado.
      * Los consumidores (ms-ia) reciben el {@code ContextoEstrategicoIADTO} completo
-     * y actualizan su cachÃ© local sin necesidad de consultar la DB.
+     * y actualizan su caché local sin necesidad de consultar la DB.
      * </p>
      *
-     * @param dto       Contexto estratÃ©gico completo del cliente.
+     * @param dto       Contexto estratégico completo del cliente.
      * @param usuarioId ID del usuario para inyectar como header AMQP.
      */
     @Async
@@ -95,7 +95,7 @@ public class PublicadorEventosBase {
     }
 
     /**
-     * MÃ©todo base para el envÃ­o de mensajes al broker.
+     * Método base para el envío de mensajes al broker.
      *
      * @param exchange   Nombre del exchange.
      * @param routingKey Clave de enrutamiento.
@@ -111,7 +111,7 @@ public class PublicadorEventosBase {
     }
 
     /**
-     * MÃ©todo de envÃ­o con headers AMQP personalizados.
+     * Método de envío con headers AMQP personalizados.
      * <p>
      * Permite inyectar metadatos como el {@code usuarioId} en las propiedades
      * del mensaje para que el consumidor pueda identificar al destinatario

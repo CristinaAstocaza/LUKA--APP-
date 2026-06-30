@@ -1,4 +1,4 @@
-﻿package com.auditoria.dominio.repositorios;
+package com.auditoria.dominio.repositorios;
 
 import com.auditoria.dominio.entidades.AuditoriaAcceso;
 import com.libreria.comun.enums.EstadoEvento;
@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Repositorio para gestionar la persistencia y anÃ¡lisis de intentos de acceso.
- * Proporciona herramientas clave para la detecciÃ³n de ataques y mantenimiento
+ * Repositorio para gestionar la persistencia y análisis de intentos de acceso.
+ * Proporciona herramientas clave para la detección de ataques y mantenimiento
  * de logs.
  * 
  * @version 1.1.0
@@ -21,12 +21,12 @@ import java.util.UUID;
 public interface AuditoriaAccesoRepository extends JpaRepository<AuditoriaAcceso, UUID> {
 
     /**
-     * Cuenta intentos por IP, estado y tiempo. Base para la detecciÃ³n de fuerza
+     * Cuenta intentos por IP, estado y tiempo. Base para la detección de fuerza
      * bruta.
      * 
      * @param ipOrigen IP a evaluar.
-     * @param estado   Estado del evento (comÃºnmente FALLO).
-     * @param desde    Inicio de la ventana temporal de evaluaciÃ³n.
+     * @param estado   Estado del evento (comúnmente FALLO).
+     * @param desde    Inicio de la ventana temporal de evaluación.
      * @return Total de intentos registrados en el periodo.
      */
     @Query("""
@@ -45,24 +45,24 @@ public interface AuditoriaAccesoRepository extends JpaRepository<AuditoriaAcceso
      * descendente.
      * 
      * @param usuarioId  Identificador del usuario.
-     * @param paginacion ConfiguraciÃ³n de pÃ¡gina y orden.
-     * @return PÃ¡gina de resultados de acceso.
+     * @param paginacion Configuración de página y orden.
+     * @return Página de resultados de acceso.
      */
     Page<AuditoriaAcceso> findByUsuarioIdOrderByFechaDesc(UUID usuarioId, Pageable paginacion);
 
     /**
-     * Recupera el historial de accesos por IP para auditorÃ­as de seguridad forense.
+     * Recupera el historial de accesos por IP para auditorías de seguridad forense.
      * 
-     * @param ipOrigen   DirecciÃ³n IP de origen.
-     * @param paginacion ConfiguraciÃ³n de pÃ¡gina y orden.
-     * @return PÃ¡gina de resultados por IP.
+     * @param ipOrigen   Dirección IP de origen.
+     * @param paginacion Configuración de página y orden.
+     * @return Página de resultados por IP.
      */
     Page<AuditoriaAcceso> findByIpOrigenOrderByFechaDesc(String ipOrigen, Pageable paginacion);
 
     /**
      * Elimina registros antiguos para optimizar el almacenamiento de la tabla.
      * 
-     * @param umbral Fecha lÃ­mite para la depuraciÃ³n de datos.
+     * @param umbral Fecha límite para la depuración de datos.
      * @return Cantidad de registros eliminados.
      */
     @Query("DELETE FROM AuditoriaAcceso a WHERE a.fecha < :umbral")
@@ -71,7 +71,7 @@ public interface AuditoriaAccesoRepository extends JpaRepository<AuditoriaAcceso
     int eliminarRegistrosAnterioresA(@Param("umbral") LocalDateTime umbral);
 
     /**
-     * Verifica si ya existe un registro con el mismo identificador de correlaciÃ³n.
+     * Verifica si ya existe un registro con el mismo identificador de correlación.
      */
     boolean existsByCorrelationId(String correlationId);
 }

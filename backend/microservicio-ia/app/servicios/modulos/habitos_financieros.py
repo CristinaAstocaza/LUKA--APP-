@@ -10,6 +10,8 @@ import numpy as np
 from typing import Dict, Any
 from app.servicios.core.base_analisis import BaseAnalisisService
 from app.libreria_comun.modelos.contexto import ContextoEstrategicoIADTO
+from app.modelos.esquemas import ConsejoEstructuradoHabitos
+from app.servicios.ia.prompts.prompt_habitos_financieros import generar_prompt_habitos_financieros
 
 class HabitosFinancierosService(BaseAnalisisService):
     def __init__(self) -> None:
@@ -19,7 +21,7 @@ class HabitosFinancierosService(BaseAnalisisService):
         self.validar_historial(df)
         
         frecuencia = kwargs.get("frecuencia", "SEMANAL").upper()
-        df['fecha'] = pd.to_datetime(df['fecha'])
+        df['fecha'] = pd.to_datetime(df['fecha'], format="mixed")
         
         # 1. Definir ventana de análisis
         dias = 7 if frecuencia == "SEMANAL" else 15 if frecuencia == "QUINCENAL" else 30
@@ -48,17 +50,8 @@ class HabitosFinancierosService(BaseAnalisisService):
         }
 
     def orquestar_prompt(self, metricas: Dict[str, Any], contexto: ContextoEstrategicoIADTO) -> str:
-        return f"""
-        Eres LUKA, experto en Psicología Financiera. Tono: {contexto.tono_ia}.
-        Analiza los HÁBITOS {metricas['frecuencia_analizada']}S de {contexto.nombres}.
-        
-        DATOS:
-        - El día que más gasta es el: {metricas['dia_mayor_gasto']}.
-        - La categoría donde más transacciona es: {metricas['categoria_mas_frecuente']}.
-        - Total movimientos en el periodo: {metricas['total_transacciones_periodo']}.
-        
-        INSTRUCCIONES:
-        1. Comenta sobre el patrón detectado (ej: si gasta más los fines de semana).
-        2. Propón un "Hábito Atómico" para mejorar su relación con el dinero.
-        3. Mantén el mensaje motivador hacia su meta: {contexto.nombre_meta_principal}.
-        """
+        return generar_prompt_habitos_financieros(metricas, contexto)
+
+    def obtener_esquema_salida(self):
+        return ConsejoEstructuradoHabitos
+

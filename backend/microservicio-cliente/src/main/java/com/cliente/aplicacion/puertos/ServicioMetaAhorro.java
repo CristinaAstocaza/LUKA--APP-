@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.puertos;
+package com.cliente.aplicacion.puertos;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaMetaAhorro;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudMetaAhorro;
@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import com.libreria.comun.respuesta.Paginacion;
 
 /**
- * Interfaz de puerto para la gestiÃ³n de metas de ahorro.
+ * Interfaz de puerto para la gestión de metas de ahorro.
  *
  * @version 1.1.0
  */
@@ -31,7 +31,7 @@ public interface ServicioMetaAhorro {
     void eliminar(UUID metaId, UUID usuarioIdToken, String ipOrigen);
 
     /**
-     * Consulta interna del listado de metas sin validaciÃ³n de JWT (uso para Facade).
+     * Consulta interna del listado de metas sin validación de JWT (uso para Facade).
      */
     List<RespuestaMetaAhorro> listarInterno(UUID usuarioId);
 }

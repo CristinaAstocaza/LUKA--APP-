@@ -5,6 +5,8 @@ import com.pagos.aplicacion.dtos.RespuestaSuscripcionDTO;
 import com.pagos.aplicacion.dtos.SolicitudPagoDTO;
 import com.pagos.aplicacion.enums.EstadoPago;
 import com.pagos.aplicacion.enums.PlanSuscripcion;
+import com.pagos.aplicacion.enums.ProveedorPago;
+import com.pagos.aplicacion.puertos.IPasarelaPagoEstrategia;
 import com.pagos.aplicacion.puertos.IServicioStripe;
 import com.pagos.dominio.entidades.DetallePago;
 import com.pagos.dominio.entidades.Pago;
@@ -20,23 +22,33 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
  * Implementación del servicio de Stripe para la gestión de sesiones de pago.
- * Sigue el patrón de segregación de responsabilidades guardando el Pago y sus
- * Detalles por separado.
+ * Implementa {@link IPasarelaPagoEstrategia} como parte del Strategy Pattern y
+ * {@link IServicioStripe} para compatibilidad con el código existente.
+ *
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ServicioStripeImpl implements IServicioStripe {
+public class ServicioStripeImpl implements IPasarelaPagoEstrategia, IServicioStripe {
 
     private final RepositorioPago repositorioPago;
     private final RepositorioDetallePago repositorioDetallePago;
     private final PropiedadesStripe propiedadesStripe;
 
+    /**
+     * {@inheritDoc}
+     * Identifica esta estrategia como proveedor STRIPE.
+     */
+    @Override
+    public ProveedorPago getProveedor() {
+        return ProveedorPago.STRIPE;
+    }
     @Override
     @Transactional
     @SuppressWarnings("null")
@@ -112,7 +124,7 @@ public class ServicioStripeImpl implements IServicioStripe {
                     pagoGuardado.getId().toString(),
                     sesion.getUrl(),
                     plan.name(),
-                    plan.getPrecio(),
+                    plan.getPrecio().setScale(2, RoundingMode.HALF_UP),
                     "PEN");
 
         } catch (StripeException e) {
@@ -137,7 +149,7 @@ public class ServicioStripeImpl implements IServicioStripe {
                     return new RespuestaSuscripcionDTO(
                             detalle.getPlanSolicitado(),
                             pago.getEstado(),
-                            detalle.getMonto(),
+                            detalle.getMonto().setScale(2, RoundingMode.HALF_UP),
                             detalle.getMoneda(),
                             pago.getFechaFinPlan(),
                             activo);
@@ -145,7 +157,7 @@ public class ServicioStripeImpl implements IServicioStripe {
                 .orElse(new RespuestaSuscripcionDTO(
                         PlanSuscripcion.FREE,
                         EstadoPago.COMPLETADO,
-                        BigDecimal.ZERO,
+                        BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP),
                         "PEN",
                         null,
                         true));

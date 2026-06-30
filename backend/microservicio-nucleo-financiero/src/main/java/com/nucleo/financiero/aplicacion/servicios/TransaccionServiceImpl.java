@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.aplicacion.servicios;
+package com.nucleo.financiero.aplicacion.servicios;
 
 import com.nucleo.financiero.aplicacion.dtos.solicitudes.SolicitudTransaccion;
 import com.nucleo.financiero.aplicacion.dtos.respuestas.ResumenFinancieroDTO;
@@ -11,6 +11,7 @@ import com.nucleo.financiero.dominio.entidades.Transaccion;
 import com.nucleo.financiero.dominio.repositorios.CategoriaRepository;
 import com.nucleo.financiero.dominio.repositorios.TransaccionRepository;
 import com.nucleo.financiero.infraestructura.mensajeria.PublicadorAuditoria;
+import com.nucleo.financiero.infraestructura.mensajeria.PublicadorFinanciero;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,9 +26,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * ImplementaciÃ³n de {@link ITransaccionService} para la gestiÃ³n de movimientos financieros.
+ * Implementación de {@link ITransaccionService} para la gestión de movimientos financieros.
  * <p>
- * Aplica lÃ³gica de negocio para la validaciÃ³n, persistencia y auditorÃ­a de transacciones,
+ * Aplica lógica de negocio para la validación, persistencia y auditoría de transacciones,
  * integrando repositorios de dominio y publicadores de eventos.
  * </p>
  *
@@ -41,16 +42,17 @@ public class TransaccionServiceImpl implements ITransaccionService {
     private final TransaccionRepository transaccionRepository;
     private final CategoriaRepository categoriaRepository;
     private final PublicadorAuditoria publicadorAuditoria;
+    private final PublicadorFinanciero publicadorFinanciero;
     private final TransaccionMapper transaccionMapper;
 
     @Override
     @Transactional
     public RespuestaTransaccion registrar(SolicitudTransaccion request, String ipCliente) {
         if (request == null) {
-            throw new IllegalArgumentException("La solicitud de transacciÃ³n no puede ser nula.");
+            throw new IllegalArgumentException("La solicitud de transacción no puede ser nula.");
         }
         Transaccion guardada = transaccionRepository.save(construirEntidad(request));
-        log.info("TransacciÃ³n registrada: {} â€” {} {} ({})",
+        log.info("Transacción registrada: {} — {} {} ({})",
                 guardada.getId(), guardada.getTipo(), guardada.getMonto(), guardada.getNombreCliente());
 
         publicadorAuditoria.publicarRegistro(
@@ -59,6 +61,13 @@ public class TransaccionServiceImpl implements ITransaccionService {
                 guardada.getMonto().toString(),
                 ipCliente
         );
+        publicadorFinanciero.publicarTransaccionRegistrada(
+                guardada.getId(),
+                guardada.getUsuarioId(),
+                guardada.getMonto(),
+                guardada.getTipo().name(),
+                guardada.getFechaTransaccion().toString()
+        );
         return transaccionMapper.aDto(guardada);
     }
 
@@ -66,7 +75,7 @@ public class TransaccionServiceImpl implements ITransaccionService {
     @Transactional
     public List<RespuestaTransaccion> registrarLote(List<SolicitudTransaccion> solicitudes, String ipCliente) {
         if (solicitudes == null || solicitudes.isEmpty()) {
-            throw new IllegalArgumentException("La lista de transacciones no puede estar vacÃ­a.");
+            throw new IllegalArgumentException("La lista de transacciones no puede estar vacía.");
         }
         if (solicitudes.size() > 500) {
             throw new IllegalArgumentException(
@@ -85,6 +94,15 @@ public class TransaccionServiceImpl implements ITransaccionService {
                 "Se registraron " + guardadas.size() + " transacciones exitosamente.",
                 ipCliente
         );
+        for (Transaccion t : guardadas) {
+            publicadorFinanciero.publicarTransaccionRegistrada(
+                    t.getId(),
+                    t.getUsuarioId(),
+                    t.getMonto(),
+                    t.getTipo().name(),
+                    t.getFechaTransaccion().toString()
+            );
+        }
         return guardadas.stream().map(transaccionMapper::aDto).toList();
     }
 
@@ -99,7 +117,7 @@ public class TransaccionServiceImpl implements ITransaccionService {
             throw new IllegalArgumentException("El ID de usuario no puede ser nulo.");
         }
         if (paginacion == null) {
-            throw new IllegalArgumentException("La informaciÃ³n de paginaciÃ³n no puede ser nula.");
+            throw new IllegalArgumentException("La información de paginación no puede ser nula.");
         }
 
         if (desde == null) {
@@ -136,7 +154,7 @@ public class TransaccionServiceImpl implements ITransaccionService {
         publicadorAuditoria.publicarAcceso(
                 usuarioId,
                 "OBTENER_RESUMEN",
-                "Se generÃ³ el resumen financiero del periodo solicitado.",
+                "Se generó el resumen financiero del periodo solicitado.",
                 ipCliente
         );
         return ResumenFinancieroDTO.calcular(desde, hasta, totalIngresos, totalGastos, cantidadIngresos, cantidadGastos);
@@ -146,7 +164,7 @@ public class TransaccionServiceImpl implements ITransaccionService {
     @Transactional(readOnly = true)
     public RespuestaTransaccion obtenerPorId(UUID id) {
         if (id == null) {
-            throw new IllegalArgumentException("El ID de transacciÃ³n no puede ser nulo.");
+            throw new IllegalArgumentException("El ID de transacción no puede ser nulo.");
         }
         return transaccionRepository.findById(id)
                 .map(transaccionMapper::aDto)
@@ -155,12 +173,12 @@ public class TransaccionServiceImpl implements ITransaccionService {
 
     /**
      * Construye una entidad de dominio {@link Transaccion} a partir de una solicitud DTO.
-     * Realiza validaciones de integridad entre categorÃ­a y tipo de movimiento.
+     * Realiza validaciones de integridad entre categoría y tipo de movimiento.
      * 
      * @param request Datos de la solicitud.
      * @return Entidad de dominio construida.
-     * @throws NoSuchElementException Si la categorÃ­a no existe.
-     * @throws IllegalStateException Si hay inconsistencia entre categorÃ­a y tipo.
+     * @throws NoSuchElementException Si la categoría no existe.
+     * @throws IllegalStateException Si hay inconsistencia entre categoría y tipo.
      */
     private Transaccion construirEntidad(SolicitudTransaccion request) {
         Categoria categoria = obtenerCategoriaValidada(request.categoriaId());
@@ -180,18 +198,18 @@ public class TransaccionServiceImpl implements ITransaccionService {
     }
 
     /**
-     * Obtiene y valida la categorÃ­a asociada a la transacciÃ³n.
+     * Obtiene y valida la categoría asociada a la transacción.
      */
     private Categoria obtenerCategoriaValidada(UUID categoriaId) {
         if (categoriaId == null) {
-            throw new IllegalArgumentException("El ID de la categorÃ­a es nulo en la peticiÃ³n.");
+            throw new IllegalArgumentException("El ID de la categoría es nulo en la petición.");
         }
         return categoriaRepository.findById(categoriaId)
                 .orElseThrow(() -> new ExcepcionRecursoNoEncontrado("Categoria", categoriaId));
     }
 
     /**
-     * Valida la consistencia de tipos entre la transacciÃ³n y la categorÃ­a seleccionada.
+     * Valida la consistencia de tipos entre la transacción y la categoría seleccionada.
      */
     private void validarConsistenciaTransaccion(SolicitudTransaccion request, Categoria categoria) {
         if (request.tipo() == null) {
@@ -199,16 +217,16 @@ public class TransaccionServiceImpl implements ITransaccionService {
         }
         if (categoria.getTipo() != request.tipo()) {
             throw new IllegalStateException(String.format(
-                    "Inconsistencia: La categorÃ­a es de tipo %s pero la transacciÃ³n es %s.",
+                    "Inconsistencia: La categoría es de tipo %s pero la transacción es %s.",
                     categoria.getTipo(), request.tipo()));
         }
     }
 
     /**
-     * Resuelve el rango de fechas para un mes y aÃ±o especÃ­ficos.
+     * Resuelve el rango de fechas para un mes y año específicos.
      * 
      * @param mes Mes (1-12).
-     * @param anio AÃ±o (ej: 2026).
+     * @param anio Año (ej: 2026).
      * @return Array con fecha inicio [0] y fecha fin [1].
      */
     private LocalDateTime[] resolverRangoFechas(Integer mes, Integer anio) {

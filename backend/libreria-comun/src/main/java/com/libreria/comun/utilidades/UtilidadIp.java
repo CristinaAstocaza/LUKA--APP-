@@ -1,9 +1,9 @@
-﻿package com.libreria.comun.utilidades;
+package com.libreria.comun.utilidades;
 
 import jakarta.servlet.http.HttpServletRequest;
 
 /**
- * Utilidad para la gestiÃ³n y extracciÃ³n de direcciones IP en entornos distribuidos.
+ * Utilidad para la gestión y extracción de direcciones IP en entornos distribuidos.
  * <p>
  * En una arquitectura de microservicios, la IP real suele venir oculta tras el 
  * API Gateway en la cabecera 'X-Forwarded-For'. Esta clase asegura que se 
@@ -16,9 +16,9 @@ public final class UtilidadIp {
     private UtilidadIp() {}
 
     /**
-     * Extrae la direcciÃ³n IP real del cliente desde la peticiÃ³n HTTP.
+     * Extrae la dirección IP real del cliente desde la petición HTTP.
      * 
-     * @param request La peticiÃ³n servlet entrante.
+     * @param request La petición servlet entrante.
      * @return String con la IP (IPv4 o IPv6).
      */
     public static String obtenerIpReal(HttpServletRequest request) {

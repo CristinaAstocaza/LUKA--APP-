@@ -1,4 +1,4 @@
-﻿package com.nucleo.financiero.dominio.repositorios;
+package com.nucleo.financiero.dominio.repositorios;
 
 import com.nucleo.financiero.dominio.entidades.Categoria;
 import com.nucleo.financiero.dominio.entidades.Categoria.TipoMovimiento;
@@ -9,8 +9,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Repositorio para la persistencia de categorÃ­as.
- * Proporciona mÃ©todos para bÃºsqueda por nombre (case-insensitive) y filtrado por tipo.
+ * Repositorio para la persistencia de categorías.
+ * Proporciona métodos para búsqueda por nombre (case-insensitive) y filtrado por tipo.
  * 
  */
 @Repository

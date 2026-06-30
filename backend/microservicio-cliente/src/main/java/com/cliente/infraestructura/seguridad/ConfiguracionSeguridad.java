@@ -1,4 +1,4 @@
-﻿package com.cliente.infraestructura.seguridad;
+package com.cliente.infraestructura.seguridad;
 
 import com.libreria.comun.seguridad.ConfiguracionSeguridadBase;
 import com.libreria.comun.seguridad.FiltroJwt;
@@ -13,9 +13,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * ConfiguraciÃ³n de seguridad especÃ­fica para el microservicio de cliente.
+ * Configuración de seguridad específica para el microservicio de cliente.
  * <p>
- * Extiende de {@link ConfiguracionSeguridadBase} para heredar la gestiÃ³n de JWT
+ * Extiende de {@link ConfiguracionSeguridadBase} para heredar la gestión de JWT
  * y define los permisos de acceso a los endpoints de cliente.
  * </p>
  * 
@@ -27,9 +27,9 @@ import org.springframework.security.web.SecurityFilterChain;
 public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
 
     /**
-     * Constructor que inyecta las dependencias de seguridad de la librerÃ­a comÃºn.
+     * Constructor que inyecta las dependencias de seguridad de la librería común.
      *
-     * @param filtroJwt       Filtro JWT para validaciÃ³n de tokens.
+     * @param filtroJwt       Filtro JWT para validación de tokens.
      * @param puntoEntradaJwt Punto de entrada para respuestas de error 401.
      */
     public ConfiguracionSeguridad(FiltroJwt filtroJwt, PuntoEntradaJwt puntoEntradaJwt) {
@@ -37,12 +37,12 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
     }
 
     /**
-     * Configura la cadena de filtros de seguridad especÃ­fica para el microservicio
+     * Configura la cadena de filtros de seguridad específica para el microservicio
      * de cliente.
      * 
-     * @param http ConfiguraciÃ³n de seguridad de Spring.
+     * @param http Configuración de seguridad de Spring.
      * @return {@link SecurityFilterChain} configurado.
-     * @throws Exception Si ocurre un error en la configuraciÃ³n.
+     * @throws Exception Si ocurre un error en la configuración.
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -50,10 +50,11 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
         // 1. Configuramos la base (JWT, Stateless, Exception handling)
         super.configurarAutorizacion(http);
 
-        // 2. Definimos las reglas de este microservicio (De lo mÃ¡s especÃ­fico a lo
+        // 2. Definimos las reglas de este microservicio (De lo más específico a lo
         // general)
         http.authorizeHttpRequests(auth -> auth
-                // Endpoints internos y creaciÃ³n inicial de perfil (comunicaciÃ³n inter-microservicio)
+                .requestMatchers("/", "/favicon.ico").permitAll()
+                // Endpoints internos y creación inicial de perfil (comunicación inter-microservicio)
                 .requestMatchers("/api/v1/clientes/interno/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/v1/clientes/perfil/inicial").authenticated()
 
@@ -67,10 +68,10 @@ public class ConfiguracionSeguridad extends ConfiguracionSeguridadBase {
                 // Metas de ahorro
                 .requestMatchers("/api/v1/clientes/metas/**").authenticated()
 
-                // LÃ­mites de gasto
+                // Límites de gasto
                 .requestMatchers("/api/v1/clientes/limites/**").authenticated()
 
-                // Monitoreo y DocumentaciÃ³n (PÃºblico)
+                // Monitoreo y Documentación (Público)
                 .requestMatchers("/actuator/**", "/error/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 

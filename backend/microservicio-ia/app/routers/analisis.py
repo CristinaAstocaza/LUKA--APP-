@@ -12,12 +12,14 @@ Cambios v7 (FASE 2):
 
 from __future__ import annotations
 import logging
+from typing import Any
 from fastapi import APIRouter, Request, Depends, Security
 from app.libreria_comun.seguridad.validador_jwt import validar_token, obtener_usuario_id, obtener_rol_usuario
 from app.libreria_comun.respuesta.resultado_api import ResultadoApi
 from app.modelos.esquemas import (
     PeticionConFiltroFecha,
     PeticionSimularMeta,
+    PeticionComparacionDTO,
     RespuestaModulo,
     NombreModulo,
     SolicitudClasificacionDTO,
@@ -36,6 +38,14 @@ def _obtener_ip(request: Request) -> str:
     return forwarded.split(",")[0].strip() if forwarded else (request.client.host if request.client else "127.0.0.1")
 
 
+def _resolver_token(request: Request, peticion: Any) -> None:
+    """Extrae el token del header Authorization si no viene en el body."""
+    if not getattr(peticion, "token", None):
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            peticion.token = auth_header[7:].strip()
+
+
 # ── Módulo 1: Gasto Hormiga ───────────────────────────────────────────────────
 
 @router.post("/gasto-hormiga", response_model=ResultadoApi[RespuestaModulo])
@@ -45,6 +55,7 @@ async def detectar_gasto_hormiga(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     resultado = await servicio.procesar_modulo(NombreModulo.GASTO_HORMIGA, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
     return ResultadoApi.exito_res(datos=resultado, mensaje="Análisis de gasto hormiga completado", ruta=request.url.path)
@@ -59,6 +70,7 @@ async def predecir_gastos(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     resultado = await servicio.procesar_modulo(NombreModulo.PREDECIR_GASTOS, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
     return ResultadoApi.exito_res(datos=resultado, mensaje="Predicción de gastos generada", ruta=request.url.path)
@@ -73,6 +85,7 @@ async def habitos_financieros(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     resultado = await servicio.procesar_modulo(NombreModulo.HABITOS_FINANCIEROS, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
     return ResultadoApi.exito_res(datos=resultado, mensaje="Análisis de hábitos completado", ruta=request.url.path)
@@ -87,6 +100,7 @@ async def simular_meta(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     extra = {
         "meta_nombre": peticion.nombre_meta,
@@ -108,6 +122,7 @@ async def reto_ahorro_dinamico(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     resultado = await servicio.procesar_modulo(
         NombreModulo.RETO_AHORRO_DINAMICO,
@@ -129,6 +144,7 @@ async def reporte_completo(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     resultado = await servicio.procesar_modulo(NombreModulo.REPORTE_COMPLETO, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
     return ResultadoApi.exito_res(datos=resultado, mensaje="Reporte ejecutivo generado", ruta=request.url.path)
@@ -143,6 +159,7 @@ async def analisis_estilo_vida(
     servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
     payload: dict = Security(validar_token),
 ):
+    _resolver_token(request, peticion)
     peticion.usuario_id = obtener_usuario_id(payload)
     resultado = await servicio.procesar_modulo(NombreModulo.ANALISIS_ESTILO_VIDA, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
     return ResultadoApi.exito_res(datos=resultado, mensaje="Análisis de estilo de vida completado", ruta=request.url.path)
@@ -174,7 +191,103 @@ async def clasificar_transaccion(
     )
 
 
-# ── Módulo 9: Limpiar Historial de Consultas ──────────────────────────────────
+# ── Módulo 9: Comprobador de Evolución (La Sala de Radiología) ───────────────
+
+@router.post("/comprobador-evolucion", response_model=ResultadoApi[RespuestaModulo])
+async def comprobador_evolucion(
+    request: Request,
+    peticion: PeticionComparacionDTO,
+    servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
+    payload: dict = Security(validar_token),
+):
+    _resolver_token(request, peticion)
+    peticion.usuario_id = obtener_usuario_id(payload)
+    resultado = await servicio.procesar_comparacion(NombreModulo.COMPROBADOR_EVOLUCION, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
+    return ResultadoApi.exito_res(datos=resultado, mensaje="Análisis de evolución completado", ruta=request.url.path)
+
+
+# ── Módulo 10: Zona de Entrenamiento (Luka Gym) ──────────────────────────────
+
+@router.post("/zona-entrenamiento", response_model=ResultadoApi[RespuestaModulo])
+async def zona_entrenamiento(
+    request: Request,
+    peticion: PeticionConFiltroFecha,
+    servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
+    payload: dict = Security(validar_token),
+):
+    _resolver_token(request, peticion)
+    peticion.usuario_id = obtener_usuario_id(payload)
+    resultado = await servicio.procesar_modulo(NombreModulo.ZONA_ENTRENAMIENTO, peticion, _obtener_ip(request), rol=obtener_rol_usuario(payload))
+    return ResultadoApi.exito_res(datos=resultado, mensaje="Rutina de entrenamiento generada", ruta=request.url.path)
+
+
+# ── Módulo 11: Espejo del Tiempo ──────────────────────────────────────────────
+
+@router.post("/espejo-tiempo", response_model=ResultadoApi[RespuestaModulo])
+async def espejo_tiempo(
+    request: Request,
+    peticion: PeticionConFiltroFecha,
+    servicio: ServicioAnalisis = Depends(obtener_servicio_analisis),
+    payload: dict = Security(validar_token),
+):
+    """
+    Proyecta el futuro financiero del usuario a 3, 6 y 12 meses.
+
+    Genera dos líneas de proyección paralelas:
+      - Continuidad    : Si el usuario mantiene sus hábitos actuales.
+      - Transformación : Si reduce un 25 % sus gastos no esenciales.
+
+    Para cada horizonte calcula el score proyectado, el ahorro acumulado
+    y clasifica las metas activas como cumplidas o fracasadas.
+
+    Gemini recibe solo los KPIs resumidos (FASE 3) y narra dos «cartas
+    al futuro» personalizadas usando el nombre y tono del usuario.
+
+    Requiere mínimo 30 transacciones históricas.
+    """
+    _resolver_token(request, peticion)
+    peticion.usuario_id = obtener_usuario_id(payload)
+
+    # Extraer metas activas y score del perfil del usuario vía kwargs.
+    # ServicioAnalisis las pasa a ejecutar_calculos(**kwargs) del módulo.
+    from app.clientes.luka_clients import obtener_cliente_perfil
+    cliente_perfil = obtener_cliente_perfil()
+    try:
+        dict_perfil = await cliente_perfil.obtener_perfil_usuario_async(
+            peticion.usuario_id, peticion.token
+        )
+        metas_raw = dict_perfil.get("metas", dict_perfil.get("metasAhorro", []))
+        # Normalizar lista de metas al formato esperado por el módulo
+        metas = [
+            {
+                "nombre": m.get("nombre", m.get("nombreMeta", "Meta sin nombre")),
+                "monto_objetivo": float(m.get("montoObjetivo", m.get("monto_objetivo", 0.0))),
+                "monto_actual": float(m.get("montoActual", m.get("monto_actual", 0.0))),
+            }
+            for m in (metas_raw if isinstance(metas_raw, list) else [])
+        ]
+        score_actual = int(dict_perfil.get("scoreFinanciero", dict_perfil.get("score_financiero", 50)))
+    except Exception:
+        logger.warning("[ESPEJO-TIEMPO] No se pudo obtener metas del perfil; usando defaults.")
+        metas = []
+        score_actual = 50
+
+    resultado = await servicio.procesar_modulo(
+        NombreModulo.ESPEJO_TEMPORAL,
+        peticion,
+        _obtener_ip(request),
+        rol=obtener_rol_usuario(payload),
+        metas=metas,
+        score_actual=score_actual,
+    )
+    return ResultadoApi.exito_res(
+        datos=resultado,
+        mensaje="Proyección temporal generada",
+        ruta=request.url.path,
+    )
+
+
+# ── Mantenimiento: Limpiar Historial de Consultas ──────────────────────────────
 
 @router.delete("/mis-consultas/historial", response_model=ResultadoApi[dict])
 async def limpiar_historial_consultas(
@@ -186,7 +299,7 @@ async def limpiar_historial_consultas(
     para poder forzar una nueva llamada a Gemini en rangos consultados anteriormente.
     """
     usuario_id = obtener_usuario_id(payload)
-    from app.persistencia.cache_redis import CacheRedis
+    from app.persistencia.redis.cache_redis import CacheRedis
     cache = CacheRedis()
     eliminadas = cache.flush_firmas_usuario(usuario_id)
     
@@ -214,7 +327,7 @@ async def flush_cache_ia(
     Por defecto elimina ia:* (consejos + cuotas). Requiere JWT válido.
     Útil para forzar que Gemini regenere consejos después de correcciones de código.
     """
-    from app.persistencia.cache_redis import CacheRedis
+    from app.persistencia.redis.cache_redis import CacheRedis
     cache = CacheRedis()
     eliminadas = cache.flush_ia_cache(patron=patron)
     logger.warning(

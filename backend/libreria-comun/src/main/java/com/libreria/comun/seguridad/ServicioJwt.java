@@ -1,4 +1,4 @@
-﻿package com.libreria.comun.seguridad;
+package com.libreria.comun.seguridad;
 
 import com.libreria.comun.excepciones.ExcepcionNoAutorizado;
 import io.jsonwebtoken.Claims;
@@ -21,9 +21,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 /**
- * Servicio centralizado para la gestiÃ³n de tokens JSON Web Token (JWT).
+ * Servicio centralizado para la gestión de tokens JSON Web Token (JWT).
  * <p>
- * Proporciona funcionalidades para la generaciÃ³n, parseo y validaciÃ³n de
+ * Proporciona funcionalidades para la generación, parseo y validación de
  * tokens, asegurando la interoperabilidad con servicios externos (como ms-ia en
  * Python) mediante el uso de una clave secreta compartida.
  * </p>
@@ -47,7 +47,7 @@ public class ServicioJwt {
     private long expiracionMs;
 
     /**
-     * Tiempo de vida del token de refresco (7 dÃ­as por defecto).
+     * Tiempo de vida del token de refresco (7 días por defecto).
      */
     @Value("${luka.jwt.refresh-expiracion-ms:604800000}")
     private long expiracionRefreshMs;
@@ -70,7 +70,7 @@ public class ServicioJwt {
      * Genera la clave de firma compatible con algoritmos HMAC-SHA decodificando
      * la clave en Base64.
      *
-     * @return {@link SecretKey} para firma y verificaciÃ³n.
+     * @return {@link SecretKey} para firma y verificación.
      */
     private SecretKey obtenerClaveFirma() {
         byte[] keyBytes = Decoders.BASE64.decode(claveSecreta);
@@ -92,7 +92,7 @@ public class ServicioJwt {
      * Genera un Refresh Token con mayor tiempo de vida y sin roles.
      *
      * @param userDetails Datos del usuario.
-     * @return Token JWT de larga duraciÃ³n.
+     * @return Token JWT de larga duración.
      */
     public String generarRefreshToken(UserDetails userDetails) {
         return generarTokenConExpiracion(userDetails, new HashMap<>(), expiracionRefreshMs);
@@ -118,7 +118,7 @@ public class ServicioJwt {
     }
 
     /**
-     * Extrae el Subject (usualmente el correo electrÃ³nico) contenido en el
+     * Extrae el Subject (usualmente el correo electrónico) contenido en el
      * token.
      *
      * @param token Token JWT Bearer.
@@ -133,7 +133,7 @@ public class ServicioJwt {
      * personalizado "usuarioId".
      *
      * @param token Token JWT Bearer.
-     * @return UUID del usuario o null si no estÃ¡ presente.
+     * @return UUID del usuario o null si no está presente.
      */
     public UUID extraerUsuarioId(String token) {
         String id = extraerClaim(token, claims -> claims.get("usuarioId", String.class));
@@ -141,11 +141,11 @@ public class ServicioJwt {
     }
 
     /**
-     * MÃ©todo genÃ©rico para extraer cualquier informaciÃ³n (Claim) del token.
+     * Método genérico para extraer cualquier información (Claim) del token.
      *
      * @param <T> Tipo de dato esperado del Claim.
      * @param token Token JWT.
-     * @param claimsResolver FunciÃ³n lÃ³gica para extraer un claim especÃ­fico.
+     * @param claimsResolver Función lógica para extraer un claim específico.
      * @return Valor del claim procesado por el resolvedor.
      */
     public <T> T extraerClaim(String token, Function<Claims, T> claimsResolver) {
@@ -154,12 +154,12 @@ public class ServicioJwt {
     }
 
     /**
-     * Realiza el parseo y verificaciÃ³n de la firma del token utilizando la
+     * Realiza el parseo y verificación de la firma del token utilizando la
      * clave secreta.
      *
      * @param token Token JWT.
-     * @return Objeto {@link Claims} con la carga Ãºtil.
-     * @throws ExcepcionNoAutorizado Si el token es invÃ¡lido o ha expirado.
+     * @return Objeto {@link Claims} con la carga útil.
+     * @throws ExcepcionNoAutorizado Si el token es inválido o ha expirado.
      */
     private Claims extraerTodosLosClaims(String token) {
         try {
@@ -172,7 +172,7 @@ public class ServicioJwt {
             log.warn("Intento de acceso con token expirado");
             throw new ExcepcionNoAutorizado("TOKEN_EXPIRADO");
         } catch (JwtException e) {
-            log.error("Fallo en la validaciÃ³n de firma JWT");
+            log.error("Fallo en la validación de firma JWT");
             throw new ExcepcionNoAutorizado("TOKEN_INVALIDO");
         }
     }
@@ -193,7 +193,7 @@ public class ServicioJwt {
      * {@link UserDetails}.
      *
      * @param token Token JWT Bearer.
-     * @param userDetails InformaciÃ³n del usuario cargada en el sistema.
+     * @param userDetails Información del usuario cargada en el sistema.
      * @return true si el token pertenece al usuario y no ha expirado.
      */
     public boolean esTokenValido(String token, UserDetails userDetails) {
@@ -202,20 +202,20 @@ public class ServicioJwt {
     }
 
     /**
-     * ValidaciÃ³n simple de integridad y expiraciÃ³n del token.
+     * Validación simple de integridad y expiración del token.
      *
      * @param token Token JWT Bearer.
-     * @return true si el token es estructuralmente vÃ¡lido y vigente.
+     * @return true si el token es estructuralmente válido y vigente.
      */
     public boolean esTokenValido(String token) {
         return !estaExpirado(token);
     }
 
     /**
-     * Comprueba si el token ha superado su fecha de expiraciÃ³n.
+     * Comprueba si el token ha superado su fecha de expiración.
      *
      * @param token Token JWT.
-     * @return true si la fecha actual es posterior a la de expiraciÃ³n.
+     * @return true si la fecha actual es posterior a la de expiración.
      */
     private boolean estaExpirado(String token) {
         return extraerClaim(token, Claims::getExpiration).before(new Date());

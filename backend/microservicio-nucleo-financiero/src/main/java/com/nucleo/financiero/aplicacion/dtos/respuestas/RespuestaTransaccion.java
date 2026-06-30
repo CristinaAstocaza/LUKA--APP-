@@ -9,7 +9,6 @@ import java.util.UUID;
  * DTO de salida enriquecido que representa una transacción persistida.
  *
  * @param id               ID único de la transacción.
- * @param usuarioId        ID del usuario propietario de la transacción.
  * @param nombreCliente    Nombre o referencia del cliente.
  * @param monto            Monto de la operación.
  * @param tipo             Tipo (INGRESO/GASTO).
@@ -24,7 +23,6 @@ import java.util.UUID;
 @Builder
 public record RespuestaTransaccion(
         UUID id,
-        UUID usuarioId,
         String nombreCliente,
         BigDecimal monto,
         String tipo,

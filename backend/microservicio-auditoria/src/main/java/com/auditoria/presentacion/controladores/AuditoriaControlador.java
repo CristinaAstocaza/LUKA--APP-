@@ -1,4 +1,4 @@
-﻿package com.auditoria.presentacion.controladores;
+package com.auditoria.presentacion.controladores;
 
 import com.auditoria.aplicacion.dtos.RespuestaAuditoriaDetalladoDTO;
 import com.auditoria.aplicacion.puertos.ServicioRegistroAuditoria;
@@ -14,10 +14,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador de infraestructura para la gestiÃ³n y consulta de auditorÃ­a.
+ * Controlador de infraestructura para la gestión y consulta de auditoría.
  * <p>
- * Implementa un modelo hÃ­brido: utiliza contratos de la librerÃ­a comÃºn para la
- * ingesta de datos y DTOs locales detallados para la visualizaciÃ³n
+ * Implementa un modelo híbrido: utiliza contratos de la librería común para la
+ * ingesta de datos y DTOs locales detallados para la visualización
  * administrativa.
  * </p>
  * 
@@ -32,16 +32,16 @@ public class AuditoriaControlador {
         private final ServicioRegistroAuditoria servicioAuditoria;
 
         /**
-         * Consulta el histÃ³rico detallado de auditorÃ­a para el Frontend.
+         * Consulta el histórico detallado de auditoría para el Frontend.
          * <p>
-         * Retorna un {@link RespuestaAuditoriaDetalladoDTO} que incluye informaciÃ³n
+         * Retorna un {@link RespuestaAuditoriaDetalladoDTO} que incluye información
          * contextual (email, nombres) necesaria para la toma de decisiones.
          * </p>
          * 
          * @param modulo  (Opcional) Filtrar por nombre del microservicio.
-         * @param pagina  NÃºmero de pÃ¡gina solicitado.
-         * @param tamanio Cantidad de registros por pÃ¡gina.
-         * @return Respuesta estandarizada con datos detallados y paginaciÃ³n.
+         * @param pagina  Número de página solicitado.
+         * @param tamanio Cantidad de registros por página.
+         * @return Respuesta estandarizada con datos detallados y paginación.
          */
         @GetMapping("/registros")
         public ResponseEntity<ResultadoApi<List<RespuestaAuditoriaDetalladoDTO>>> listarRegistros(
@@ -54,7 +54,7 @@ public class AuditoriaControlador {
 
                 Pageable paginacionRequest = PageRequest.of(paginaSegura, tamanioSeguro);
 
-                // El servicio ahora debe devolver una pÃ¡gina del DTO detallado local
+                // El servicio ahora debe devolver una página del DTO detallado local
                 Page<RespuestaAuditoriaDetalladoDTO> resultadoPage = servicioAuditoria.listarRegistrosDetallados(modulo,
                                 paginacionRequest);
 
@@ -63,7 +63,7 @@ public class AuditoriaControlador {
                 return ResponseEntity.ok(
                                 ResultadoApi.exito(
                                                 infoPaginacion.contenido(),
-                                                "Consulta de registros detallada realizada con Ã©xito.",
+                                                "Consulta de registros detallada realizada con éxito.",
                                                 infoPaginacion));
         }
 }

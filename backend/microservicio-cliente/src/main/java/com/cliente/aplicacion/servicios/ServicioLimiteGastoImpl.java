@@ -1,4 +1,4 @@
-﻿package com.cliente.aplicacion.servicios;
+package com.cliente.aplicacion.servicios;
 
 import com.cliente.aplicacion.dtos.respuestas.RespuestaLimiteGasto;
 import com.cliente.aplicacion.dtos.solicitudes.SolicitudLimiteGasto;
@@ -25,7 +25,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * LÃ³gica de negocio para la gestiÃ³n del limite de gasto global.
+ * Lógica de negocio para la gestión del limite de gasto global.
  *
  * @since 2026-05
  */
@@ -39,7 +39,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * Crea un nuevo lÃ­mite de gasto global.
+     * Crea un nuevo límite de gasto global.
      */
     @Override
     @Transactional
@@ -52,26 +52,27 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         }
         repositorio.findByUsuarioIdAndActivoTrue(usuarioIdToken).ifPresent((LimiteGasto limite) -> {
             if (!limite.estaVencido()) {
-                throw new LimiteGastoException("Ya tienes un lÃ­mite global activo y vigente.");
+                throw new LimiteGastoException("Ya tienes un límite global activo y vigente.");
             }
         });
 
-        // DesactivaciÃ³n eficiente por lote en la base de datos
+        // Desactivación eficiente por lote en la base de datos
         repositorio.desactivarLimitesAnteriores(usuarioIdToken);
 
         LimiteGasto nuevo = LimiteGasto.builder()
                 .usuarioId(usuarioIdToken)
+                .nombre(solicitud.nombre() != null ? solicitud.nombre() : "Presupuesto Mensual")
                 .montoLimite(solicitud.montoLimite())
                 .porcentajeAlerta(solicitud.porcentajeAlerta() != null ? solicitud.porcentajeAlerta() : 80)
-                .fechaInicio(LocalDate.now())
-                .fechaFin(LocalDate.now().plusMonths(1))
+                .fechaInicio(solicitud.fechaInicio() != null ? solicitud.fechaInicio() : LocalDate.now())
+                .fechaFin(solicitud.fechaFin() != null ? solicitud.fechaFin() : LocalDate.now().plusMonths(1))
                 .activo(true)
                 .build();
 
         LimiteGasto guardado = repositorio.save(nuevo);
         publicadorAuditoria.publicarEventoExitoso(EventoAuditoriaDTO.crear(
                 usuarioIdToken, "LIMITE_GLOBAL_CREADO", "MS-CLIENTE",
-                ipOrigen, String.format("LÃ­mite global: S/ %.2f hasta %s",
+                ipOrigen, String.format("Límite global: S/ %.2f hasta %s",
                         guardado.getMontoLimite(), guardado.getFechaFin())));
 
         eventPublisher.publishEvent(new EventoContextoActualizado(usuarioIdToken, "LIMITE_GLOBAL_CREADO"));
@@ -79,7 +80,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Actualiza el lÃ­mite global ACTIVO.
+     * Actualiza el límite global ACTIVO.
      */
     @Override
     @Transactional
@@ -88,7 +89,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
                 .orElseThrow(() -> new LimiteGastoNoEncontradoException(usuarioId));
 
         if (limite.estaVencido()) {
-            throw new LimiteGastoException("El lÃ­mite actual ha vencido y no se puede modificar. Crea uno nuevo.");
+            throw new LimiteGastoException("El límite actual ha vencido y no se puede modificar. Crea uno nuevo.");
         }
 
         if (solicitud.montoLimite() != null) {
@@ -96,6 +97,17 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         }
         if (solicitud.porcentajeAlerta() != null) {
             limite.setPorcentajeAlerta(solicitud.porcentajeAlerta());
+        }
+        if (solicitud.fechaInicio() != null) {
+            limite.setFechaInicio(solicitud.fechaInicio());
+        }
+        if (solicitud.fechaFin() != null) {
+            limite.setFechaFin(solicitud.fechaFin());
+        }
+
+        // Validar rango de fechas si ambas están definidas
+        if (limite.getFechaInicio() != null && limite.getFechaFin() != null && limite.getFechaInicio().isAfter(limite.getFechaFin())) {
+            throw new LimiteGastoException("La fecha de inicio debe ser anterior o igual a la fecha de fin.");
         }
 
         LimiteGasto actualizado = repositorio.save(limite);
@@ -108,7 +120,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Lista todos los lÃ­mites del usuario.
+     * Lista todos los límites del usuario.
      */
     @Override
     @Transactional(readOnly = true)
@@ -120,7 +132,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Obtiene el lÃ­mite activo del usuario.
+     * Obtiene el límite activo del usuario.
      */
     @Override
     @Transactional(readOnly = true)
@@ -131,7 +143,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Desactiva (eliminaciÃ³n lÃ³gica) el lÃ­mite global actual.
+     * Desactiva (eliminación lógica) el límite global actual.
      */
     @Override
     @Transactional
@@ -145,12 +157,12 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         publicadorAuditoria.publicarTransaccionExitosa(EventoTransaccionalDTO.crear(
                 usuarioId, limite.getId(), "MS-CLIENTE", "LIMITE GLOBAL",
                 "Eliminando limite global", "ACTIVO", "DESACTIVADO"));
-        log.info("LÃ­mite global desactivado para usuario: {}", usuarioId);
+        log.info("Límite global desactivado para usuario: {}", usuarioId);
         eventPublisher.publishEvent(new EventoContextoActualizado(usuarioId, "LIMITE_GLOBAL_ELIMINADO"));
     }
 
     /**
-     * EvalÃºa el gasto TOTAL del usuario contra su lÃ­mite global Ãºnico.
+     * Evalúa el gasto TOTAL del usuario contra su límite global único.
      */
     @Override
     @Transactional
@@ -160,7 +172,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
                     if (!limite.estaVencido() && limite.haAlcanzadoUmbral(gastoTotalActual)) {
                         publicadorAuditoria.publicarEventoExitoso(EventoAuditoriaDTO.crear(
                                 usuarioId, "ALERTA_PRESUPUESTO_GLOBAL", "MS-CLIENTE", ipOrigen,
-                                String.format("Gasto total S/ %.2f alcanzÃ³ el %d%% de tu presupuesto global S/ %.2f",
+                                String.format("Gasto total S/ %.2f alcanzó el %d%% de tu presupuesto global S/ %.2f",
                                         gastoTotalActual, limite.getPorcentajeAlerta(), limite.getMontoLimite())));
                         return true;
                     }
@@ -170,7 +182,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
     }
 
     /**
-     * Consulta interna del lÃ­mite activo sin validaciÃ³n de JWT (uso para Facade).
+     * Consulta interna del límite activo sin validación de JWT (uso para Facade).
      */
     @Override
     @Transactional(readOnly = true)
@@ -184,6 +196,7 @@ public class ServicioLimiteGastoImpl implements ServicioLimiteGasto {
         return new RespuestaLimiteGasto(
                 limite.getId(),
                 limite.getUsuarioId(),
+                limite.getNombre(),
                 limite.getMontoLimite(),
                 limite.getPorcentajeAlerta(),
                 limite.getFechaInicio(),
