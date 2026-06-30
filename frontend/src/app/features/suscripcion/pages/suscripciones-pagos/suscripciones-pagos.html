@@ -5,13 +5,19 @@
       <h1 class="suscripciones-pagos-page__title">Todas las Suscripciones</h1>
       <p class="suscripciones-pagos-page__subtitle">Visualiza y administra todas tus suscripciones en una sola vista</p>
     </div>
-    <button type="button" class="btn-primary" (click)="abrirModal()" style="padding: 10px 20px; border-radius: var(--radius-md); font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-      <i class="fa-solid fa-plus"></i>
-      Nueva Suscripción
-    </button>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button type="button" class="btn-secondary" (click)="iniciarTourManualmente()" style="padding: 10px 14px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-circle-question"></i>
+        Ayuda
+      </button>
+      <button type="button" id="btn-nueva-suscripcion" class="btn-primary" (click)="abrirModal()" style="padding: 10px 20px; border-radius: var(--radius-md); font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-plus"></i>
+        Nueva Suscripción
+      </button>
+    </div>
   </header>
 
-  <section class="suscripciones-pagos-page__filters">
+  <section class="suscripciones-pagos-page__filters" id="tour-filtros">
     <div class="filters-container">
       
       <div class="filter-group">
@@ -140,7 +146,7 @@
   </section>
 
   @if (suscripciones().length === 0) {
-    <div class="suscripciones-pagos-page__empty">
+    <div class="suscripciones-pagos-page__empty" id="tour-suscripciones-grid">
       <i class="fa-solid fa-inbox"></i>
       <h2>No hay resultados</h2>
       <p>Intenta ajustar tus filtros para encontrar lo que buscas</p>
@@ -150,7 +156,7 @@
       </button>
     </div>
   } @else {
-    <section class="suscripciones-pagos-page__grid">
+    <section class="suscripciones-pagos-page__grid" id="tour-suscripciones-grid">
       @for (suscripcion of suscripciones(); track suscripcion.id) {
         <app-suscripcion-card 
           [suscripcion]="suscripcion"
@@ -168,5 +174,12 @@
       (cerrar)="cerrarModal()"
       (crear)="onCrearSuscripcion($event)">
     </app-modal-nueva-suscripcion>
+  }
+
+  @if (mostrarTour()) {
+    <app-onboarding-tour
+      [steps]="stepsTour"
+      (cerrar)="completarTour()">
+    </app-onboarding-tour>
   }
 </div>

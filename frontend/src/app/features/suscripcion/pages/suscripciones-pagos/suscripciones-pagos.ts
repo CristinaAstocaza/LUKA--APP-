@@ -4,22 +4,42 @@ import { FormsModule } from '@angular/forms';
 import { SuscripcionGastosService } from '../../../../core/services/suscripcion-gastos.service';
 import { SuscripcionDTO, CATEGORIAS_SUSCRIPCION, FRECUENCIAS_SUSCRIPCION, ESTADOS_SUSCRIPCION } from '../../../../core/models/financiero/suscripcion-gasto.model';
 import { SuscripcionCard } from '../../components/suscripcion-card/suscripcion-card';
-// 👇 1. IMPORTAMOS EL MODAL AQUÍ
 import { ModalNuevaSuscripcion } from '../modal-nueva-suscripcion/modal-nueva-suscripcion';
+import { OnboardingTour, TourStep } from '../../components/onboarding-tour/onboarding-tour';
 
 @Component({
   selector: 'app-suscripciones-pagos',
   standalone: true,
-  // 👇 2. LO AGREGAMOS AL ARREGLO DE IMPORTS
-  imports: [CommonModule, FormsModule, SuscripcionCard, ModalNuevaSuscripcion],
+  imports: [CommonModule, FormsModule, SuscripcionCard, ModalNuevaSuscripcion, OnboardingTour],
   templateUrl: './suscripciones-pagos.html',
   styleUrl: './suscripciones-pagos.scss'
 })
 export class SuscripcionesPagos implements OnInit {
   private readonly suscripcionService = inject(SuscripcionGastosService);
 
-  // 👇 3. AGREGAMOS LA SEÑAL DEL MODAL
   readonly modalAbierto = signal(false);
+  readonly mostrarTour = signal(false);
+
+  readonly stepsTour: TourStep[] = [
+    {
+      targetSelector: '#btn-nueva-suscripcion',
+      title: 'Crear Nueva Suscripción',
+      description: 'Haz clic aquí para registrar un pago recurrente o suscripción. Podrás definir su costo, categoría, frecuencia y próximo vencimiento.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '#tour-filtros',
+      title: 'Filtros y Búsqueda',
+      description: 'Utiliza esta barra para buscar por nombre o filtrar por categoría, frecuencia o rango de precios, manteniendo el control de tus gastos.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '#tour-suscripciones-grid app-suscripcion-card:first-child, .suscripciones-pagos-page__empty',
+      title: 'Tus Suscripciones',
+      description: 'Aquí verás un resumen de cada suscripción con su costo y estado. Puedes editarlas, pausarlas o eliminarlas de forma directa.',
+      position: 'top'
+    }
+  ];
 
   // Filtros
   readonly busqueda = signal('');
@@ -58,6 +78,22 @@ export class SuscripcionesPagos implements OnInit {
 
   ngOnInit(): void {
     // Cargar suscripciones
+    const tourVisto = localStorage.getItem('luka_tour_suscripciones_visto');
+    if (!tourVisto) {
+      // Small timeout to let DOM render completely so selectors are available
+      setTimeout(() => {
+        this.mostrarTour.set(true);
+      }, 600);
+    }
+  }
+
+  completarTour(): void {
+    localStorage.setItem('luka_tour_suscripciones_visto', 'true');
+    this.mostrarTour.set(false);
+  }
+
+  iniciarTourManualmente(): void {
+    this.mostrarTour.set(true);
   }
 
   // 👇 4. AGREGAMOS LAS FUNCIONES PARA CONTROLAR EL MODAL
