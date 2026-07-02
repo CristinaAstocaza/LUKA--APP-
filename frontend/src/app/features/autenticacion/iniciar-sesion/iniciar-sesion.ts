@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, NotificacionService } from '../../../core/services';
 
 @Component({
   selector: 'app-iniciar-sesion',
@@ -20,7 +20,8 @@ export class IniciarSesion {
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private notificacionService: NotificacionService
   ) {
     this.formulario = this.fb.group({
       correo: ['', [Validators.required, Validators.email]],
@@ -30,6 +31,22 @@ export class IniciarSesion {
 
   alternarPassword(): void {
     this.mostrarPassword = !this.mostrarPassword;
+  }
+
+  usarMock(): void {
+    this.formulario.patchValue({
+      correo: 'prueba@gmail.com',
+      password: '12345'
+    });
+    this.iniciarSesion();
+  }
+
+  usarMockAdmin(): void {
+    this.formulario.patchValue({
+      correo: 'admin@gmail.com',
+      password: '12345'
+    });
+    this.iniciarSesion();
   }
 
   iniciarSesion(): void {
@@ -45,12 +62,50 @@ export class IniciarSesion {
       password: this.formulario.value.password
     };
 
+    // [F-29] Intercepción de Usuario Mock para Pruebas (Frontend Only)
+    if (solicitudLogin.correo === 'prueba@gmail.com' && solicitudLogin.password === '12345') {
+      setTimeout(() => {
+        this.cargando = false;
+        this.authService.actualizarSesion({
+          idUsuario: 'mock-12345',
+          nombreUsuario: 'Usuario Prueba',
+          roles: ['ROLE_PREMIUM', 'USER'],
+          tokenAcceso: 'mock-jwt-token-valido-solo-frontend',
+          expiraEn: new Date(Date.now() + 86400000).toISOString()
+        } as any);
+        this.notificacionService.mostrarLoginExitoso('Usuario Prueba');
+        this.router.navigate(['/dashboard']);
+      }, 600);
+      return;
+    }
+
+    if (solicitudLogin.correo === 'admin@gmail.com' && solicitudLogin.password === '12345') {
+      setTimeout(() => {
+        this.cargando = false;
+        this.authService.actualizarSesion({
+          idUsuario: 'mock-admin',
+          nombreUsuario: 'Administrador Prueba',
+          roles: ['ROLE_ADMIN', 'ADMIN', 'ROLE_PREMIUM', 'USER'],
+          tokenAcceso: 'mock-jwt-token-valido-solo-frontend-admin',
+          expiraEn: new Date(Date.now() + 86400000).toISOString()
+        } as any);
+        this.notificacionService.mostrarLoginExitoso('Administrador Prueba');
+        this.router.navigate(['/admin']);
+      }, 600);
+      return;
+    }
+
     this.authService.login(solicitudLogin).subscribe({
       next: (resp) => {
-        this.cargando = false;
         if (resp.exito) {
-          this.router.navigate(['/dashboard']);
+          this.notificacionService.mostrarLoginExitoso(resp.datos?.nombreUsuario || 'Usuario');
+          // Añadimos un pequeño retraso para permitir que el Header/Dashboard inicialicen sin parpadeo
+          setTimeout(() => {
+            this.cargando = false;
+            this.router.navigate(['/dashboard']);
+          }, 1000);
         } else {
+          this.cargando = false;
           this.errorMensaje = resp.mensaje || 'Error al iniciar sesión';
         }
       },

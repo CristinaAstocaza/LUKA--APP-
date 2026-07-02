@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { PerfilLayout } from './perfil-layout/perfil-layout';
+import { pendingChangesGuard } from '../../core/guards/pending-changes.guard';
 
 export const PERFIL_ROUTES: Routes = [
   {
@@ -9,6 +10,7 @@ export const PERFIL_ROUTES: Routes = [
       { path: '', redirectTo: 'cliente', pathMatch: 'full' },
       {
         path: 'cliente',
+        canDeactivate: [pendingChangesGuard],
         data: {
           title: 'Mi perfil',
           breadcrumbs: [
@@ -88,7 +90,7 @@ export const PERFIL_ROUTES: Routes = [
           import('./configuracion/terminos-condiciones')
             .then(m => m.TerminosCondiciones)
       },
-    {
+      {
         path: 'historial',
         data: {
           title: 'Historial',
@@ -99,7 +101,7 @@ export const PERFIL_ROUTES: Routes = [
         },
         loadComponent: () =>
           import('./historial/historial')
-            .then(m => m.HistorialComponent) 
+            .then(m => m.Historial)
       },
       {
         path: 'transacciones',

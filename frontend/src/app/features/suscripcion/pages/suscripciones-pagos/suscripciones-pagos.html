@@ -6,10 +6,6 @@
       <p class="suscripciones-pagos-page__subtitle">Visualiza y administra todas tus suscripciones en una sola vista</p>
     </div>
     <div style="display: flex; gap: 12px; align-items: center;">
-      <button type="button" class="btn-secondary" (click)="iniciarTourManualmente()" style="padding: 10px 14px; border-radius: var(--radius-md); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-        <i class="fa-solid fa-circle-question"></i>
-        Ayuda
-      </button>
       <button type="button" id="btn-nueva-suscripcion" class="btn-primary" (click)="abrirModal()" style="padding: 10px 20px; border-radius: var(--radius-md); font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
         <i class="fa-solid fa-plus"></i>
         Nueva Suscripción
@@ -77,7 +73,7 @@
       </div>
 
       <div class="filter-group filter-group--range">
-        <label class="filter-label">Monto (USD)</label>
+        <label class="filter-label">Monto (S/)</label>
         <div class="filter-range">
           <input 
             type="number" 
@@ -182,4 +178,8 @@
       (cerrar)="completarTour()">
     </app-onboarding-tour>
   }
+
+  <button type="button" class="floating-help-btn" (click)="iniciarTourManualmente()" title="Ver guía de ayuda">
+    <i class="fa-solid fa-circle-question"></i>
+  </button>
 </div>

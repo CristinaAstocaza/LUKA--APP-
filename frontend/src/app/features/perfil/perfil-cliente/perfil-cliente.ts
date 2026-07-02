@@ -1,10 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AvatarConfig, AvatarService, AuthService, ClientePerfilService } from '../../../core/services';
+import { HasUnsavedChanges } from '../../../core/guards/pending-changes.guard';
+import { AvatarConfig, AvatarService, AuthService, ClientePerfilService, NotificacionService } from '../../../core/services';
 import { AvatarDisplay } from './components/avatar-display/avatar-display';
 import { AvatarSelector } from './components/avatar-selector/avatar-selector';
 import { RespuestaDatosPersonales } from '../../../core/models';
 import { SolicitudCambioPassword } from '../../../core/models/auth/user.model';
+import { PerfilDatosPersonales } from './components/perfil-datos-personales/perfil-datos-personales';
+import { PerfilSeguridad } from './components/perfil-seguridad/perfil-seguridad';
 
 interface ActividadReciente {
   titulo: string;
@@ -39,14 +42,18 @@ type PerfilFormKey = keyof PerfilForm;
 @Component({
   selector: 'app-perfil-cliente',
   standalone: true,
-  imports: [AvatarDisplay, AvatarSelector, FormsModule],
+  imports: [AvatarDisplay, AvatarSelector, FormsModule, PerfilDatosPersonales, PerfilSeguridad],
   templateUrl: './perfil-cliente.html',
   styleUrl: './perfil-cliente.scss',
 })
-export class PerfilCliente {
+export class PerfilCliente implements HasUnsavedChanges {
+  hasUnsavedChanges(): boolean {
+    return JSON.stringify(this.form()) !== JSON.stringify(this.formOriginal());
+  }
   private readonly avatarService = inject(AvatarService);
   private readonly clientePerfilService = inject(ClientePerfilService);
   private readonly authService = inject(AuthService);
+  private readonly notificacionService = inject(NotificacionService);
 
   readonly paisesCatalogo: PaisCatalogo[] = [
     { codigo: 'PE', nombre: 'Perú', banderaClase: 'flag flag--pe', prefijo: '+51', ciudades: ['Lima', 'Ica', 'Arequipa', 'Cusco', 'Trujillo', 'Piura'] },
@@ -136,7 +143,7 @@ export class PerfilCliente {
   readonly nombreMostrado = computed(() => {
     const f = this.form();
     const full = `${f.nombres} ${f.apellidos}`.trim();
-    return full || 'Usuario Luka';
+    return full || this.authService.usuario()?.nombreUsuario || 'Usuario Luka';
   });
 
   readonly estadoVerificacion = computed(() => this.form().correo ? 'Verificación pendiente' : 'Sin verificar');
@@ -158,6 +165,19 @@ export class PerfilCliente {
   });
 
   readonly selectedPais = computed(() => this.paisesCatalogo.find(p => p.codigo === this.form().pais) ?? this.paisesCatalogo[0]);
+
+  get longitudMaximaTelefono(): number {
+    const pref = this.form().telefonoCodigoPais;
+    const longitudesMinimasPorPrefijo: Record<string, number> = {
+      '+51': 9,
+      '+56': 9,
+      '+57': 10,
+      '+54': 10,
+      '+52': 10,
+      '+1': 10
+    };
+    return longitudesMinimasPorPrefijo[pref] ?? 9;
+  }
 
   readonly fortalezaPassword = computed(() => {
     const value = this.cambioPassword().nuevoPassword ?? '';
@@ -217,7 +237,7 @@ export class PerfilCliente {
     if (usuarioId && p) {
       const f = this.form();
       const telefonoCompleto = `${f.telefonoCodigoPais}${f.telefonoNumero}`.trim();
-      const avatarSerializado = JSON.stringify(config);
+      const avatarUrl = `/assets/avatares/figuras/${encodeURIComponent(config.figura)}.png?accesorio=${encodeURIComponent(config.accesorio || '')}`;
 
       const generoMapa: Record<string, string> = {
         'Masculino': 'MASCULINO',
@@ -234,7 +254,7 @@ export class PerfilCliente {
         genero: generoBackend,
         edad: Number(f.edad || p.edad || 0),
         telefono: telefonoCompleto,
-        fotoPerfilUrl: avatarSerializado,
+        fotoPerfilUrl: avatarUrl,
         pais: f.pais,
         ciudad: f.ciudad,
       }).subscribe({
@@ -247,6 +267,7 @@ export class PerfilCliente {
 
     this.cerrarModalAvatar();
     this.mensajeExito.set('Cambios guardados correctamente.');
+    this.notificacionService.mostrarDatosGuardados('Avatar personalizado actualizado correctamente.');
     setTimeout(() => this.mensajeExito.set(''), 2500);
   }
 
@@ -259,18 +280,46 @@ export class PerfilCliente {
     if (campo === 'dni') {
       valorSaneado = valor.replace(/\D/g, '').slice(0, 8);
     }
+    if (campo === 'telefonoNumero') {
+      const limit = this.longitudMaximaTelefono;
+      valorSaneado = valor.replace(/\D/g, '').slice(0, limit);
+    }
 
     this.form.update(state => ({ ...state, [campo]: valorSaneado }));
     this.errores.update(e => ({ ...e, [campo]: undefined }));
 
     if (campo === 'pais') {
       const pais = this.paisesCatalogo.find(p => p.codigo === valorSaneado);
+      const prefijo = pais?.prefijo ?? this.form().telefonoCodigoPais;
+      const longitudesMinimasPorPrefijo: Record<string, number> = {
+        '+51': 9,
+        '+56': 9,
+        '+57': 10,
+        '+54': 10,
+        '+52': 10,
+        '+1': 10
+      };
+      const limit = longitudesMinimasPorPrefijo[prefijo] ?? 9;
       this.form.update(state => ({
         ...state,
-        telefonoCodigoPais: pais?.prefijo ?? state.telefonoCodigoPais,
+        telefonoCodigoPais: prefijo,
+        telefonoNumero: state.telefonoNumero.slice(0, limit),
         ciudad: ''
       }));
     }
+  }
+
+  filtrarTeclasNumericas(event: KeyboardEvent): boolean {
+    const charCode = event.key;
+    if (charCode >= '0' && charCode <= '9') {
+      return true;
+    }
+    // Permitir teclas especiales del sistema
+    if (['Backspace', 'Tab', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(event.code)) {
+      return true;
+    }
+    event.preventDefault();
+    return false;
   }
 
   actualizarCampoPassword(campo: keyof SolicitudCambioPassword, valor: string): void {
@@ -349,6 +398,8 @@ export class PerfilCliente {
 
     const f = this.form();
     const telefonoCompleto = `${f.telefonoCodigoPais}${f.telefonoNumero}`.trim();
+    const currentAvatar = this.avatarService.avatarConfig();
+    const avatarUrl = `/assets/avatares/figuras/${encodeURIComponent(currentAvatar.figura)}.png?accesorio=${encodeURIComponent(currentAvatar.accesorio || '')}`;
 
     const generoMapa: Record<string, string> = {
       'Masculino': 'MASCULINO',
@@ -365,7 +416,7 @@ export class PerfilCliente {
       genero: generoBackend,
       edad: Number(f.edad || p.edad || 0),
       telefono: telefonoCompleto,
-      fotoPerfilUrl: p.fotoPerfilUrl,
+      fotoPerfilUrl: avatarUrl,
       pais: f.pais,
       ciudad: f.ciudad,
     }).subscribe({
@@ -374,6 +425,7 @@ export class PerfilCliente {
         this.hidratarFormularioDesdePerfil(perfilActualizado);
         this.guardandoPerfil.set(false);
         this.mensajeExito.set('Datos personales actualizados correctamente.');
+        this.notificacionService.mostrarDatosGuardados('Datos personales actualizados correctamente.');
         setTimeout(() => this.mensajeExito.set(''), 2500);
       },
       error: (err: any) => {
@@ -403,6 +455,7 @@ export class PerfilCliente {
         this.guardandoPassword.set(false);
         this.cambioPassword.set({ passwordActual: '', nuevoPassword: '', confirmarPassword: '' });
         this.mensajeExito.set('Contraseña actualizada correctamente.');
+        this.notificacionService.mostrarDatosGuardados('Contraseña actualizada correctamente.');
         setTimeout(() => this.mensajeExito.set(''), 2500);
       },
       error: () => {
@@ -417,6 +470,24 @@ export class PerfilCliente {
       this.mensajeExito.set('Solicitud de eliminación registrada. Contacta soporte para completar el proceso.');
       setTimeout(() => this.mensajeExito.set(''), 3500);
     }
+  }
+
+  // --- Bridges para @Output de componentes hijos ---
+
+  onCampoChange(event: { campo: string; valor: string }): void {
+    this.actualizarCampo(event.campo as any, event.valor);
+  }
+
+  onFechaParteChange(event: { parte: 'dia' | 'mes' | 'anio'; valor: string }): void {
+    this.actualizarFechaNacimientoParte(event.parte, event.valor);
+  }
+
+  onCampoPasswordChange(event: { campo: keyof SolicitudCambioPassword; valor: string }): void {
+    this.actualizarCampoPassword(event.campo, event.valor);
+  }
+
+  onTogglePasswordVisibility(campo: 'actual' | 'nueva' | 'confirmar'): void {
+    this.togglePassword(campo);
   }
 
   private cargarDatosPerfil(): void {
@@ -493,12 +564,45 @@ export class PerfilCliente {
 
     if (!f.nombres.trim()) errores.nombres = 'Nombres es obligatorio.';
     if (!f.apellidos.trim()) errores.apellidos = 'Apellidos es obligatorio.';
-    if (!/^\d+$/.test(f.dni.trim())) errores.dni = 'DNI debe contener solo números.';
+
+    // DNI: exactamente 8 dígitos numéricos
+    if (!/^\d{8}$/.test(f.dni.trim())) {
+      errores.dni = 'DNI debe tener exactamente 8 dígitos numéricos.';
+    }
+
     if (!/^\S+@\S+\.\S+$/.test(f.correo.trim())) errores.correo = 'Correo no tiene formato válido.';
 
-    if (f.telefonoNumero.trim()) {
-      if (!/^\d{6,12}$/.test(f.telefonoNumero.trim())) {
-        errores.telefonoNumero = 'Teléfono inválido para el país seleccionado.';
+    // Teléfono: solo números, con validación por país (mínimo longitud por prefijo si existe, si no aplicar mínimo 9 dígitos)
+    const telTrimmed = f.telefonoNumero.trim();
+    if (telTrimmed) {
+      if (!/^\d+$/.test(telTrimmed)) {
+        errores.telefonoNumero = 'Teléfono debe contener solo números.';
+      } else {
+        const longitudesMinimasPorPrefijo: Record<string, number> = {
+          '+51': 9,
+          '+56': 9,
+          '+57': 10,
+          '+54': 10,
+          '+52': 10,
+          '+1': 10
+        };
+        const minLongitud = longitudesMinimasPorPrefijo[f.telefonoCodigoPais] ?? 9;
+        if (telTrimmed.length < minLongitud) {
+          errores.telefonoNumero = `Teléfono debe tener al menos ${minLongitud} dígitos para el país seleccionado.`;
+        }
+      }
+    }
+
+    // Edad: solo números, rango 0–120
+    const edadTrimmed = f.edad ? String(f.edad).trim() : '';
+    if (!edadTrimmed) {
+      errores.edad = 'Edad es obligatoria.';
+    } else if (!/^\d+$/.test(edadTrimmed)) {
+      errores.edad = 'Edad debe contener solo números.';
+    } else {
+      const edadNum = Number(edadTrimmed);
+      if (edadNum < 0 || edadNum > 120) {
+        errores.edad = 'Edad debe estar entre 0 y 120 años.';
       }
     }
 

@@ -5,6 +5,7 @@ import { RespuestaMetaAhorro } from '../../../../core/models/cliente/meta-limite
 import { FinancieroService } from '../../../../core/services/Financiero.service';
 import { AuthService } from '../../../../core/services/auth.service';
 import { AppEventBus } from '../../../../core/services/app-event-bus.service';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
 import { TransaccionRequestDTO } from '../../../../core/models/financiero/transaccion.model';
 import { MetaKpiComponent } from '../../components/meta-kpi/meta-kpi.component';
 import { MetaFiltersComponent } from '../../components/meta-filters/meta-filters.component';
@@ -13,6 +14,8 @@ import { MetaDetailsSidebarComponent } from '../../components/meta-details-sideb
 import { MetaConfirmModalComponent } from '../../components/meta-confirm-modal/meta-confirm-modal.component';
 import { MetasUtilityService } from '../../services/metas-utility.service';
 import { MetasDataService } from '../../services/metas-data.service';
+
+import { OnboardingTour, TourStep } from '../../../../shared/components/onboarding-tour/onboarding-tour';
 
 @Component({
   selector: 'app-metas-page',
@@ -23,7 +26,8 @@ import { MetasDataService } from '../../services/metas-data.service';
     MetaFiltersComponent,
     MetaCardComponent,
     MetaDetailsSidebarComponent,
-    MetaConfirmModalComponent
+    MetaConfirmModalComponent,
+    OnboardingTour
   ],
   templateUrl: './metas-page.html',
   styleUrl: './metas-page.scss',
@@ -35,6 +39,7 @@ export class MetasPage implements OnInit {
   private authService = inject(AuthService);
   private eventBus = inject(AppEventBus);
   private metasUtility = inject(MetasUtilityService);
+  private notificacionService = inject(NotificacionService);
 
   // Estado
   metas = signal<RespuestaMetaAhorro[]>([]);
@@ -106,19 +111,13 @@ export class MetasPage implements OnInit {
       return new Date(a.fechaLimite).getTime() - new Date(b.fechaLimite).getTime();
     });
 
-    let saldoRestante = disponibleGlobal;
-
     const activasCalculadas = activasOrdenadas.map(meta => {
       const datosVisuales = this.metasUtility.obtenerCategoriaYNombre(meta.nombre);
       const nombreVisual = datosVisuales.nombre;
       const categoriaVisual = meta.proposito || datosVisuales.categoria || 'Otros';
       const iconoVisual = this.metasUtility.obtenerIconoCategoria(categoriaVisual);
 
-      const faltante = meta.montoObjetivo;
-      const adicionalAplicado = Math.min(faltante, saldoRestante);
-
-      const montoAplicado = adicionalAplicado;
-      saldoRestante = Math.max(0, saldoRestante - adicionalAplicado);
+      const montoAplicado = Math.min(meta.montoObjetivo, disponibleGlobal);
 
       const porcentaje = meta.montoObjetivo > 0 
         ? (montoAplicado / meta.montoObjetivo) * 100 
@@ -253,9 +252,49 @@ export class MetasPage implements OnInit {
     })[0];
   });
 
+  readonly mostrarTour = signal(false);
+  readonly stepsTour: TourStep[] = [
+    {
+      targetSelector: '.metas-page__btn-nueva',
+      title: 'Crear Nueva Meta',
+      description: 'Define tus objetivos de ahorro especificando el nombre, monto total necesario y la fecha límite para cumplirlos.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '.metas-page__resumen-dashboard',
+      title: 'Resumen de Metas',
+      description: 'Lleva el seguimiento del total de metas activas, cuántas has logrado completar y el saldo acumulado disponible para repartir.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: 'app-meta-filters',
+      title: 'Barra de Filtros',
+      description: 'Filtra y ordena tus metas por estado, periodo mensual y rango de montos para focalizar tus prioridades de ahorro.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '.metas-page__grid',
+      title: 'Tus Objetivos de Ahorro',
+      description: 'Visualiza el avance detallado de cada meta. Puedes seleccionarla para ver su desglose, editarla o completarla.',
+      position: 'top'
+    }
+  ];
+
+  completarTour(): void {
+    localStorage.setItem('luka_tour_metas_visto', 'true');
+    this.mostrarTour.set(false);
+  }
+
   ngOnInit(): void {
     this.financieroService.cargarResumen();
     this.cargarMetas();
+
+    const tourVisto = localStorage.getItem('luka_tour_metas_visto');
+    if (!tourVisto) {
+      setTimeout(() => {
+        this.mostrarTour.set(true);
+      }, 600);
+    }
   }
 
   cargarMetas(): void {
@@ -367,12 +406,15 @@ export class MetasPage implements OnInit {
   }
 
   obtenerTiempoEmpleadoMeta(meta: RespuestaMetaAhorro): string {
+    if (!meta.fechaCreacion) {
+      return 'N/A';
+    }
     const fin = meta.fechaActualizacion || meta.fechaCreacion;
     return this.calcularTiempoEmpleado(meta.fechaCreacion, fin);
   }
 
   obtenerFechaActualizacionOCreacion(meta: RespuestaMetaAhorro): string {
-    return meta.fechaActualizacion || meta.fechaCreacion;
+    return meta.fechaActualizacion || meta.fechaCreacion || '';
   }
 
   abrirCrearMeta(): void {
@@ -394,17 +436,25 @@ export class MetasPage implements OnInit {
 
     this.metasDataService.eliminarMeta(metaId).subscribe({
       next: () => {
-        this.exitoMensaje.set('Meta de ahorro eliminada con éxito.');
+        this.notificacionService.mostrar(
+          'Meta Eliminada',
+          'La meta de ahorro fue eliminada con éxito.',
+          'meta',
+          'trash-can'
+        );
         if (this.metaSeleccionada()?.id === metaId) {
           this.metaSeleccionada.set(null);
         }
         this.cargarMetas();
-        setTimeout(() => this.exitoMensaje.set(''), 4000);
       },
       error: () => {
-        this.errorMensaje.set('Hubo un error al eliminar la meta de ahorro.');
+        this.notificacionService.mostrar(
+          'Error',
+          'Hubo un error al intentar eliminar la meta de ahorro.',
+          'meta',
+          'triangle-exclamation'
+        );
         this.cargando.set(false);
-        setTimeout(() => this.errorMensaje.set(''), 4000);
       }
     });
   }
@@ -458,7 +508,7 @@ export class MetasPage implements OnInit {
           ? `¡Felicidades! Has completado tu meta "${meta.nombreVisual}" (Modo Pruebas).`
           : `¡Felicidades! Has completado tu meta "${meta.nombreVisual}". Se registró un gasto de S/ ${meta.montoObjetivo.toFixed(2)}.`;
         
-        this.exitoMensaje.set(mensajeExito);
+        this.notificacionService.mostrar('¡Felicidades!', mensajeExito, 'meta', 'award', 5000);
         this.modalConfirmarCompletar.set(null);
         this.metaSeleccionada.set(null);
         
@@ -466,11 +516,14 @@ export class MetasPage implements OnInit {
         this.cargarMetas();
         
         this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
-        
-        setTimeout(() => this.exitoMensaje.set(''), 5000);
       },
       error: () => {
-        this.errorMensaje.set('Hubo un error al completar la meta de ahorro.');
+        this.notificacionService.mostrar(
+          'Error',
+          'Hubo un error al completar la meta de ahorro.',
+          'meta',
+          'triangle-exclamation'
+        );
         this.cargando.set(false);
       }
     });

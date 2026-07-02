@@ -2,8 +2,10 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { HasUnsavedChanges } from '../../../../core/guards/pending-changes.guard';
 import { RespuestaMetaAhorro, SolicitudMetaAhorro } from '../../../../core/models/cliente/meta-limite.model';
 import { FinancieroService } from '../../../../core/services/Financiero.service';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
 import { MetasUtilityService } from '../../services/metas-utility.service';
 import { MetaPurposeSelectorComponent } from '../../components/meta-purpose-selector/meta-purpose-selector.component';
 import { MetaPreviewCardComponent } from '../../components/meta-preview-card/meta-preview-card.component';
@@ -24,12 +26,13 @@ import { MetasDataService } from '../../services/metas-data.service';
   templateUrl: './meta-form-page.html',
   styleUrl: './meta-form-page.scss',
 })
-export class MetaFormPage implements OnInit {
+export class MetaFormPage implements OnInit, HasUnsavedChanges {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private metasDataService = inject(MetasDataService);
   private financieroService = inject(FinancieroService);
+  private notificacionService = inject(NotificacionService);
   private metasUtility = inject(MetasUtilityService);
 
   formulario!: FormGroup;
@@ -39,6 +42,11 @@ export class MetaFormPage implements OnInit {
   errorMensaje = signal<string>('');
   exitoMensaje = signal<string>('');
   fechaMinima = '';
+  formularioGuardado = false;
+
+  hasUnsavedChanges(): boolean {
+    return this.formulario && this.formulario.dirty && !this.formularioGuardado;
+  }
 
   protected readonly Math = Math;
 
@@ -200,7 +208,7 @@ export class MetaFormPage implements OnInit {
       this.metasDataService.actualizarMeta(this.metaId, payload).subscribe({
         next: () => {
           this.exitoMensaje.set(`Meta "${formVal.nombre}" actualizada con éxito.`);
-          this.finalizarConExito();
+          this.finalizarConExito(formVal.nombre, true);
         },
         error: () => {
           this.errorMensaje.set('Hubo un error al guardar la meta de ahorro.');
@@ -213,7 +221,7 @@ export class MetaFormPage implements OnInit {
         next: (nuevaMeta) => {
           const datosVisuales = this.metasUtility.obtenerCategoriaYNombre(nuevaMeta.nombre);
           this.exitoMensaje.set(`Meta "${datosVisuales.nombre}" creada con éxito.`);
-          this.finalizarConExito();
+          this.finalizarConExito(datosVisuales.nombre, false);
         },
         error: () => {
           this.errorMensaje.set('Hubo un error al crear la meta de ahorro.');
@@ -223,8 +231,14 @@ export class MetaFormPage implements OnInit {
     }
   }
 
-  private finalizarConExito(): void {
+  private finalizarConExito(nombreMeta: string, esEdicion = false): void {
+    this.formularioGuardado = true;
     this.cargando.set(false);
+    if (esEdicion) {
+      this.notificacionService.mostrarDatosGuardados(`Meta "${nombreMeta}" actualizada con éxito.`);
+    } else {
+      this.notificacionService.mostrarMetaCreada(nombreMeta);
+    }
     setTimeout(() => {
       this.router.navigate(['/metas']);
     }, 1500);

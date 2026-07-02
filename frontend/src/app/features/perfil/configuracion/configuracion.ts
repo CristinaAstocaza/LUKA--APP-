@@ -1,26 +1,70 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { ClientePerfilService } from '../../../core/services/cliente-perfil.service';
 import { RespuestaDatosPersonales, SolicitudDatosPersonales } from '../../../core/models/cliente/perfil-cliente.model';
 import { AvatarService } from '../../../core/services/avatar.service';
 import { ServicioTema } from '../../../core/services/servicio-tema';
 import { SuscripcionService } from '../../../core/services/suscripcion.service';
+import { ModalPlanes } from '../../suscripcion/components/modal-planes/modal-planes';
 import { finalize } from 'rxjs';
+import { OnboardingTour, TourStep } from '../../../shared/components/onboarding-tour/onboarding-tour';
 
 @Component({
   selector: 'app-configuracion',
   standalone:true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, ModalPlanes, OnboardingTour],
   templateUrl: './configuracion.html',
   styleUrls: ['./configuracion.scss'],
 })
-export class Configuracion {
+export class Configuracion implements OnInit {
 
   modalPlanesAbierto = signal(false);
   comprandoPlan = signal(false);
+
+  readonly mostrarTour = signal(false);
+  readonly stepsTour: TourStep[] = [
+    {
+      targetSelector: '#tour-apariencia',
+      title: 'Apariencia y Tema',
+      description: 'Elige entre tema Claro u Oscuro para adaptar la interfaz de Luka a tus preferencias visuales y condiciones de luz.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '#tour-color-principal',
+      title: 'Color de Acento',
+      description: 'Personaliza los botones y elementos interactivos de la aplicación seleccionando tu color favorito en esta paleta.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '#tour-ia-premium',
+      title: 'Inteligencia Artificial y Premium',
+      description: 'Mejora tu plan para acceder al Asistente de IA Financiera, análisis predictivos avanzados y gráficos históricos detallados.',
+      position: 'top'
+    },
+    {
+      targetSelector: '#tour-zona-peligro',
+      title: 'Zona de Peligro',
+      description: 'Desde aquí puedes gestionar opciones de alta sensibilidad de tu cuenta, como la eliminación definitiva del perfil.',
+      position: 'top'
+    }
+  ];
+
+  completarTour(): void {
+    localStorage.setItem('luka_tour_configuracion_visto', 'true');
+    this.mostrarTour.set(false);
+  }
+
+  ngOnInit(): void {
+    const tourVisto = localStorage.getItem('luka_tour_configuracion_visto');
+    if (!tourVisto) {
+      setTimeout(() => {
+        this.mostrarTour.set(true);
+      }, 600);
+    }
+  }
 
   abrirModalPlanes(): void {
     this.modalPlanesAbierto.set(true);
@@ -30,22 +74,22 @@ export class Configuracion {
     this.modalPlanesAbierto.set(false);
   }
 
-  comprarPlan(plan: 'PRO' | 'PREMIUM'): void {
+  comprarPlan(plan: 'PRO' | 'PREMIUM', proveedor: 'STRIPE' | 'MERCADOPAGO' = 'STRIPE'): void {
     if (this.comprandoPlan()) return;
     this.comprandoPlan.set(true);
 
-    this.suscripcionService.crearSesionCheckout(plan)
+    this.suscripcionService.crearSesionCheckout(plan, proveedor)
       .pipe(finalize(() => this.comprandoPlan.set(false)))
       .subscribe({
         next: (sesion) => {
           if (sesion && sesion.urlCheckout) {
             window.location.href = sesion.urlCheckout;
           } else {
-            console.error('No se recibió la URL de Stripe Checkout');
+            console.error('No se recibió la URL de redirección del checkout');
           }
         },
         error: (err) => {
-          console.error('Error al iniciar Checkout de Stripe:', err);
+          console.error(`Error al iniciar Checkout de ${proveedor}:`, err);
         }
       });
   }
@@ -55,6 +99,21 @@ export class Configuracion {
   readonly servicioTema = inject(ServicioTema);
   private readonly clientePerfilService = inject(ClientePerfilService);
   private readonly suscripcionService = inject(SuscripcionService);
+  private readonly router = inject(Router);
+
+  /**
+   * Computed signal que centraliza la validación del plan.
+   * true  → usuario PREMIUM o PRO  → muestra banner de IA.
+   * false → usuario FREE            → muestra banner de upgrade.
+   */
+  readonly esPlanPremiumOPro = computed(() =>
+    this.authService.esPremium() || this.authService.esPro()
+  );
+
+  /** Navega a la sección de Inteligencia Artificial. */
+  navegarAIA(): void {
+    this.router.navigate(['/inteligencia-artificial']);
+  }
 
   readonly tema = signal<'oscuro' | 'claro'>('claro');
   readonly colorPrincipal = signal<string>('#6d4aff');
@@ -192,14 +251,14 @@ export class Configuracion {
     this.eliminandoCuenta.set(true);
     this.mensajeCuenta.set('');
 
-    this.clientePerfilService
-      .eliminarCuenta(usuarioId)
+    this.authService
+      .eliminarMiCuenta()
       .pipe(finalize(() => this.eliminandoCuenta.set(false)))
       .subscribe({
         next: () => {
           this.modalEliminarCuentaAbierto.set(false);
           this.confirmacionEliminarCuenta.set('');
-          this.mensajeCuenta.set('Solicitud de eliminación registrada. Nuestro equipo validará el proceso.');
+          this.authService.logout();
         },
         error: () => {
           this.mensajeCuenta.set('No se pudo procesar la solicitud de eliminación. Inténtalo nuevamente.');

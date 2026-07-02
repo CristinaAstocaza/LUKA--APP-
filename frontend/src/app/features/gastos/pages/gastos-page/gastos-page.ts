@@ -1,41 +1,43 @@
-import { Component, computed, inject, signal, effect, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, effect, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Transacciones } from '../../../../core/services/transacciones';
-import { MetodoPago, TransaccionRequestDTO } from '../../../../core/models/financiero/transaccion.model';
+import { MetodoPago, TransaccionDTO, TransaccionRequestDTO } from '../../../../core/models/financiero/transaccion.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FinancieroService } from '../../../../core/services/Financiero.service';
+import { forkJoin } from 'rxjs';
 import { AppEventBus } from '../../../../core/services/app-event-bus.service';
 import { GastosStateService } from '../../../../core/services/gastos-state.service';
 import { IaService } from '../../../../core/services/ia.service';
-import { SuscripcionGastosService } from '../../../../core/services/suscripcion-gastos.service';
-import { Router } from '@angular/router';
+import { CategoriaSugerida } from '../../../../core/models/ia_coach/ia-base.model';
+import { NotificacionService } from '../../../../core/services/notificacion.service';
+import { OnboardingTour, TourStep } from '../../../../shared/components/onboarding-tour/onboarding-tour';
+
 @Component({
   selector: 'app-gastos-page',
-  standalone: true,
-  imports: [CommonModule, RouterLink],
+  standalone:true,
+  imports: [CommonModule, RouterLink, OnboardingTour],
   templateUrl: './gastos-page.html',
-  styleUrl: './gastos-page.scss'
+  styleUrl: './gastos-page.scss',
 })
-export class GastosPage implements OnDestroy {
+export class GastosPage implements OnInit, OnDestroy {
   private readonly transaccionesService = inject(Transacciones);
   private readonly authService = inject(AuthService);
   private readonly financieroService = inject(FinancieroService);
   private readonly eventBus = inject(AppEventBus);
   private readonly stateService = inject(GastosStateService);
   private readonly iaService = inject(IaService);
-private readonly suscripcionService = inject(SuscripcionGastosService);
-private readonly router = inject(Router);
-  private readonly pendientesStorageKey = 'luka:gastos:pendientes-locales';
-  
-// Exponerlo para usarlo en el template
-readonly Math = Math;
-  readonly sugerenciasIa = signal<string[]>([]);
+  private readonly notificacionService = inject(NotificacionService);
+  readonly iaSugeridaConfirmada = signal<boolean>(false);
+
+  readonly sugerenciasIa = signal<CategoriaSugerida[]>([]);
+  readonly sugerenciaSeleccionada = signal<CategoriaSugerida | null>(null);
+  readonly categoriaIAPendiente = signal<{ nombre: string; icono: string } | null>(null);
   readonly clasificandoIa = signal(false);
   readonly intentosIaRestantes = computed(() => this.iaService.clasificacionesRestantes());
   readonly intentosIaMaximos = computed(() => this.iaService.clasificacionesMaximas());
   readonly puedeSugerirCategoriaIa = computed(() =>
-    this.descripcion().trim().length >= 4 && !this.clasificandoIa() && this.intentosIaRestantes() > 0
+    this.descripcion().trim().length >= 4 && !this.clasificandoIa() && this.intentosIaRestantes() > 0 && this.sugerenciasIa().length === 0
   );
   readonly cargando = computed(() => this.stateService.cargando());
   readonly terminoBusqueda = signal('');
@@ -46,29 +48,85 @@ readonly Math = Math;
   readonly mensajeFormulario = signal('');
   readonly gastoEditandoId = signal<string | null>(null);
   readonly gastoPendienteEliminar = signal<{ id: string; nombre: string } | null>(null);
-readonly cantidadPendientes = computed(
-  () => this.gastosPendientes().length
-);
 
-readonly pendientePorPagar = computed(() => ({
-  total: this.totalPendiente(),
-  cantidad: this.cantidadPendientes(),
-  variacion: this.variacionPendienteMensual()
-}));
   readonly categoria = signal('');
   readonly monto = signal('');
   readonly nombreGasto = signal('');
   readonly descripcion = signal('');
   readonly fecha = signal('');
   readonly metodoPago = signal<MetodoPago>('DIGITAL');
-  readonly registrarComoPendiente = signal(false);
   readonly etiquetas = signal<string[]>([]);
   readonly nuevaEtiqueta = signal('');
   readonly filtroTendencia = signal<'7d' | '30d' | '90d'>('30d');
-  readonly mesSeleccionado = signal<string>('Todos');
-  readonly fechaSeleccionada = signal<string>('');
   readonly errores = signal<Record<string, string>>({});
   readonly eliminadosIds = signal<string[]>([]);
+
+  readonly gastosRecientes = computed(() => {
+    return [...this.stateService.gastos()]
+      .sort((a, b) => new Date(b.fechaTransaccion).getTime() - new Date(a.fechaTransaccion).getTime())
+      .slice(0, 5);
+  });
+
+  colorCategoriaGasto(cat: string): string {
+    const colores: Record<string, string> = {
+      'food': '#FF7043',
+      'transport': '#42A5F5',
+      'health': '#26C6DA',
+      'home': '#FFA726',
+      'leisure': '#AB47BC',
+      'study': '#66BB6A',
+      'comida': '#FF7043',
+      'transporte': '#42A5F5',
+      'salud': '#26C6DA',
+      'hogar': '#FFA726',
+      'entretenimiento': '#AB47BC',
+      'educación': '#66BB6A',
+      'otros': '#78909C'
+    };
+    return colores[cat?.toLowerCase()] || '#5B6AF0';
+  }
+
+  readonly mostrarTour = signal(false);
+  readonly stepsTour: TourStep[] = [
+    {
+      targetSelector: '#btn-registrar-gasto',
+      title: 'Registrar Gasto',
+      description: 'Presiona aquí para registrar tus egresos diarios. Podrás ingresar el monto, clasificarlo con categorías inteligentes y asignarle métodos de pago.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '#tour-kpis',
+      title: 'Métricas Financieras',
+      description: 'Visualiza tus deudas y gastos promedio del mes, el saldo acumulado pendiente por pagar, y el próximo vencimiento más cercano.',
+      position: 'bottom'
+    },
+    {
+      targetSelector: '#tour-pending',
+      title: 'Próximos Cargos y Recurrentes',
+      description: 'Lleva el control de tus deudas pendientes y cargos recurrentes de suscripciones que vencen pronto. Puedes marcarlos como pagados aquí.',
+      position: 'top'
+    },
+    {
+      targetSelector: '#tour-summary-note',
+      title: 'Acceso al Historial Completo',
+      description: 'Entra a la vista ampliada de tu historial para revisar, buscar y administrar detalladamente todas tus transacciones de ingresos y gastos.',
+      position: 'top'
+    }
+  ];
+
+  ngOnInit(): void {
+    const tourVisto = localStorage.getItem('luka_tour_gastos_visto');
+    if (!tourVisto) {
+      setTimeout(() => {
+        this.mostrarTour.set(true);
+      }, 600);
+    }
+  }
+
+  completarTour(): void {
+    localStorage.setItem('luka_tour_gastos_visto', 'true');
+    this.mostrarTour.set(false);
+  }
 
   readonly saldoActual = computed(() => Number(this.stateService.resumenActual()?.balance ?? 0));
   readonly totalGastadoActual = computed(() => Number(this.stateService.resumenActual()?.totalGastos ?? 0));
@@ -79,8 +137,10 @@ readonly pendientePorPagar = computed(() => ({
   readonly variacionSaldo = computed(() => this.calcularVariacion(this.saldoActual(), this.saldoAnterior()));
   readonly variacionPendiente = signal(0);
   readonly bannerIntegracion = signal(
-    'Sistema de gastos integrado: historial de transacciones, pendientes y suscripciones activas'
+    'Integración en curso: historial de gastos (OK). Pendientes/Recurrentes dependen de Suscripciones (falta implementar backend).'
   );
+  // TODO(backend): Implementar endpoint de Suscripciones para poblar Pendientes/Recurrentes.
+  // TODO(backend): Implementar estado de pago de suscripción para habilitar “Marcar pagado”.
 
   readonly pendientesMock = signal<Array<{
     id: string;
@@ -89,30 +149,9 @@ readonly pendientePorPagar = computed(() => ({
     fechaVencimiento: string;
     monto: number;
     vencePronto: boolean;
-    metodoPago: MetodoPago;
+    metodoPago: 'TARJETA' | 'DIGITAL' | 'TRANSFERENCIA';
     categoriaIcono: string;
-  }>>([
-    {
-      id: 'pend-1',
-      nombre: 'Internet',
-      frecuencia: 'MENSUAL',
-      fechaVencimiento: '15/07/2025',
-      monto: 79.9,
-      vencePronto: true,
-      metodoPago: 'DIGITAL',
-      categoriaIcono: 'wifi'
-    },
-    {
-      id: 'pend-2',
-      nombre: 'Streaming',
-      frecuencia: 'MENSUAL',
-      fechaVencimiento: '20/07/2025',
-      monto: 24,
-      vencePronto: false,
-      metodoPago: 'TARJETA',
-      categoriaIcono: 'film'
-    }
-  ]);
+  }>>([]);
 
   readonly pagadosMock = signal<Array<{
     id: string;
@@ -128,30 +167,69 @@ readonly pendientePorPagar = computed(() => ({
     colorCategoria: 'comida' | 'hogar' | 'transporte' | 'servicios' | 'entretenimiento' | 'salud';
   }>>([
     {
-      id: 'mock-1',
-      nombre: 'Almuerzo',
-      detalle: 'Comida corporativa',
-      categoria: 'Alimentos',
-      fecha: 'Hoy',
-      hora: '13:00',
-      monto: 24.5,
-      metodo: 'DIGITAL',
+      id: 'mock-g1',
+      nombre: 'Pizza Hut',
+      detalle: 'Cena familiar de fin de semana',
+      categoria: 'Restaurantes',
+      fecha: new Date(Date.now() - 86400000).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+      hora: '20:15',
+      monto: 85.00,
+      metodo: 'TARJETA',
       estado: 'Pagado',
       icono: 'utensils',
       colorCategoria: 'comida'
     },
     {
-      id: 'mock-2',
-      nombre: 'Gasolina',
-      detalle: 'Recarga semanal',
+      id: 'mock-g2',
+      nombre: 'Uber',
+      detalle: 'Traslado a la oficina',
       categoria: 'Transporte',
-      fecha: 'Ayer',
+      fecha: new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
       hora: '08:30',
-      monto: 18,
-      metodo: 'TARJETA',
+      monto: 18.50,
+      metodo: 'DIGITAL',
       estado: 'Pagado',
       icono: 'bus',
       colorCategoria: 'transporte'
+    },
+    {
+      id: 'mock-g3',
+      nombre: 'Netflix',
+      detalle: 'Suscripción mensual estándar',
+      categoria: 'Entretenimiento',
+      fecha: new Date(Date.now() - 86400000 * 3).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+      hora: '00:05',
+      monto: 44.90,
+      metodo: 'TARJETA',
+      estado: 'Pagado',
+      icono: 'film',
+      colorCategoria: 'entretenimiento'
+    },
+    {
+      id: 'mock-g4',
+      nombre: 'Luz del Sur',
+      detalle: 'Recibo de luz del mes',
+      categoria: 'Servicios',
+      fecha: new Date(Date.now() - 86400000 * 5).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+      hora: '14:20',
+      monto: 120.00,
+      metodo: 'TRANSFERENCIA',
+      estado: 'Pagado',
+      icono: 'bolt',
+      colorCategoria: 'servicios'
+    },
+    {
+      id: 'mock-g5',
+      nombre: 'Plaza Vea',
+      detalle: 'Compras de víveres para la semana',
+      categoria: 'Alimentos',
+      fecha: new Date(Date.now() - 86400000 * 7).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+      hora: '11:00',
+      monto: 250.00,
+      metodo: 'TARJETA',
+      estado: 'Pagado',
+      icono: 'utensils',
+      colorCategoria: 'comida'
     }
   ]);
 
@@ -165,13 +243,20 @@ readonly pendientePorPagar = computed(() => ({
           { id: 'transporte', nombre: 'Transporte' },
           { id: 'servicios', nombre: 'Servicios' },
           { id: 'hogar', nombre: 'Hogar' },
-          { id: 'otros', nombre: 'Otros' }
+          { id: 'otros', nombre: 'Otros' },
         ];
   }
 
   get categoriasConCrear(): any[] {
+    const base = [...this.categoriasDisponibles];
+    const pending = this.categoriaIAPendiente();
+    if (pending) {
+      if (!base.some(c => c.nombre.toLowerCase() === pending.nombre.toLowerCase())) {
+        base.push({ id: 'PENDIENTE_IA', nombre: pending.nombre });
+      }
+    }
     return [
-      ...this.categoriasDisponibles,
+      ...base,
       { id: 'CREAR_NUEVA', nombre: '＋ Crear nueva categoría...' }
     ];
   }
@@ -188,14 +273,12 @@ readonly pendientePorPagar = computed(() => ({
   );
 
   readonly totalPendiente = computed(() =>
-    this.gastosPendientes().reduce((acc, p) => acc + Number(p.monto || 0), 0)
+    this.pendientesMock().reduce((acc, p) => acc + Number(p.monto || 0), 0)
   );
-
   readonly totalPagado = computed(() =>
     this.filasPagadas().filter((g) => g.estado === 'Pagado').reduce((acc, g) => acc + g.monto, 0)
   );
-
-  readonly proximoVencimiento = computed(() => this.gastosPendientes().find(() => true) ?? null);
+  readonly proximoVencimiento = computed(() => this.pendientesMock().find(() => true) ?? null);
 
   readonly gastosPorCategoria = computed(() => {
     const grupos = new Map<string, { categoria: string; total: number }>();
@@ -215,17 +298,14 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   readonly tendenciaMensual = computed(() => {
-    const meses = new Map<string, { etiqueta: string; total: number; fecha: Date }>();
+    const meses = new Map<string, { etiqueta: string; total: number }>();
     for (const g of this.filasPagadas()) {
-      const fecha = this.parseFechaFila(g.fecha);
-      const key = this.monthKey(fecha);
+      const raw = g.fecha === 'Hoy' ? new Date() : new Date(`${g.fecha} ${new Date().getFullYear()}`);
+      const fecha = Number.isNaN(raw.getTime()) ? new Date() : raw;
+      const key = `${fecha.getFullYear()}-${fecha.getMonth()}`;
       const etiqueta = fecha.toLocaleDateString('es-PE', { month: 'short' });
       const prev = meses.get(key);
-      meses.set(key, {
-        etiqueta,
-        fecha: new Date(fecha.getFullYear(), fecha.getMonth(), 1),
-        total: (prev?.total ?? 0) + Number(g.monto || 0)
-      });
+      meses.set(key, { etiqueta, total: (prev?.total ?? 0) + Number(g.monto || 0) });
     }
 
     const arr = Array.from(meses.entries())
@@ -234,81 +314,6 @@ readonly pendientePorPagar = computed(() => ({
 
     const max = Math.max(...arr.map((x) => x.total), 1);
     return arr.map((x) => ({ ...x, porcentaje: (x.total / max) * 100 }));
-  });
-
-  readonly tendenciaGastosMensuales = computed(() => {
-    const totales = new Map<string, number>();
-    for (const g of this.filasPagadas()) {
-      const fecha = this.parseFechaFila(g.fecha);
-      const key = this.monthKey(fecha);
-      totales.set(key, (totales.get(key) ?? 0) + Number(g.monto || 0));
-    }
-
-    const hoy = new Date();
-    const salida: Array<{ fecha: Date; etiqueta: string; total: number; porcentaje: number }> = [];
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-      salida.push({
-        fecha,
-        etiqueta: fecha.toLocaleDateString('es-PE', { month: 'short' }),
-        total: totales.get(this.monthKey(fecha)) ?? 0,
-        porcentaje: 0
-      });
-    }
-
-    const max = Math.max(...salida.map((item) => item.total), 1);
-    return salida.map((item) => ({
-      ...item,
-      porcentaje: (item.total / max) * 100
-    }));
-  });
-
-  readonly kpiGastosLinePath = computed(() => this.buildSparklinePath(this.tendenciaGastosMensuales()));
-
-  readonly kpiGastosLineFillPath = computed(() => {
-    const line = this.kpiGastosLinePath();
-    return line ? `${line} L114 62 L6 62 Z` : '';
-  });
-
-  readonly tendenciaPendientesMensuales = computed(() => {
-    const totales = new Map<string, number>();
-    for (const pendiente of this.gastosPendientes()) {
-      const fecha = this.parseFechaFila(pendiente.fechaVencimiento);
-      const key = this.monthKey(fecha);
-      totales.set(key, (totales.get(key) ?? 0) + Number(pendiente.monto || 0));
-    }
-
-    const hoy = new Date();
-    const salida: Array<{ fecha: Date; total: number; porcentaje: number }> = [];
-    for (let i = 5; i >= 0; i--) {
-      const fecha = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-      salida.push({
-        fecha,
-        total: totales.get(this.monthKey(fecha)) ?? 0,
-        porcentaje: 0
-      });
-    }
-
-    const max = Math.max(...salida.map((item) => item.total), 1);
-    return salida.map((item) => ({
-      ...item,
-      porcentaje: (item.total / max) * 100
-    }));
-  });
-
-  readonly kpiPendientesBars = computed(() =>
-    this.tendenciaPendientesMensuales().map((item) =>
-      item.total > 0 ? Math.max(12, Math.round(item.porcentaje)) : 0
-    )
-  );
-
-  readonly variacionPendienteMensual = computed(() => {
-    const actual = new Date();
-    const previo = new Date(actual.getFullYear(), actual.getMonth() - 1, 1);
-    const data = this.tendenciaPendientesMensuales();
-    const totalActual = data.find((item) => this.monthKey(item.fecha) === this.monthKey(actual))?.total ?? 0;
-    const totalPrevio = data.find((item) => this.monthKey(item.fecha) === this.monthKey(previo))?.total ?? 0;
-    return this.calcularVariacionMensual(totalActual, totalPrevio);
   });
 
   readonly donutCategorias = computed(() => {
@@ -330,6 +335,27 @@ readonly pendientePorPagar = computed(() => ({
   readonly totalDonutCategorias = computed(() =>
     this.gastosPorCategoria().reduce((acc, item) => acc + Number(item.total || 0), 0)
   );
+
+  readonly tendenciaLineal = computed(() => {
+    const data = this.tendenciaMensualFiltrada();
+    if (!data.length) {
+      return { puntos: '', etiquetas: [] as string[] };
+    }
+    const max = Math.max(...data.map((d) => d.total), 1);
+    const n = data.length;
+    const puntos = data
+      .map((item, idx) => {
+        const x = n === 1 ? 10 : 10 + (idx * 80) / (n - 1);
+        const y = 90 - ((item.total / max) * 80);
+        return `${x},${y}`;
+      })
+      .join(' ');
+
+    return {
+      puntos,
+      etiquetas: data.map((d) => d.etiqueta),
+    };
+  });
 
   readonly tendenciaMensualFiltrada = computed(() => {
     const dias = this.filtroTendencia() === '7d' ? 7 : this.filtroTendencia() === '30d' ? 30 : 90;
@@ -357,7 +383,20 @@ readonly pendientePorPagar = computed(() => ({
       });
       cursor.setDate(cursor.getDate() + step);
     }
+
     return salida;
+  });
+
+  readonly puntosTendencia = computed(() => {
+    const data = this.tendenciaMensualFiltrada();
+    if (!data.length) return [] as Array<{ x: number; y: number; etiqueta: string }>;
+    const max = Math.max(...data.map((d) => d.total), 1);
+    const n = data.length;
+    return data.map((d, idx) => {
+      const x = n === 1 ? 50 : 10 + (idx * 80) / (n - 1);
+      const y = 82 - ((d.total / max) * 54);
+      return { x, y, etiqueta: d.etiqueta };
+    });
   });
 
   readonly topDiasGasto = computed(() => {
@@ -374,122 +413,66 @@ readonly pendientePorPagar = computed(() => ({
   });
 
   readonly gastoPromedioMensual = computed(() => {
-    const actual = new Date();
-    const keyActual = this.monthKey(actual);
-    return this.tendenciaGastosMensuales().find((item) => this.monthKey(item.fecha) === keyActual)?.total ?? 0;
+    const data = this.tendenciaMensual();
+    if (!data.length) return 0;
+    const total = data.reduce((acc, item) => acc + Number(item.total || 0), 0);
+    return total / data.length;
   });
 
   readonly variacionPromedioMensual = computed(() => {
-    const actual = new Date();
-    const previo = new Date(actual.getFullYear(), actual.getMonth() - 1, 1);
-    const data = this.tendenciaGastosMensuales();
-    const totalActual = data.find((item) => this.monthKey(item.fecha) === this.monthKey(actual))?.total ?? 0;
-    const totalPrevio = data.find((item) => this.monthKey(item.fecha) === this.monthKey(previo))?.total ?? 0;
-    return this.calcularVariacion(totalActual, totalPrevio);
+    const data = this.tendenciaMensual();
+    if (data.length < 2) return 0;
+    const actual = data[data.length - 1]?.total ?? 0;
+    const previo = data[data.length - 2]?.total ?? 0;
+    if (!previo) return 0;
+    return ((actual - previo) / previo) * 100;
   });
 
-  readonly gastosPendientes = computed(() => {
-    // Usar datos reales del servicio de suscripciones
-    return this.suscripcionService.suscripcionesProximas().map(sus => ({
-      id: sus.id,
-      nombre: sus.nombre,
-      frecuencia: sus.frecuencia as 'MENSUAL' | 'SEMANAL' | 'QUINCENAL',
-      fechaVencimiento: new Date(sus.proximoVencimiento).toLocaleDateString('es-PE', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-      }),
-      monto: sus.monto,
-      vencePronto: (sus.diasParaVencimiento ?? 100) <= 5,
-      metodoPago: 'DIGITAL' as MetodoPago,
-      categoriaIcono: this.iconoCategoriaSuscripcion(sus.categoria)
-    }));
-  });
+  readonly gastosPendientes = computed(() => this.pendientesMock());
   readonly gastosPagados = computed(() => this.gastos());
 
   readonly filasPagadas = computed(() => {
     const eliminados = new Set(this.eliminadosIds());
     const base = this.usarMockVisualPagados()
       ? this.pagadosMock()
-      : this.gastosPagados().map((g) => {
-          const fecha = new Date(g.fechaTransaccion);
-          const categoria = g.categoria || 'Otros';
-          const { nombre, detalle } = this.parseNotas(g.notas, categoria);
-          return {
-            id: g.id,
-            nombre,
-            detalle,
-            categoria,
-            categoriaId: g.categoriaId,
-            fecha: fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
-            hora: fecha.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }),
-            monto: Number(g.monto || 0),
-            metodo: g.metodoPago || 'DIGITAL',
-            estado: 'Pagado' as const,
-            icono: g.categoriaIcono || this.iconoCategoria(categoria),
-            colorCategoria: this.colorCategoria(categoria),
-          };
-        });
+      : (() => {
+          const data = this.gastosPagados();
+          if (!data.length) {
+            return [];
+          }
+
+          return data.map((g) => {
+            const fecha = new Date(g.fechaTransaccion);
+            const categoria = g.categoria || 'Otros';
+            const nombre = g.nombreCliente || categoria;
+            const detalle = g.descripcion || 'Gasto registrado';
+
+            return {
+              id: g.id,
+              nombre,
+              detalle,
+              categoria,
+              categoriaId: g.categoriaId,
+              fecha: fecha.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' }),
+              hora: fecha.toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }),
+              monto: Number(g.monto || 0),
+              metodo: g.metodoPago || 'DIGITAL',
+              estado: 'Pagado' as const,
+              icono: g.categoriaIcono || this.iconoCategoria(categoria),
+              colorCategoria: this.colorCategoria(categoria),
+            };
+          });
+        })();
 
     return base.filter((g) => !eliminados.has(g.id));
-  });
-
-  readonly meses = computed(() => {
-    const mesesSet = new Set<string>();
-    for (const gasto of this.filasPagadas()) {
-      const fecha = this.parseFechaFila(gasto.fecha);
-      const mes = fecha.toLocaleDateString('es-PE', {
-        year: 'numeric',
-        month: 'long'
-      });
-      mesesSet.add(mes);
-    }
-    return Array.from(mesesSet);
-  });
-
- readonly gastosFiltradosPorFecha = computed(() => {
-  // Si no hay fecha seleccionada → mostrar todo
-  if (!this.fechaSeleccionada()) {
-    return this.filasPagadas();
-  }
-
-  const seleccionada = new Date(this.fechaSeleccionada());
-
-  return this.filasPagadas().filter((g) => {
-    const fecha = this.parseFechaFila(g.fecha);
-
-    return (
-      fecha.getFullYear() === seleccionada.getFullYear() &&
-      fecha.getMonth() === seleccionada.getMonth() &&
-      fecha.getDate() === seleccionada.getDate()
-    );
-  });
-});
-  readonly categoriasUI = computed(() => {
-    return this.gastosPorCategoria().map((cat) => ({
-      name: cat.categoria,
-      percent: Math.round(cat.porcentaje),
-      amount: `S/ ${cat.total.toFixed(2)}`,
-      color: this.getColor(cat.categoria),
-      icon: this.getIcon(cat.categoria)
-    }));
-  });
-
-  readonly categoriasUIFiltradas = computed(() => {
-    return this.categoriasUI().map((cat) => ({
-      ...cat,
-      percent: Math.max(0, Math.min(cat.percent, 100))
-    }));
   });
 
   readonly gastosFiltradosPagados = computed(() => {
     const q = this.terminoBusqueda().trim().toLowerCase();
     const tab = this.tabActiva();
     return this.filasPagadas().filter((gasto) => {
-      const coincideBusqueda = !q ||
-        gasto.nombre.toLowerCase().includes(q) ||
-        gasto.categoria.toLowerCase().includes(q) ||
-        gasto.metodo.toLowerCase().includes(q);
+      const coincideBusqueda = !q || gasto.nombre.toLowerCase().includes(q) || gasto.categoria.toLowerCase().includes(q) || gasto.metodo.toLowerCase().includes(q);
+
       const coincideTab = tab === 'todos' || tab === 'pagados';
       return coincideBusqueda && coincideTab;
     });
@@ -509,12 +492,10 @@ readonly pendientePorPagar = computed(() => ({
     });
   });
 
-  private txSub?: { unsubscribe: () => void };
+  private txSub?: any;
 
   constructor() {
-    this.cargarPendientesLocales();
     this.stateService.cargarDatos();
-
     effect(() => {
       if (this.stateService.gastos().length > 0) {
         this.usarMockVisualPagados.set(false);
@@ -523,19 +504,15 @@ readonly pendientePorPagar = computed(() => ({
       }
     });
 
-    effect(() => {
-      this.guardarPendientesLocales(this.pendientesMock());
-    });
-
     this.txSub = this.eventBus.on('TRANSACTION_MODIFIED').subscribe(() => {
       this.stateService.invalidarCache();
     });
   }
 
   ngOnDestroy(): void {
-   this.txSub?.unsubscribe();
- 
-
+    if (this.txSub) {
+      this.txSub.unsubscribe();
+    }
   }
 
   seleccionarTab(tab: 'todos' | 'pagados' | 'pendientes' | 'recurrentes'): void {
@@ -547,44 +524,29 @@ readonly pendientePorPagar = computed(() => ({
   }
 
   marcarPendienteComoPagado(id: string): void {
-    const pendiente = this.gastosPendientes().find((p) => p.id === id);
+    const pendiente = this.pendientesMock().find((p) => p.id === id);
     if (!pendiente) {
       return;
     }
 
-    // Si es una suscripción real del backend
-    if (!id.startsWith('pend-local')) {
-      const usuarioId = this.authService.usuario()?.id;
-      if (!usuarioId) {
-        this.mensajeFormulario.set('No se encontró sesión activa.');
-        return;
-      }
-
-      // Registrar la transacción de pago
-      const request: TransaccionRequestDTO = {
-        usuarioId,
-        nombreCliente: this.authService.usuario()?.nombreUsuario ?? 'Cliente',
+    this.pendientesMock.set(this.pendientesMock().filter((p) => p.id !== id));
+    this.pagadosMock.update((items) => [
+      {
+        id: `mock-${pendiente.id}`,
+        nombre: pendiente.nombre,
+        detalle: 'Suscripción recurrente',
+        categoria: 'Servicios',
+        fecha: 'Hoy',
+        hora: 'Ahora',
         monto: pendiente.monto,
-        tipo: 'GASTO',
-        categoriaId: 'suscripciones',
-        fechaTransaccion: new Date().toISOString(),
-        metodoPago: pendiente.metodoPago,
-        notas: `${pendiente.nombre} - Suscripción pagada|Pago de suscripción recurrente`,
-        descripcion: `Pago de suscripción: ${pendiente.nombre}`,
-        etiquetas: 'suscripcion,pagado'
-      };
-
-      this.transaccionesService.registrar(request).subscribe({
-        next: () => {
-          this.eventBus.emit({ type: 'TRANSACTION_CREATED' });
-          this.stateService.invalidarCache();
-          this.mensajeFormulario.set(`✓ ${pendiente.nombre} marcado como pagado`);
-        },
-        error: () => {
-          this.mensajeFormulario.set('Error al registrar el pago de la suscripción.');
-        }
-      });
-    }
+        metodo: pendiente.metodoPago,
+        estado: 'Pagado',
+        icono: 'circle-check',
+        colorCategoria: 'servicios',
+      },
+      ...items,
+    ]);
+    this.usarMockVisualPagados.set(true);
   }
 
   abrirModal(): void {
@@ -603,6 +565,7 @@ readonly pendientePorPagar = computed(() => ({
     this.fecha.set(this.fechaIsoDesdeTexto(gasto.fecha));
     this.metodoPago.set(this.normalizarMetodoPago(gasto.metodo));
 
+    // Encontrar ID de categoría a partir de filas o por nombre como fallback
     let catId = (gasto as any).categoriaId || '';
     if (!catId) {
       const match = this.categoriasDisponibles.find(
@@ -611,6 +574,7 @@ readonly pendientePorPagar = computed(() => ({
       catId = match ? match.id : '';
     }
     this.categoria.set(catId);
+
     this.modalAbierto.set(true);
   }
 
@@ -624,7 +588,7 @@ readonly pendientePorPagar = computed(() => ({
     if (!pendiente) return;
     const id = pendiente.id;
 
-    if (id.startsWith('g') || id.startsWith('mock-')) {
+    if (id.startsWith('g') || id.startsWith('mock-') || this.usarMockVisualPagados()) {
       this.eliminadosIds.update((ids) => Array.from(new Set([...ids, id])));
       this.pagadosMock.update((items) => items.filter((i) => i.id !== id));
       this.usarMockVisualPagados.set(true);
@@ -638,7 +602,7 @@ readonly pendientePorPagar = computed(() => ({
         this.stateService.invalidarCache();
         this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
       },
-      error: () => this.mensajeFormulario.set('No se pudo eliminar el gasto.')
+      error: () => this.mensajeFormulario.set('No se pudo eliminar el gasto.'),
     });
   }
 
@@ -650,6 +614,11 @@ readonly pendientePorPagar = computed(() => ({
     this.modalAbierto.set(false);
   }
 
+  private nombreCategoriaPorId(id: string): string {
+    const match = this.categoriasDisponibles.find(c => c.id === id);
+    return match ? match.nombre : 'Gastos';
+  }
+
   guardarGasto(): void {
     const errores = this.validarFormulario();
     this.errores.set(errores);
@@ -658,8 +627,6 @@ readonly pendientePorPagar = computed(() => ({
     if (Object.keys(errores).length > 0) {
       return;
     }
-
-    this.guardandoGasto.set(true);
 
     const getLocalIsoString = (dateString: string): string => {
       let localDate = new Date();
@@ -677,130 +644,153 @@ readonly pendientePorPagar = computed(() => ({
       return new Date(localDate.getTime() - tzOffset).toISOString().slice(0, 19);
     };
 
-    const editId = this.gastoEditandoId();
-    if (editId) {
-      if (editId.startsWith('g') || editId.startsWith('mock-')) {
-        this.pagadosMock.update((items) =>
-          items.map((i) =>
-            i.id !== editId
-              ? i
-              : {
-                  ...i,
-                  nombre: this.nombreGasto().trim(),
-                  detalle: this.descripcion().trim(),
-                  monto: Number(this.monto()),
-                  metodo: this.metodoPago(),
-                  fecha: this.fecha()
-                    ? new Date(this.fecha()).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
-                    : i.fecha,
-                }
-          )
-        );
-        this.usarMockVisualPagados.set(true);
-        this.modalAbierto.set(false);
-        this.resetFormulario();
-        this.guardandoGasto.set(false);
-        return;
-      }
-
-      const usuarioIdEdit = this.authService.usuario()?.id;
-      if (!usuarioIdEdit) {
-        this.mensajeFormulario.set('No se encontró sesión activa.');
-        this.guardandoGasto.set(false);
-        return;
-      }
-
-      const requestEdit: TransaccionRequestDTO = {
-        usuarioId: usuarioIdEdit,
-        nombreCliente: this.authService.usuario()?.nombreUsuario ?? 'Cliente',
-        monto: Number(this.monto()),
-        tipo: 'GASTO',
-        categoriaId: this.categoria() || 'otros',
-        fechaTransaccion: getLocalIsoString(this.fecha()),
-        metodoPago: this.metodoPago(),
-        notas: `${this.nombreGasto().trim()}|${this.descripcion().trim()}`,
-        descripcion: this.descripcion().trim(),
-        etiquetas: this.etiquetas().join(','),
-      };
-
-      this.transaccionesService.actualizar(editId, requestEdit).subscribe({
-        next: () => {
-          this.guardandoGasto.set(false);
-          this.modalAbierto.set(false);
-          this.resetFormulario();
-          this.stateService.invalidarCache();
-          this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
-        },
-        error: () => {
-          this.guardandoGasto.set(false);
-          this.mensajeFormulario.set('No se pudo actualizar el gasto.');
-        },
-      });
-      return;
-    }
-
-    if (this.registrarComoPendiente()) {
-      const fechaVencimiento = this.fecha()
-        ? new Date(`${this.fecha()}T00:00:00`)
-        : new Date();
-      this.pendientesMock.update((items) => [
-        {
-          id: `pend-local-${Date.now()}`,
-          nombre: this.nombreGasto().trim(),
-          frecuencia: 'MENSUAL',
-          fechaVencimiento: fechaVencimiento.toLocaleDateString('es-PE', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-          }),
-          monto: Number(this.monto()),
-          vencePronto: this.venceEnDias(fechaVencimiento, 3),
-          metodoPago: this.metodoPago(),
-          categoriaIcono: this.iconoCategoria(
-            this.categoriasDisponibles.find((cat) => cat.id === this.categoria())?.nombre ?? 'otros'
-          )
-        },
-        ...items
-      ]);
-      this.guardandoGasto.set(false);
-      this.modalAbierto.set(false);
-      this.resetFormulario();
-      return;
-    }
-
     const usuarioId = this.authService.usuario()?.id;
     if (!usuarioId) {
       this.mensajeFormulario.set('No se encontró sesión activa.');
-      this.guardandoGasto.set(false);
       return;
     }
 
-    const request: TransaccionRequestDTO = {
-      usuarioId,
-      nombreCliente: this.authService.usuario()?.nombreUsuario ?? 'Cliente',
-      monto: Number(this.monto()),
-      tipo: 'GASTO',
-      categoriaId: this.categoria(),
-      fechaTransaccion: getLocalIsoString(this.fecha()),
-      metodoPago: this.metodoPago(),
-      notas: `${this.nombreGasto().trim()}|${this.descripcion().trim()}`,
-      descripcion: this.descripcion().trim(),
-      etiquetas: this.etiquetas().join(','),
+    const registrarTransaccionFinal = (catId: string) => {
+      this.guardandoGasto.set(true);
+      const editId = this.gastoEditandoId();
+      if (editId) {
+        if (editId.startsWith('g') || editId.startsWith('mock-') || this.usarMockVisualPagados()) {
+          this.pagadosMock.update((items) =>
+            items.map((i) =>
+              i.id !== editId
+                ? i
+                : {
+                    ...i,
+                    nombre: this.nombreGasto().trim(),
+                    detalle: this.descripcion().trim(),
+                    monto: Number(this.monto()),
+                    metodo: this.metodoPago(),
+                    fecha: this.fecha()
+                      ? new Date(this.fecha()).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+                      : i.fecha,
+                    categoria: this.nombreCategoriaPorId(catId),
+                    icono: this.iconoCategoria(this.nombreCategoriaPorId(catId)),
+                    colorCategoria: this.colorCategoria(this.nombreCategoriaPorId(catId))
+                  }
+            )
+          );
+          this.usarMockVisualPagados.set(true);
+          this.modalAbierto.set(false);
+          this.resetFormulario();
+          this.guardandoGasto.set(false);
+          this.notificacionService.mostrarGastoRegistrado(Number(this.monto()), this.nombreCategoriaPorId(catId));
+          return;
+        }
+
+        const requestEdit: TransaccionRequestDTO = {
+          usuarioId,
+          nombreCliente: this.nombreGasto().trim(),
+          monto: Number(this.monto()),
+          tipo: 'GASTO',
+          categoriaId: catId || 'otros',
+          fechaTransaccion: getLocalIsoString(this.fecha()),
+          metodoPago: this.metodoPago(),
+          descripcion: this.descripcion().trim(),
+          etiquetas: this.etiquetas().join(','),
+        };
+
+        this.transaccionesService.actualizar(editId, requestEdit).subscribe({
+          next: () => {
+            this.guardandoGasto.set(false);
+            this.modalAbierto.set(false);
+            this.resetFormulario();
+            this.stateService.invalidarCache();
+            this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
+            this.notificacionService.mostrarGastoRegistrado(Number(this.monto()), this.nombreCategoriaPorId(catId));
+          },
+          error: () => {
+            this.guardandoGasto.set(false);
+            this.mensajeFormulario.set('No se pudo actualizar el gasto.');
+          },
+        });
+      } else {
+        if (this.usarMockVisualPagados()) {
+          const mockId = `mock-${Date.now()}`;
+          this.pagadosMock.update((items) => [
+            {
+              id: mockId,
+              nombre: this.nombreGasto().trim(),
+              detalle: this.descripcion().trim(),
+              categoria: this.nombreCategoriaPorId(catId),
+              fecha: this.fecha()
+                ? new Date(this.fecha()).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+                : 'Hoy',
+              hora: new Date().toLocaleTimeString('es-PE', { hour: 'numeric', minute: '2-digit' }),
+              monto: Number(this.monto()),
+              metodo: this.metodoPago(),
+              estado: 'Pagado',
+              icono: this.iconoCategoria(this.nombreCategoriaPorId(catId)),
+              colorCategoria: this.colorCategoria(this.nombreCategoriaPorId(catId))
+            },
+            ...items
+          ]);
+          this.usarMockVisualPagados.set(true);
+          this.modalAbierto.set(false);
+          this.resetFormulario();
+          this.guardandoGasto.set(false);
+          this.notificacionService.mostrarGastoRegistrado(Number(this.monto()), this.nombreCategoriaPorId(catId));
+          return;
+        }
+
+        const request: TransaccionRequestDTO = {
+          usuarioId,
+          nombreCliente: this.nombreGasto().trim(),
+          monto: Number(this.monto()),
+          tipo: 'GASTO',
+          categoriaId: catId,
+          fechaTransaccion: getLocalIsoString(this.fecha()),
+          metodoPago: this.metodoPago(),
+          descripcion: this.descripcion().trim(),
+          etiquetas: this.etiquetas().join(','),
+        };
+
+        this.transaccionesService.registrar(request).subscribe({
+          next: () => {
+            this.guardandoGasto.set(false);
+            this.modalAbierto.set(false);
+            this.resetFormulario();
+            this.stateService.invalidarCache();
+            this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
+            this.notificacionService.mostrarGastoRegistrado(Number(this.monto()), this.nombreCategoriaPorId(catId));
+          },
+          error: () => {
+            this.guardandoGasto.set(false);
+            this.mensajeFormulario.set('No se pudo registrar el gasto.');
+          },
+        });
+      }
     };
 
-    this.transaccionesService.registrar(request).subscribe({
-      next: () => {
-        this.guardandoGasto.set(false);
-        this.modalAbierto.set(false);
-        this.stateService.invalidarCache();
-        this.eventBus.emit({ type: 'TRANSACTION_MODIFIED' });
-      },
-      error: () => {
-        this.guardandoGasto.set(false);
-        this.mensajeFormulario.set('No se pudo registrar el gasto.');
-      },
-    });
+    const pendingCat = this.categoriaIAPendiente();
+    if (this.categoria() === 'PENDIENTE_IA' && pendingCat) {
+      this.guardandoGasto.set(true);
+      this.financieroService.crearCategoria({
+        nombre: pendingCat.nombre,
+        descripcion: 'Categoría personalizada de gastos recomendada por IA',
+        icono: pendingCat.icono,
+        tipo: 'GASTO'
+      }).subscribe({
+        next: (cat) => {
+          this.stateService.categorias.update(cats => [...cats, cat]);
+          this.categoria.set(cat.id);
+          registrarTransaccionFinal(cat.id);
+        },
+        error: (err) => {
+          this.guardandoGasto.set(false);
+          this.mensajeFormulario.set('No se pudo crear la categoría recomendada por IA.');
+          console.error(err);
+        }
+      });
+    } else {
+      registrarTransaccionFinal(this.categoria());
+    }
   }
+
 
   clasificarConIa(): void {
     const d = this.descripcion().trim();
@@ -820,18 +810,22 @@ readonly pendientePorPagar = computed(() => ({
       next: (res) => {
         this.clasificandoIa.set(false);
         if (res.datos) {
-          const categorias = res.datos.consejo?.categorias_sugeridas || res.datos.categorias_sugeridas || res.datos.sugerencias;
-          if (categorias) {
-            this.sugerenciasIa.set(categorias);
+          const sugerencias = res.datos.sugerencias;
+          if (sugerencias) {
+            this.sugerenciasIa.set(sugerencias);
           }
         }
       },
       error: () => {
         this.clasificandoIa.set(false);
-        const matched = ['Alimentos', 'Transporte', 'Servicios', 'Hogar', 'Salud', 'Educación', 'Entretenimiento'].filter((c) =>
+        const matched = ['Alimentos', 'Transporte', 'Servicios', 'Hogar', 'Salud', 'Educación', 'Entretenimiento'].filter(c =>
           c.toLowerCase().includes(d.toLowerCase())
         );
-        this.sugerenciasIa.set(matched.length > 0 ? matched : ['Otros Gastos']);
+        const fallbackList: CategoriaSugerida[] = (matched.length > 0 ? matched : ['Alimentos', 'Transporte', 'Servicios', 'Hogar', 'Otros']).slice(0, 5).map(c => ({
+          categoria: c,
+          icono: this.iconoCategoria(c)
+        }));
+        this.sugerenciasIa.set(fallbackList);
       }
     });
   }
@@ -841,21 +835,21 @@ readonly pendientePorPagar = computed(() => ({
     if (!raw) return;
     const tag = raw.split(' ')[0];
     if (!this.etiquetas().includes(tag)) {
-      this.etiquetas.update((tags) => [...tags, tag]);
+      this.etiquetas.update(tags => [...tags, tag]);
     }
     this.nuevaEtiqueta.set('');
   }
 
   eliminarEtiqueta(tag: string): void {
-    this.etiquetas.update((tags) => tags.filter((t) => t !== tag));
+    this.etiquetas.update(tags => tags.filter(t => t !== tag));
   }
 
-  confirmarCrearCategoriaGasto(nombre: string): void {
+  confirmarCrearCategoriaGasto(nombre: string, icono?: string): void {
     const nameTrim = nombre.trim();
     if (!nameTrim) return;
 
     const match = this.categoriasDisponibles.find(
-      (c) => c.nombre.toLowerCase() === nameTrim.toLowerCase()
+      c => c.nombre.toLowerCase() === nameTrim.toLowerCase()
     );
     if (match) {
       this.categoria.set(match.id);
@@ -865,11 +859,11 @@ readonly pendientePorPagar = computed(() => ({
     this.financieroService.crearCategoria({
       nombre: nameTrim,
       descripcion: 'Categoría personalizada de gastos',
-      icono: this.iconoCategoria(nameTrim),
+      icono: icono || this.iconoCategoria(nameTrim),
       tipo: 'GASTO'
     }).subscribe({
       next: (cat) => {
-        this.stateService.categorias.update((cats) => [...cats, cat]);
+        this.stateService.categorias.update(cats => [...cats, cat]);
         this.categoria.set(cat.id);
       },
       error: (err) => {
@@ -878,9 +872,27 @@ readonly pendientePorPagar = computed(() => ({
     });
   }
 
-  seleccionarSugerenciaGasto(nombre: string): void {
-    this.confirmarCrearCategoriaGasto(nombre);
+  seleccionarSugerenciaGasto(sug: CategoriaSugerida): void {
+    this.sugerenciaSeleccionada.set(sug);
   }
+
+  confirmarSugerenciaGasto(): void {
+    const sug = this.sugerenciaSeleccionada();
+    if (!sug) return;
+
+    const match = this.categoriasDisponibles.find(
+      c => c.nombre.toLowerCase() === sug.categoria.toLowerCase()
+    );
+    if (match) {
+      this.categoria.set(match.id);
+      this.categoriaIAPendiente.set(null);
+    } else {
+      this.categoriaIAPendiente.set({ nombre: sug.categoria, icono: sug.icono });
+      this.categoria.set('PENDIENTE_IA');
+    }
+    this.sugerenciaSeleccionada.set(null);
+  }
+
 
   private validarFormulario(): Record<string, string> {
     const out: Record<string, string> = {};
@@ -890,6 +902,8 @@ readonly pendientePorPagar = computed(() => ({
     }
     if (!this.monto().trim() || Number(this.monto()) <= 0) {
       out['monto'] = 'Ingresa un monto válido mayor a 0.';
+    } else if (this.saldoActual() - Number(this.monto()) < 0) {
+      out['monto'] = 'El gasto supera tu balance actual. Registra un ingreso primero.';
     }
     if (!this.nombreGasto().trim()) {
       out['nombreGasto'] = 'Ingresa el nombre del gasto.';
@@ -912,7 +926,6 @@ readonly pendientePorPagar = computed(() => ({
     this.descripcion.set('');
     this.fecha.set('');
     this.metodoPago.set('DIGITAL');
-    this.registrarComoPendiente.set(false);
     this.etiquetas.set([]);
     this.nuevaEtiqueta.set('');
     this.errores.set({});
@@ -933,130 +946,16 @@ readonly pendientePorPagar = computed(() => ({
 
   private parseFechaFila(fechaTexto: string): Date {
     if (fechaTexto === 'Hoy') return new Date();
-    if (fechaTexto === 'Ayer') {
-      const ayer = new Date();
-      ayer.setDate(ayer.getDate() - 1);
-      return ayer;
-    }
-
-    const meses: Record<string, number> = {
-      ene: 0,
-      enero: 0,
-      feb: 1,
-      febrero: 1,
-      mar: 2,
-      marzo: 2,
-      abr: 3,
-      abril: 3,
-      may: 4,
-      mayo: 4,
-      jun: 5,
-      junio: 5,
-      jul: 6,
-      julio: 6,
-      ago: 7,
-      agosto: 7,
-      sep: 8,
-      sept: 8,
-      septiembre: 8,
-      oct: 9,
-      octubre: 9,
-      nov: 10,
-      noviembre: 10,
-      dic: 11,
-      diciembre: 11
-    };
-    const limpia = fechaTexto.toLowerCase().replace(/\./g, '').replace(/,/g, '').trim();
-    const partes = limpia.split(/\s+/);
-    const dia = Number(partes[0]);
-    const mesTexto = partes[1] ?? '';
-    const mes = meses[mesTexto];
-    const anio = Number(partes[2]) || new Date().getFullYear();
-    if (Number.isFinite(dia) && mes !== undefined) {
-      return new Date(anio, mes, dia);
-    }
-
-    const dt = new Date(fechaTexto);
+    const normalizada = fechaTexto
+      .toLowerCase()
+      .replace('.', '')
+      .replace('ene', 'jan')
+      .replace('abr', 'apr')
+      .replace('ago', 'aug')
+      .replace('dic', 'dec');
+    const dt = new Date(normalizada);
     if (!Number.isNaN(dt.getTime())) return dt;
     return new Date();
-  }
-
-  private cargarPendientesLocales(): void {
-    const storage = globalThis.localStorage;
-    if (!storage) return;
-
-    try {
-      const raw = storage.getItem(this.pendientesStorageKey);
-      if (!raw) return;
-      const pendientes = JSON.parse(raw);
-      if (Array.isArray(pendientes)) {
-        this.pendientesMock.set(pendientes);
-      }
-    } catch {
-      storage.removeItem(this.pendientesStorageKey);
-    }
-  }
-
-  private guardarPendientesLocales(pendientes: Array<{
-    id: string;
-    nombre: string;
-    frecuencia: 'MENSUAL' | 'SEMANAL' | 'QUINCENAL';
-    fechaVencimiento: string;
-    monto: number;
-    vencePronto: boolean;
-    metodoPago: MetodoPago;
-    categoriaIcono: string;
-  }>): void {
-    const storage = globalThis.localStorage;
-    if (!storage) return;
-
-    try {
-      storage.setItem(this.pendientesStorageKey, JSON.stringify(pendientes));
-    } catch {
-      this.mensajeFormulario.set('No se pudo guardar el pendiente localmente.');
-    }
-  }
-
-  private venceEnDias(fecha: Date, dias: number): boolean {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const limite = new Date(hoy);
-    limite.setDate(hoy.getDate() + dias);
-    const vencimiento = new Date(fecha);
-    vencimiento.setHours(0, 0, 0, 0);
-    return vencimiento >= hoy && vencimiento <= limite;
-  }
-
-  private monthKey(fecha: Date): string {
-    return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-  }
-
-  private buildSparklinePath(data: Array<{ total: number }>): string {
-    if (!data.length) return '';
-
-    const width = 108;
-    const height = 46;
-    const x0 = 6;
-    const y0 = 8;
-    const max = Math.max(...data.map((item) => item.total), 1);
-    const step = data.length > 1 ? width / (data.length - 1) : width;
-    const points = data.map((item, index) => {
-      const x = x0 + index * step;
-      const y = y0 + height - (item.total / max) * height;
-      return { x, y };
-    });
-
-    if (points.length === 1) {
-      const point = points[0]!;
-      return `M${point.x} ${point.y} L${x0 + width} ${point.y}`;
-    }
-
-    return points.reduce((path, point, index) => {
-      if (index === 0) return `M${point.x} ${point.y}`;
-      const prev = points[index - 1]!;
-      const controlOffset = step * 0.42;
-      return `${path} C${prev.x + controlOffset} ${prev.y} ${point.x - controlOffset} ${point.y} ${point.x} ${point.y}`;
-    }, '');
   }
 
   private fechaIsoDesdeTexto(fechaTexto: string): string {
@@ -1084,11 +983,6 @@ readonly pendientePorPagar = computed(() => ({
     return ((actual - previo) / Math.abs(previo)) * 100;
   }
 
-  private calcularVariacionMensual(actual: number, previo: number): number {
-    if (!previo) return actual > 0 ? 100 : 0;
-    return ((actual - previo) / Math.abs(previo)) * 100;
-  }
-
   private iconoCategoria(categoria: string): string {
     const key = categoria.toLowerCase();
     if (key.includes('comida')) return 'utensils';
@@ -1097,18 +991,6 @@ readonly pendientePorPagar = computed(() => ({
     if (key.includes('servicio')) return 'wifi';
     if (key.includes('entreten')) return 'film';
     if (key.includes('salud')) return 'briefcase-medical';
-    return 'receipt';
-  }
-
-  private iconoCategoriaSuscripcion(categoria: string): string {
-    const key = categoria.toLowerCase();
-    if (key.includes('leisure') || key.includes('entretenimiento')) return 'film';
-    if (key.includes('home') || key.includes('hogar')) return 'house';
-    if (key.includes('health') || key.includes('salud')) return 'briefcase-medical';
-    if (key.includes('transport') || key.includes('auto')) return 'bus';
-    if (key.includes('study') || key.includes('educacion')) return 'graduation-cap';
-    if (key.includes('food') || key.includes('comida')) return 'utensils';
-    if (key.includes('subscription') || key.includes('suscripcion')) return 'credit-card';
     return 'receipt';
   }
 
@@ -1122,21 +1004,4 @@ readonly pendientePorPagar = computed(() => ({
     return 'salud';
   }
 
-  private getColor(cat: string): string {
-    const key = cat.toLowerCase();
-    if (key.includes('comida')) return '#10b981';
-    if (key.includes('hogar')) return '#2563eb';
-    if (key.includes('transporte')) return '#8b5cf6';
-    if (key.includes('entreten')) return '#f97316';
-    return '#9ca3af';
-  }
-
-  private getIcon(cat: string): string {
-    const key = cat.toLowerCase();
-    if (key.includes('comida')) return '🍔';
-    if (key.includes('hogar')) return '🏠';
-    if (key.includes('transporte')) return '🚗';
-    if (key.includes('entreten')) return '🎮';
-    return '⋯';
-  }
 }

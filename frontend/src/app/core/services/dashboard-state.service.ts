@@ -1,158 +1,153 @@
 import { Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, forkJoin } from 'rxjs';
 import { environment } from '../../enviroments/environment';
 import { ResultadoApi } from '../models/auth/user.model';
 import { 
   DashboardResumenDTO, 
   CashflowPointDTO, 
-  CategoriaDistribucionDTO 
+  CategoriaDistribucionDTO,
+  HeatmapPointDTO,
+  MetaProgressDTO,
+  ComparativaMensualDTO,
+  DashboardAnaliticaDTO
 } from '../models/dashboard/dashboard.model';
-import { TransaccionDTO } from '../models/financiero/transaccion.model';
+
+export interface DashboardFiltros {
+  fechaInicio?: string;
+  fechaFin?: string;
+  metodoPago?: string;
+  tipoMovimiento?: string;
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class DashboardStateService {
-  private base = `${environment.gatewayUrl}/api/v1/dashboard`;
+  private base = `${environment.gatewayUrl}/api/v1/ia/dashboard`;
 
   // ── Angular Signals de Estado ──
-  readonly perfil = signal<any>(null);
   readonly resumen = signal<DashboardResumenDTO | null>(null);
-  readonly recientes = signal<TransaccionDTO[]>([]);
   readonly flujoCaja = signal<CashflowPointDTO[]>([]);
   readonly distribucionGastos = signal<CategoriaDistribucionDTO[]>([]);
+  readonly heatmap = signal<HeatmapPointDTO[]>([]);
+  readonly metas = signal<MetaProgressDTO[]>([]);
+  readonly comparativa = signal<ComparativaMensualDTO[]>([]);
+  readonly transaccionesMetodo = signal<{ metodo: string, cantidad: number, color: string }[]>([]);
+
+  // ── Filtros Actuales ──
+  readonly filtrosActuales = signal<DashboardFiltros>({});
 
   // ── Estados Auxiliares ──
-  readonly loadingResumen = signal<boolean>(false);
-  readonly loadingGraficos = signal<boolean>(false);
+  readonly loading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
-
-  // Timestamp de la última actualización exitosa de los KPIs
-  private ultimoRefrescoKPIs = 0;
-  // Duración de caché local en ms (15 minutos)
-  private readonly CACHE_DURATION_MS = 15 * 60 * 1000;
-
-  // Bandera para forzar actualización del backend al iniciar sesión
-  private forzarProximoRefresco = false;
 
   constructor(private http: HttpClient) {}
 
   marcarForzarRefresco(): void {
-    this.forzarProximoRefresco = true;
+    // Deprecated o ignorado para V2, retenido por compatibilidad con Auth
   }
 
+  private initialLoadDone = false;
+
   /**
-   * Carga el perfil del usuario, los KPIs (resumen) y las transacciones recientes.
-   * Utiliza caché en memoria de 15 minutos a menos que se fuerce el refresco.
+   * Carga los datos analíticos usando forkJoin para obtener KPIs y Gráficos del microservicio-ia
    */
-  cargarResumen(forzar: boolean = false): void {
-    const ahora = Date.now();
-    const forzarFinal = forzar || this.forzarProximoRefresco;
-    if (!forzarFinal && this.resumen() && (ahora - this.ultimoRefrescoKPIs < this.CACHE_DURATION_MS)) {
-      // Retener estado local (caché cliente activa)
+  cargarAnalitica(filtros?: DashboardFiltros): void {
+    if (this.initialLoadDone && !filtros) {
       return;
     }
 
-    this.loadingResumen.set(true);
+    this.loading.set(true);
     this.error.set(null);
 
-    const url = forzarFinal ? `${this.base}/resumen?refresh=true` : `${this.base}/resumen`;
-    this.http.get<ResultadoApi<any>>(url).subscribe({
-      next: (resp) => {
-        if (resp.exito && resp.datos) {
-          this.perfil.set(resp.datos.perfil);
-          this.resumen.set(resp.datos.resumen);
-          this.recientes.set(resp.datos.recientes || []);
-          this.ultimoRefrescoKPIs = Date.now();
-        } else {
-          this.error.set(resp.mensaje || 'Error al cargar resumen');
-        }
-        this.loadingResumen.set(false);
-        this.limpiarBanderaRefresco();
-      },
-      error: (err) => {
-        // Fallback a mock si falla el BFF
-        console.warn('[DashboardStateService] Fallback a mock de resumen:', err);
-        const hoy = new Date();
-        const factorMes = (hoy.getMonth() + 1) * 230;
-        const totalIngresos = 3800 + (factorMes % 1500);
-        const totalGastos = 2200 + (factorMes % 900);
-        const balance = totalIngresos - totalGastos;
-        
-        this.resumen.set({
-          desde: new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString(),
-          hasta: new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString(),
-          totalIngresos,
-          totalGastos,
-          balance,
-          cantidadIngresos: 4,
-          cantidadGastos: 15,
-          tasaAhorro: totalIngresos > 0 ? (balance / totalIngresos) * 100 : 0
-        });
-        this.recientes.set([]);
-        this.error.set(null);
-        this.loadingResumen.set(false);
-        this.limpiarBanderaRefresco();
+    if (filtros) {
+      const actuales = this.filtrosActuales();
+      if (
+        actuales.fechaInicio === filtros.fechaInicio &&
+        actuales.fechaFin === filtros.fechaFin &&
+        actuales.metodoPago === filtros.metodoPago &&
+        actuales.tipoMovimiento === filtros.tipoMovimiento &&
+        this.initialLoadDone
+      ) {
+        this.loading.set(false);
+        return;
       }
-    });
-  }
-
-  /**
-   * Carga los datos analíticos para renderizar los gráficos SVG.
-   */
-  cargarGraficos(forzar: boolean = false): void {
-    this.loadingGraficos.set(true);
-
-    const forzarFinal = forzar || this.forzarProximoRefresco;
-    const url = forzarFinal ? `${this.base}/graficos?refresh=true` : `${this.base}/graficos`;
-    this.http.get<ResultadoApi<any>>(url).subscribe({
-      next: (resp) => {
-        if (resp.exito && resp.datos) {
-          this.flujoCaja.set(resp.datos.flujoCaja || []);
-          this.distribucionGastos.set(resp.datos.distribucionGastos || []);
-        }
-        this.loadingGraficos.set(false);
-        this.limpiarBanderaRefresco();
-      },
-      error: (err) => {
-        console.error('[DashboardStateService] Error cargando gráficos:', err);
-        this.loadingGraficos.set(false);
-        this.limpiarBanderaRefresco();
-      }
-    });
-  }
-
-  private limpiarBanderaRefresco(): void {
-    if (this.forzarProximoRefresco) {
-      setTimeout(() => {
-        this.forzarProximoRefresco = false;
-      }, 0);
+      this.filtrosActuales.set(filtros);
     }
+
+    let params = new HttpParams();
+    const currentFilters = this.filtrosActuales();
+    
+    if (currentFilters.fechaInicio) params = params.set('fechaInicio', currentFilters.fechaInicio);
+    if (currentFilters.fechaFin) params = params.set('fechaFin', currentFilters.fechaFin);
+    if (currentFilters.metodoPago) params = params.set('metodoPago', currentFilters.metodoPago);
+    if (currentFilters.tipoMovimiento) params = params.set('tipoMovimiento', currentFilters.tipoMovimiento);
+
+    forkJoin({
+      kpis: this.http.get<ResultadoApi<any>>(`${this.base}/kpis`, { params }),
+      graficos: this.http.get<ResultadoApi<any>>(`${this.base}/graficos`, { params })
+    }).subscribe({
+      next: ({ kpis, graficos }) => {
+        if (kpis.exito && kpis.datos) {
+          const resumenBackend = kpis.datos.resumen;
+          this.resumen.set({
+            desde: resumenBackend.desde,
+            hasta: resumenBackend.hasta,
+            tasaAhorro: resumenBackend.tasaAhorro,
+            gastoPromedioDiario: 0, 
+            cumplimientoPresupuesto: 0, 
+            proyeccionFinDeMes: 0,
+            totalIngresos: resumenBackend.totalIngresos,
+            totalGastos: resumenBackend.totalGastos,
+            balance: resumenBackend.balance
+          } as any);
+        } else {
+          this.error.set(kpis.mensaje || 'Error al cargar KPIs');
+        }
+
+        if (graficos.exito && graficos.datos) {
+          this.flujoCaja.set(graficos.datos.flujoCaja || []);
+          
+          const dist = (graficos.datos.distribucionGastos || [])
+            .sort((a: any, b: any) => b.total - a.total)
+            .slice(0, 5);
+          this.distribucionGastos.set(dist);
+        }
+
+        // Limpiar arrays para que no muestren mockups residuales
+        this.heatmap.set([]);
+        this.metas.set([]);
+        this.comparativa.set([]);
+        this.transaccionesMetodo.set([]);
+
+        this.loading.set(false);
+        this.initialLoadDone = true;
+      },
+      error: (err) => {
+        console.error('[DashboardStateService] Error de conexión con backend:', err);
+        this.error.set('No se pudo conectar con el microservicio de IA');
+        this.loading.set(false);
+        this.initialLoadDone = true;
+      }
+    });
   }
 
-  /**
-   * Invalida los datos y la fecha del último refresco local, forzando una recarga limpia.
-   */
   invalidarCache(): void {
-    this.ultimoRefrescoKPIs = 0;
-    this.cargarResumen(true);
-    this.cargarGraficos(true);
+    this.initialLoadDone = false; 
+    this.cargarAnalitica(this.filtrosActuales());
   }
 
-  /**
-   * Limpia completamente el estado de las signals.
-   * Útil para cuando un usuario cierra sesión.
-   */
   limpiarEstado(): void {
-    this.ultimoRefrescoKPIs = 0;
-    this.perfil.set(null);
     this.resumen.set(null);
-    this.recientes.set([]);
     this.flujoCaja.set([]);
     this.distribucionGastos.set([]);
-    this.loadingResumen.set(false);
-    this.loadingGraficos.set(false);
+    this.heatmap.set([]);
+    this.metas.set([]);
+    this.comparativa.set([]);
+    this.transaccionesMetodo.set([]);
+    this.filtrosActuales.set({});
+    this.loading.set(false);
     this.error.set(null);
   }
 }

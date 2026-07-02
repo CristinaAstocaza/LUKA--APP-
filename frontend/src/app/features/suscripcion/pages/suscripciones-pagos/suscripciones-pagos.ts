@@ -73,7 +73,7 @@ export class SuscripcionesPagos implements OnInit {
 
   // Data para selects
   readonly categorias = CATEGORIAS_SUSCRIPCION;
-  readonly frecuencias = FRECUENCIAS_SUSCRIPCION;
+  readonly frecuencias = FRECUENCIAS_SUSCRIPCION.filter(f => ['MENSUAL', 'ANUAL', 'QUINCENAL'].includes(f.id));
   readonly estados = ESTADOS_SUSCRIPCION;
 
   ngOnInit(): void {
