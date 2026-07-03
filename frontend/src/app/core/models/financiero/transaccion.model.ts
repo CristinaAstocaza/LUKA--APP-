@@ -10,15 +10,22 @@ export interface TransaccionDTO {
   monto:             number;          
   tipo:              TipoMovimiento;  
   categoriaId:       string;          
-  categoriaNombre:   string;          
+  categoria:         string;
+  categoriaNombre?:  string;
   categoriaIcono:    string;          
   fechaTransaccion:  string;          
   metodoPago:        MetodoPago;
   etiquetas:         string | null;   
   notas:             string | null;
   descripcion:       string | null;
-  fechaRegistro:     string;          
+  fechaRegistro?:    string;
 }
+
+export type TransaccionApiDTO = Omit<TransaccionDTO, 'categoriaNombre'> & {
+  categoria?: string;
+  categoriaNombre?: string;
+  fechaRegistro?: string;
+};
  
 // ─── Lo que mandas al backend para crear/editar ───────────────────────────────
 export interface TransaccionRequestDTO {

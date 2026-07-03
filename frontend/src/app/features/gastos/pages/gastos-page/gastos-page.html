@@ -1,73 +1,134 @@
-<section class="gastos-page">
+<section class="gastos-page" data-tour-id="tour-pantalla-completa" [class.gastos-page--tour-activo]="tourAbierto()">
   <header class="gastos-page__hero">
     <div class="gastos-page__hero-copy">
-      <h1>Gestión de Gastos</h1>
+      <h1 data-tour-id="tour-bienvenida">Gestión de Gastos</h1>
       <p>
         Visualiza tus egresos pagados, tus próximos vencimientos y tus suscripciones recurrentes en un solo dashboard.
       </p>
     </div>
-    <button type="button" class="gastos-page__btn-main" (click)="abrirModal()">
-      <span aria-hidden="true">＋</span>
-      Registrar gasto
-    </button>
+    <div class="gastos-page__hero-actions">
+      <button type="button" class="gastos-page__btn-main" (click)="abrirModal()" data-tour-id="tour-registrar">
+        <span aria-hidden="true">＋</span>
+        Registrar gasto
+      </button>
+    </div>
   </header>
 
-  <section class="gastos-page__kpis">
+  <section class="gastos-page__kpis" data-tour-id="tour-kpis">
     <article class="gastos-page__kpi gastos-page__kpi--salida">
       <div class="gastos-page__kpi-head">
-        <span class="gastos-page__icon" aria-hidden="true">🧾</span>
+        <span class="gastos-page__icon gastos-page__icon--salida" aria-hidden="true">
+          <i class="fa-solid fa-wallet"></i>
+        </span>
         <p>Total gastado</p>
       </div>
       <strong>S/ {{ totalGastado().toFixed(2) }}</strong>
-      <small>Este mes</small>
-      <em class="gastos-page__trend is-up">↑ {{ variacionGastado() }}% vs mes anterior</em>
+      <small>Acumulado histórico</small>
+      <span class="gastos-page__kpi-pill gastos-page__kpi-pill--salida" [class.is-down]="!gastoSubioVsMesAnterior()">
+        <i class="fa-solid" [ngClass]="gastoSubioVsMesAnterior() ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+        {{ variacionGastadoAbs() | number:'1.0-0' }}% frente al mes anterior
+      </span>
+      <div class="gastos-page__kpi-mini-line-chart" aria-hidden="true">
+        <svg viewBox="0 0 100 32" preserveAspectRatio="none">
+          <polyline [attr.points]="miniTendenciaTotalGastadoPuntos()"></polyline>
+        </svg>
+      </div>
     </article>
 
 
     <article class="gastos-page__kpi gastos-page__kpi--pendiente">
       <div class="gastos-page__kpi-head">
-        <span class="gastos-page__icon" aria-hidden="true">⏰</span>
+        <span class="gastos-page__icon gastos-page__icon--pending" aria-hidden="true">
+          <i class="fa-solid fa-clock"></i>
+        </span>
         <p>Pendiente por pagar</p>
       </div>
       <strong>S/ {{ totalPendiente().toFixed(2) }}</strong>
-      <small>{{ pendientesFiltrados().length }} pendientes</small>
-      <em class="gastos-page__trend is-up">↑ {{ variacionPendiente() }}% vs mes anterior</em>
+      <small>{{ gastosPendientes().length }} pendientes registrados</small>
+      <span class="gastos-page__kpi-pill" [class.is-down]="!pendienteSubioVsMesAnterior()">
+        <i class="fa-solid" [ngClass]="pendienteSubioVsMesAnterior() ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+        {{ variacionPendienteAbs() | number:'1.0-0' }}% respecto al mes anterior
+      </span>
+      <div class="gastos-page__kpi-mini-bars" aria-hidden="true">
+        @for (altura of miniBarrasPendiente(); track $index) {
+          <span [style.height.%]="altura"></span>
+        }
+      </div>
     </article>
 
     <article class="gastos-page__kpi gastos-page__kpi--vencimiento">
-      <div class="gastos-page__kpi-head">
-        <span class="gastos-page__icon" aria-hidden="true">📅</span>
+      <div class="gastos-page__kpi-head gastos-page__kpi-head--vencimiento">
         <p>Próximo vencimiento</p>
+        <div class="gastos-page__vencimiento-calendar-wrap">
+          <button type="button" class="gastos-page__vencimiento-calendar" (click)="abrirCalendarioVencimientos()" [attr.aria-expanded]="calendarioVencimientosAbierto()">
+            <i class="fa-solid fa-calendar-days"></i>
+          </button>
+          @if (calendarioVencimientosAbierto()) {
+            <div class="gastos-page__calendar-popover">
+              <div class="gastos-page__calendar-head">
+                <button type="button" class="gastos-page__calendar-nav" (click)="cambiarMesCalendario(-1)" aria-label="Mes anterior">
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <strong>{{ calendarioMesEtiqueta() }}</strong>
+                <button type="button" class="gastos-page__calendar-nav" (click)="cambiarMesCalendario(1)" aria-label="Mes siguiente">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+              <div class="gastos-page__calendar-weekdays">
+                @for (dia of diasSemanaCalendario; track dia) {
+                  <span>{{ dia }}</span>
+                }
+              </div>
+              <div class="gastos-page__calendar-grid">
+                @for (celda of calendarioDias(); track $index) {
+                  @if (celda.tipo === 'vacio') {
+                    <span class="gastos-page__calendar-empty"></span>
+                  } @else {
+                    <button
+                      type="button"
+                      class="gastos-page__calendar-day"
+                      [class.is-today]="celda.esHoy"
+                      [class.is-selected]="celda.esSeleccionado"
+                      [class.has-vencimiento]="celda.tieneVencimientos"
+                      (click)="seleccionarDiaCalendario(celda.fechaISO)"
+                    >
+                      <strong>{{ celda.dia }}</strong>
+                      @if (celda.cantidad > 0) {
+                        <small>{{ celda.cantidad }}</small>
+                      }
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          }
+        </div>
       </div>
-      <strong>
+      <strong class="gastos-page__vencimiento-name">
         @if (proximoVencimiento(); as proximo) {
           {{ proximo.nombre }}
         } @else {
-          Sin pagos
+          Gym PowerFit
         }
       </strong>
-      <small>
+      <small class="gastos-page__vencimiento-amount">
         @if (proximoVencimiento(); as proximo) {
-          {{ proximo.fechaVencimiento }} · S/ {{ proximo.monto.toFixed(2) }}
+          S/ {{ proximo.monto.toFixed(0) }}
         } @else {
-          No hay vencimientos registrados
+          S/ 89
         }
       </small>
+      <div class="gastos-page__vencimiento-footer">
+        <span class="gastos-page__vencimiento-date">
+          <i class="fa-solid fa-calendar-days"></i>
+          {{ fechaProximoVencimiento() }}
+        </span>
+        <span class="gastos-page__vencimiento-pill">{{ textoProximoVencimiento() }}</span>
+      </div>
     </article>
   </section>
 
-  <div class="gastos-page__tabs" role="tablist" aria-label="Filtros de gastos">
-    <button type="button" class="gastos-page__tab" [class.is-active]="tabActiva() === 'todos'" (click)="seleccionarTab('todos')">Todos</button>
-    <button type="button" class="gastos-page__tab" [class.is-active]="tabActiva() === 'pagados'" (click)="seleccionarTab('pagados')">Pagados</button>
-    <button type="button" class="gastos-page__tab" [class.is-active]="tabActiva() === 'pendientes'" (click)="seleccionarTab('pendientes')">Pendientes</button>
-    <button type="button" class="gastos-page__tab" [class.is-active]="tabActiva() === 'recurrentes'" (click)="seleccionarTab('recurrentes')">Recurrentes</button>
-  </div>
-
-  <div class="gastos-page__integration-note" role="note">
-    {{ bannerIntegracion() }}
-  </div>
-
-  <div class="gastos-page__toolbar">
+  <div class="gastos-page__toolbar" data-tour-id="tour-buscar-exportar">
     <input
       type="search"
       placeholder="Buscar gasto"
@@ -76,105 +137,14 @@
       aria-label="Buscar gasto"
     />
     <div class="gastos-page__toolbar-actions">
-      <button type="button" class="gastos-page__btn-tool" disabled title="Próximamente">Exportar Excel</button>
-      <button type="button" class="gastos-page__btn-tool" disabled title="Próximamente">PDF</button>
-      <button type="button" class="gastos-page__btn-tool">Filtrar</button>
+      <button type="button" class="gastos-page__btn-tool" (click)="exportarExcel()">Exportar Excel</button>
+      <button type="button" class="gastos-page__btn-tool" (click)="exportarPdf()">PDF</button>
     </div>
+
   </div>
 
   <section class="gastos-page__content-grid">
-    <section class="gastos-page__panel gastos-page__panel--left">
-      <header class="gastos-page__panel-header">
-        <div>
-          <h3>Gastos pagados</h3>
-          <p>Dinero ya gastado y confirmado</p>
-        </div>
-        <span class="gastos-page__chip is-success">{{ gastosFiltradosPagados().length }} movimientos</span>
-      </header>
-
-      @if (cargando()) {
-        <div class="gastos-page__skeleton-list" aria-hidden="true">
-          <div></div><div></div><div></div><div></div>
-        </div>
-      } @else {
-        @if (gastosFiltradosPagados().length === 0) {
-          <div class="gastos-page__empty">
-            <h4>Aún no hay gastos pagados</h4>
-            <p>Registra tu primer gasto para comenzar a visualizar tu flujo de egresos.</p>
-          </div>
-        } @else {
-          <div class="gastos-page__table-wrap">
-            <table class="gastos-page__table">
-              <thead>
-                <tr>
-                  <th><i class="fa-solid fa-receipt"></i> Gasto</th>
-                  <th><i class="fa-solid fa-tags"></i> Categoría</th>
-                  <th><i class="fa-solid fa-calendar-days"></i> Fecha</th>
-                  <th><i class="fa-solid fa-money-bill-wave"></i> Monto</th>
-                  <th><i class="fa-solid fa-circle-check"></i> Estado</th>
-                  <th><i class="fa-solid fa-credit-card"></i> Método de pago</th>
-                  <th><i class="fa-solid fa-gear"></i> Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (gasto of gastosFiltradosPagados(); track gasto.id) {
-                  <tr>
-                    <td>
-                      <div class="gastos-page__cell-main">
-                        <span class="gastos-page__icon-wrap" aria-hidden="true">
-                          <i class="fa-solid" [ngClass]="'fa-' + gasto.icono"></i>
-                        </span>
-                        <div>
-                          <strong>{{ gasto.nombre }}</strong>
-                          <small>{{ gasto.detalle }}</small>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span class="gastos-page__cat" [class]="'gastos-page__cat is-' + gasto.colorCategoria">{{ gasto.categoria }}</span></td>
-                    <td>
-                      <div class="gastos-page__cell-date">
-                        <span>{{ gasto.fecha }}</span>
-                        <small>{{ gasto.hora }}</small>
-                      </div>
-                    </td>
-                    <td><span class="gastos-page__amount">-S/ {{ gasto.monto.toFixed(2) }}</span></td>
-                    <td>
-                      <span class="gastos-page__badge" [class.is-paid]="gasto.estado === 'Pagado'" [class.is-warning]="gasto.estado === 'Pendiente'">
-                        <i class="fa-solid" [ngClass]="gasto.estado === 'Pagado' ? 'fa-circle-check' : 'fa-clock'"></i>
-                        {{ gasto.estado }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="gastos-page__pay-method">
-                        <i class="fa-solid" [ngClass]="
-                          gasto.metodo.toLowerCase().includes('yape') ? 'fa-mobile-screen-button' :
-                          gasto.metodo.toLowerCase().includes('efectivo') ? 'fa-money-bill-wave' :
-                          gasto.metodo.toLowerCase().includes('crédito') ? 'fa-credit-card' :
-                          gasto.metodo.toLowerCase().includes('débito') ? 'fa-credit-card' : 'fa-wallet'
-                        "></i>
-                        {{ gasto.metodo }}
-                      </span>
-                    </td>
-                    <td>
-                      <div class="gastos-page__row-actions">
-                        <button type="button" class="gastos-page__icon-btn is-edit" (click)="editarGasto(gasto.id)">
-                          <i class="fa-solid fa-pen"></i>
-                        </button>
-                        <button type="button" class="gastos-page__icon-btn is-delete" (click)="eliminarGasto(gasto.id)">
-                          <i class="fa-solid fa-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        }
-      }
-    </section>
-
-    <section class="gastos-page__panel gastos-page__panel--right gastos-page__panel--pending">
+    <section class="gastos-page__panel gastos-page__panel--right gastos-page__panel--pending" data-tour-id="tour-pendientes">
       <header class="gastos-page__panel-header">
         <div>
           <h3>Pendientes y recurrentes</h3>
@@ -182,56 +152,146 @@
         </div>
         <span class="gastos-page__chip is-warning">S/ {{ totalPendiente().toFixed(2) }}</span>
       </header>
-
-      @if (pendientesFiltrados().length === 0) {
+      @if (gastosPendientes().length === 0) {
         <div class="gastos-page__empty gastos-page__empty--compact">
           <h4>No hay pendientes</h4>
           <p>Todo está al día por ahora.</p>
         </div>
       } @else {
         <div class="gastos-page__pending-list">
-          @for (pendiente of pendientesFiltrados(); track pendiente.id) {
-            <article class="gastos-page__pending-item">
-              <div class="gastos-page__pending-top">
-                <div class="gastos-page__pending-title-wrap">
-                  <span class="gastos-page__icon-wrap gastos-page__icon-wrap--pending" aria-hidden="true">
-                    <i class="fa-solid" [ngClass]="'fa-' + pendiente.categoriaIcono"></i>
-                  </span>
-                  <h4>{{ pendiente.nombre }}</h4>
-                  <p>{{ pendiente.frecuencia }} · {{ pendiente.metodoPago }}</p>
+          @for (pendiente of gastosPendientes(); track pendiente.id) {
+            <article class="gastos-page__pending-item gastos-page__pending-item--rich">
+              <span class="gastos-page__pending-emoji" aria-hidden="true">
+                {{ pendiente.categoriaEmoji }}
+              </span>
+              <div class="gastos-page__pending-main">
+                <h4>{{ pendiente.nombre }}</h4>
+                <small>{{ pendiente.categoria }}</small>
+              </div>
+              <span class="gastos-page__pending-badge-freq">🔁 {{ pendiente.frecuencia }}</span>
+              <span class="gastos-page__pending-date">
+                <i class="fa-solid fa-calendar-days"></i>
+                {{ pendiente.fechaVencimiento }}
+              </span>
+              <span class="gastos-page__pending-payment">{{ pendiente.formaPago }}</span>
+              <span class="gastos-page__pending-days" [ngClass]="pendiente.diasClase">{{ pendiente.textoDiasRestantes }}</span>
+              <span class="gastos-page__pending-state-chip" [ngClass]="pendiente.estadoClase">{{ pendiente.estado }}</span>
+              <span class="gastos-page__pending-priority" [ngClass]="pendiente.prioridadClase">Prioridad {{ pendiente.prioridad }}</span>
+              <span class="gastos-page__pending-amount">S/ {{ pendiente.monto.toFixed(2) }}</span>
+              @if (pendiente.progresoAnual !== null) {
+                <div class="gastos-page__pending-progress">
+                  <div class="gastos-page__pending-progress-bar" [style.width.%]="pendiente.progresoAnual"></div>
+                  <small>{{ pendiente.progresoAnual }}%</small>
                 </div>
-                <span class="gastos-page__pending-amount">S/ {{ pendiente.monto.toFixed(2) }}</span>
+              }
+              <div class="gastos-page__pending-actions">
+                <button type="button" class="gastos-page__pending-icon-btn" (click)="editarGasto(pendiente.id)" aria-label="Ver gasto">
+                  <i class="fa-regular fa-eye"></i>
+                </button>
+                <button type="button" class="gastos-page__pending-icon-btn" (click)="editarGasto(pendiente.id)" aria-label="Editar gasto">
+                  <i class="fa-regular fa-pen-to-square"></i>
+                </button>
+                <button type="button" class="gastos-page__pending-icon-btn is-danger" (click)="eliminarGasto(pendiente.id)" aria-label="Eliminar gasto">
+                  <i class="fa-regular fa-trash-can"></i>
+                </button>
+                <button type="button" class="gastos-page__pending-pay-btn" (click)="marcarPendienteComoPagado(pendiente.id)">
+                  ✓ Marcar pagado
+                </button>
               </div>
-
-              <div class="gastos-page__pending-bottom">
-                <span class="gastos-page__pending-date">
-                  <i class="fa-solid fa-calendar-days"></i>
-                  {{ pendiente.fechaVencimiento }}
-                </span>
-
-                @if (pendiente.vencePronto) {
-                  <span class="gastos-page__badge is-warning">Vence pronto</span>
-                } @else {
-                  <span class="gastos-page__badge is-soft">Programado</span>
-                }
-              </div>
-
-              <button type="button" class="gastos-page__btn-mark" (click)="marcarPendienteComoPagado(pendiente.id)">
-                <i class="fa-solid fa-circle-check"></i>
-                Marcar pagado
-              </button>
             </article>
           }
         </div>
       }
     </section>
+
+    <article class="gastos-page__widget gastos-page__widget--month-summary gastos-page__content-summary" data-tour-id="tour-resumen-mes">
+      <header><h4>Resumen del mes</h4><span>Panel financiero</span></header>
+      <div class="gastos-page__month-kpis">
+        <article class="gastos-page__month-card is-gastado">
+          <div class="gastos-page__month-card-head">
+            <span class="gastos-page__month-card-emoji">📈</span>
+            <span>Gastado</span>
+          </div>
+          <strong>S/ {{ totalGastadoActual().toFixed(2) }}</strong>
+          <small [class.is-down]="!gastoSubioVsMesAnterior()" class="gastos-page__month-card-compare">
+            {{ gastoSubioVsMesAnterior() ? '↑' : '↓' }} {{ variacionGastadoAbs() | number:'1.0-0' }}% frente al mes anterior
+          </small>
+          <small class="gastos-page__month-card-sub">
+            {{ comparativaGastadoAbsoluta() >= 0 ? '+' : '-' }}S/{{ comparativaGastadoAbsMonto() | number:'1.0-0' }}
+          </small>
+        </article>
+        <article class="gastos-page__month-card is-saldo">
+          <div class="gastos-page__month-card-head">
+            <span class="gastos-page__month-card-emoji">💰</span>
+            <span>Saldo</span>
+          </div>
+          <strong>S/ {{ saldoActual().toFixed(2) }}</strong>
+          <small class="gastos-page__month-card-sub">Quedan S/{{ saldoActual().toFixed(2) }}</small>
+          <small [class.is-down]="!saldoSubioVsMesAnterior()" class="gastos-page__month-card-compare">{{ saldoSubioVsMesAnterior() ? '↑' : '↓' }} {{ variacionSaldoAbs() | number:'1.0-0' }}%</small>
+        </article>
+        <article class="gastos-page__month-card is-pendiente">
+          <div class="gastos-page__month-card-head">
+            <span class="gastos-page__month-card-emoji">⏳</span>
+            <span>Pendiente</span>
+          </div>
+          <strong>S/ {{ totalPendiente().toFixed(2) }}</strong>
+          <small class="gastos-page__month-card-sub">{{ totalCuotasPendientes() }} pagos</small>
+          <small [class.is-down]="!pendienteSubioVsMesAnterior()" class="gastos-page__month-card-compare">{{ pendienteSubioVsMesAnterior() ? '↑' : '↓' }} {{ variacionPendienteAbs() | number:'1.0-0' }}%</small>
+        </article>
+      </div>
+
+      <div class="gastos-page__month-extra">
+        <div class="gastos-page__month-extra-item">
+          <span>📊 Promedio diario</span>
+          <strong>S/ {{ promedioDiarioGasto().toFixed(2) }}</strong>
+        </div>
+        <div class="gastos-page__month-extra-item">
+          <span>🏆 Mayor categoría</span>
+          <strong>
+            @if (categoriaMayorGasto()) {
+              {{ categoriaMayorGasto()!.categoria }} · S/ {{ categoriaMayorGasto()!.total.toFixed(2) }}
+            } @else {
+              Sin datos
+            }
+          </strong>
+        </div>
+        <div class="gastos-page__month-extra-item">
+          <span>📅 Próximo pago</span>
+          <strong>
+            @if (resumenProximoPago()) {
+              {{ resumenProximoPago()!.nombre }} · {{ resumenProximoPago()!.fechaVencimiento }} · S/ {{ resumenProximoPago()!.monto.toFixed(2) }}
+            } @else {
+              Sin pendientes
+            }
+          </strong>
+        </div>
+      </div>
+
+      <div class="gastos-page__month-recent">
+        <h5>Últimos gastos</h5>
+        @for (gasto of gastosRecientesResumen(); track gasto.id) {
+          <div class="gastos-page__month-recent-row">
+            <div class="gastos-page__month-recent-main">
+              <span class="gastos-page__month-recent-icon" [ngClass]="gastoEmojiClase(gasto.categoria)">
+                {{ gastoEmoji(gasto.categoria) }}
+              </span>
+              <div>
+                <strong>{{ gasto.nombre }}</strong>
+                <small>{{ gasto.categoria }} · {{ fechaRelativa(gasto.fechaOrden) }}</small>
+              </div>
+            </div>
+            <span class="gastos-page__month-recent-amount">S/ {{ gasto.monto.toFixed(2) }}</span>
+          </div>
+        }
+      </div>
+    </article>
   </section>
 
   <section class="gastos-page__analytics">
-    <article class="gastos-page__widget">
+    <article class="gastos-page__widget" data-tour-id="tour-categorias">
       <header><h4>Gastos por categoría</h4><span>Últimos 30 días</span></header>
       <div class="gastos-page__donut-layout">
-        <div class="gastos-page__donut-wrap">
+        <div class="gastos-page__donut-wrap" data-tour-id="tour-categorias-anillo">
           <svg viewBox="0 0 36 36" class="gastos-page__donut-svg" aria-label="Distribución de gastos por categoría">
             <circle class="gastos-page__donut-track" cx="18" cy="18" r="15.91549430918954"></circle>
             @for (item of donutCategorias(); track item.categoria) {
@@ -247,7 +307,7 @@
             }
             <g class="gastos-page__donut-text">
               <text x="50%" y="47%">Total</text>
-              <text x="50%" y="64%">S/ {{ totalDonutCategorias().toFixed(2) }}</text>
+              <text x="50%" y="64%">S/.{{ totalDonutCategorias() | number:'1.0-0' }}</text>
             </g>
           </svg>
         </div>
@@ -262,47 +322,37 @@
         </div>
       </div>
     </article>
-    <article class="gastos-page__widget gastos-page__widget--avg-kpi">
-      <div class="gastos-page__kpi-icon-container gastos-page__kpi-icon-container--danger">
-        <i class="fa-solid fa-arrow-down"></i>
-      </div>
-      <span class="gastos-page__kpi-label">Gastos mensuales</span>
-      <strong class="gastos-page__kpi-value text-danger">S/ {{ gastoPromedioMensual().toFixed(2) }}</strong>
-      <div class="gastos-page__kpi-progress-wrapper">
-        <div class="gastos-page__kpi-progress-bar">
-          <span class="gastos-page__kpi-progress-fill"></span>
-        </div>
-        <small class="gastos-page__kpi-progress-text">
-          {{ variacionPromedioMensual() >= 0 ? variacionPromedioMensual().toFixed(0) : 0 }}% del presupuesto utilizado
-        </small>
-      </div>
-    </article>
-    <article class="gastos-page__widget">
+    <article class="gastos-page__widget" data-tour-id="tour-periodo">
       <header>
-        <h4>Top días de gasto</h4>
+        <div>
+          <h4>Gastos por periodo</h4>
+          <small>{{ gastosPeriodoFiltrados().length }} gastos • S/ {{ totalGastosPeriodo().toFixed(2) }}</small>
+        </div>
         <select class="gastos-page__trend-filter" [value]="filtroTendencia()" (change)="filtroTendencia.set($any($event.target).value)">
           <option value="7d">Últimos 7 días</option>
           <option value="30d">Últimos 30 días</option>
           <option value="90d">Últimos 90 días</option>
         </select>
       </header>
-      <div class="gastos-page__rank-chart">
-        @for (dia of topDiasGasto(); track dia.etiqueta) {
-          <div class="gastos-page__rank-row">
-            <div class="gastos-page__rank-meta">
-              <strong>{{ dia.etiqueta }}</strong>
-              <small>S/ {{ dia.total.toFixed(2) }}</small>
+      <div class="gastos-page__period-list" data-tour-id="tour-periodo-lista">
+        @for (gasto of gastosPeriodoFiltrados(); track gasto.id) {
+          <div class="gastos-page__period-item" [ngClass]="gastoEmojiClase(gasto.categoria)">
+            <span class="gastos-page__period-icon" [ngClass]="gastoEmojiClase(gasto.categoria)">
+              <i class="fa-solid" [ngClass]="gasto.icono"></i>
+            </span>
+            <div class="gastos-page__period-meta">
+              <strong>
+                <span class="gastos-page__period-emoji" [ngClass]="gastoEmojiClase(gasto.categoria)">{{ gastoEmoji(gasto.categoria) }}</span>
+                {{ gasto.nombre }}
+              </strong>
+              <small>{{ gasto.categoria }} • {{ gasto.fecha }}</small>
             </div>
-            <div class="gastos-page__rank-bar">
-              <span [style.width.%]="dia.porcentaje"></span>
-            </div>
+            <span class="gastos-page__period-amount" [ngClass]="gastoEmojiClase(gasto.categoria)">S/ {{ gasto.monto.toFixed(2) }}</span>
           </div>
         }
       </div>
     </article>
   </section>
-
-  <button type="button" class="gastos-page__fab" (click)="abrirModal()" aria-label="Agregar gasto">+</button>
 
   @if (modalAbierto()) {
     <div class="gastos-page__overlay" (click)="cerrarModal()">
@@ -371,7 +421,8 @@
 
           <label class="gastos-page__form-col-full">
             <span><i class="fa-solid fa-note-sticky"></i> Descripción</span>
-            <textarea rows="3" [value]="descripcion()" (input)="descripcion.set($any($event.target).value)"></textarea>
+            <textarea rows="3" [value]="descripcion()" (input)="actualizarDescripcion($any($event.target).value)"></textarea>
+            <small class="gastos-page__tags-hint">{{ descripcionPalabras() }}/200 palabras</small>
             @if (errores()['descripcion']) { <small class="gastos-page__error">{{ errores()['descripcion'] }}</small> }
           </label>
 
@@ -385,6 +436,9 @@
               {{ clasificandoIa() ? 'Analizando...' : '✨ Sugerir categoría con IA' }}
             </button>
           </div>
+          @if (iaMensaje()) {
+            <small class="gastos-page__error">{{ iaMensaje() }}</small>
+          }
 
           <!-- Sugerencias IA en Gastos -->
           @if (sugerenciasIa().length > 0) {
@@ -406,7 +460,18 @@
 
           <label>
             <span><i class="fa-solid fa-calendar-days"></i> Fecha</span>
-            <input type="date" [value]="fecha()" (input)="fecha.set($any($event.target).value)" />
+            <div class="gastos-page__date-picker">
+              <input
+                #fechaInput
+                type="date"
+                [value]="fecha()"
+                (input)="fecha.set($any($event.target).value)"
+                (click)="abrirSelectorFecha()"
+              />
+              <button type="button" class="gastos-page__date-button" (click)="abrirSelectorFecha()" aria-label="Abrir calendario">
+                <i class="fa-solid fa-calendar-days"></i>
+              </button>
+            </div>
             @if (errores()['fecha']) { <small class="gastos-page__error">{{ errores()['fecha'] }}</small> }
           </label>
 
@@ -460,11 +525,46 @@
 
         <footer class="gastos-page__modal-actions">
           <button type="button" class="gastos-page__btn-cancel" (click)="cerrarModal()">Cancelar</button>
-          <button type="button" class="gastos-page__btn-save" [disabled]="guardandoGasto()" (click)="guardarGasto()">
+          <button type="button" class="gastos-page__btn-save" [disabled]="guardandoGasto() || !formularioCompleto()" (click)="guardarGasto()">
             {{ guardandoGasto() ? 'Guardando...' : (gastoEditandoId() ? 'Actualizar' : 'Guardar') }}
           </button>
         </footer>
       </div>
+    </div>
+  }
+
+  @if (tourAbierto() && tourPasoActual(); as paso) {
+    <div class="gastos-page__tour-overlay">
+      @if (tourRect(); as rect) {
+        <div
+          class="gastos-page__tour-focus"
+          [style.top.px]="rect.top"
+          [style.left.px]="rect.left"
+          [style.width.px]="rect.width"
+          [style.height.px]="rect.height"
+        ></div>
+      }
+      <aside
+        class="gastos-page__tour-card"
+        role="dialog"
+        aria-live="polite"
+        aria-label="Tour guiado gastos"
+        [style.top.px]="tourCardRect()?.top"
+        [style.left.px]="tourCardRect()?.left"
+        [style.width.px]="tourCardRect()?.width"
+      >
+        <small>Paso {{ tourPasoIndex() + 1 }} de {{ tourPasos.length }}</small>
+        <h3>{{ paso.titulo }}</h3>
+        @for (linea of paso.descripcion; track linea) {
+          <p>{{ linea }}</p>
+        }
+        <div class="gastos-page__tour-actions">
+          <button type="button" class="gastos-page__tour-skip" (click)="omitirTour()">Omitir</button>
+          <button type="button" class="gastos-page__tour-next" (click)="siguienteTour()">
+            {{ tourEsUltimoPaso() ? 'Comenzar a usar el sistema' : 'Siguiente' }}
+          </button>
+        </div>
+      </aside>
     </div>
   }
 

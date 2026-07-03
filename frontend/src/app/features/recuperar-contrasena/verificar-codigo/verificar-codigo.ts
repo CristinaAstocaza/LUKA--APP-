@@ -23,6 +23,7 @@ export class VerificarCodigo {
   @Input() rutaVolver = '/recuperar-contrasena/correo';
   /** Ruta a donde navegar tras verificación exitosa (solo modo standalone) */
   @Input() rutaSiguiente = '/recuperar-contrasena/nueva';
+  @Input() usuarioId = '';
 
   /** Emite cuando el código es verificado exitosamente */
   @Output() codigoVerificado = new EventEmitter<string>();

@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../enviroments/environment';
 import { ResumenFinancieroDTO}  from '../models/financiero/resumen.model';
 import { CategoriaDTO, CategoriaRequestDTO, TipoMovimiento } from '../models/financiero/categoria.model';
@@ -29,22 +29,7 @@ export class FinancieroService {
     if (anio) params = params.set('anio', anio);
  
     return this.http.get<ResultadoApi<ResumenFinancieroDTO>>(`${this.baseTransacciones}/resumen`, { params }).pipe(
-      map(resp => resp.datos),
-      catchError(() => {
-        // Fallback a mock si falla el backend
-        return of({
-          desde: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString(),
-          hasta: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString(),
-          totalIngresos: 4500,
-          totalGastos: 2800,
-          balance: 1700,
-          cantidadIngresos: 3,
-          cantidadGastos: 15,
-          totalTransacciones: 18,
-          promedioIngreso: 1500,
-          promedioGasto: 186.67
-        } as ResumenFinancieroDTO);
-      })
+      map(resp => resp.datos)
     );
   }
  

@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { expand, reduce } from 'rxjs/operators';
 import { environment } from '../../enviroments/environment';
 import { AuthService } from './auth.service';
 import {
   TransaccionDTO,
+  TransaccionApiDTO,
   TransaccionRequestDTO,
   TransaccionFiltros,
 } from '../models/financiero/transaccion.model';
@@ -19,17 +21,36 @@ export class Transacciones {
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 
+  private normalizarTransaccion(transaccion: TransaccionApiDTO): TransaccionDTO {
+    const categoria = transaccion.categoria ?? transaccion.categoriaNombre ?? '';
+
+    return {
+      ...transaccion,
+      categoria,
+      categoriaNombre: transaccion.categoriaNombre ?? categoria,
+      categoriaIcono: transaccion.categoriaIcono ?? '',
+      etiquetas: transaccion.etiquetas ?? null,
+      notas: transaccion.notas ?? null,
+      descripcion: transaccion.descripcion ?? null,
+      fechaRegistro: transaccion.fechaRegistro ?? transaccion.fechaTransaccion,
+    };
+  }
+
+  private normalizarLista(transacciones: TransaccionApiDTO[] = []): TransaccionDTO[] {
+    return transacciones.map((transaccion) => this.normalizarTransaccion(transaccion));
+  }
+
   /* Registrar una transacción (ingreso o gasto) */
   registrar(request: TransaccionRequestDTO): Observable<TransaccionDTO> {
-    return this.http.post<ResultadoApi<TransaccionDTO>>(this.base, request).pipe(
-      map(res => res.datos)
+    return this.http.post<ResultadoApi<TransaccionApiDTO>>(this.base, request).pipe(
+      map((res) => this.normalizarTransaccion(res.datos))
     );
   }
 
   /* Registrar varias transacciones a la vez */
   registrarLote(requests: TransaccionRequestDTO[]): Observable<TransaccionDTO[]> {
-    return this.http.post<ResultadoApi<TransaccionDTO[]>>(`${this.base}/lote`, requests).pipe(
-      map(res => res.datos)
+    return this.http.post<ResultadoApi<TransaccionApiDTO[]>>(`${this.base}/lote`, requests).pipe(
+      map((res) => this.normalizarLista(res.datos))
     );
   }
 
@@ -54,9 +75,9 @@ export class Transacciones {
       .set('pagina',  filtros.pagina  ?? 0)
       .set('tamanio', filtros.tamanio ?? 20);
 
-    return this.http.get<ResultadoApi<TransaccionDTO[]>>(`${this.base}/historial`, { params }).pipe(
+    return this.http.get<ResultadoApi<TransaccionApiDTO[]>>(`${this.base}/historial`, { params }).pipe(
       map(resp => {
-        const content = resp.datos || [];
+        const content = this.normalizarLista(resp.datos);
         const pag = resp.pagina;
         return {
           content: content,
@@ -69,17 +90,41 @@ export class Transacciones {
     );
   }
 
+  listarHistorialCompleto(filtros: Partial<TransaccionFiltros> = {}): Observable<TransaccionDTO[]> {
+    const tamanio = filtros.tamanio ?? 100;
+    const baseFiltros: Partial<TransaccionFiltros> = {
+      ...filtros,
+      pagina: 0,
+      tamanio,
+    };
+
+    return this.listarHistorial(baseFiltros).pipe(
+      expand((pagina) => {
+        if (pagina.number + 1 >= pagina.totalPages) {
+          return EMPTY;
+        }
+
+        return this.listarHistorial({
+          ...baseFiltros,
+          pagina: pagina.number + 1,
+        });
+      }),
+      map((pagina) => pagina.content),
+      reduce((acumulado, content) => acumulado.concat(content), [] as TransaccionDTO[])
+    );
+  }
+
   /* Detalle de una transacción por ID */
   obtenerPorId(id: string): Observable<TransaccionDTO> {
-    return this.http.get<ResultadoApi<TransaccionDTO>>(`${this.base}/${id}`).pipe(
-      map(res => res.datos)
+    return this.http.get<ResultadoApi<TransaccionApiDTO>>(`${this.base}/${id}`).pipe(
+      map((res) => this.normalizarTransaccion(res.datos))
     );
   }
 
   /* Actualizar transacción */
   actualizar(id: string, request: TransaccionRequestDTO): Observable<TransaccionDTO> {
-    return this.http.put<ResultadoApi<TransaccionDTO>>(`${this.base}/${id}`, request).pipe(
-      map(res => res.datos)
+    return this.http.put<ResultadoApi<TransaccionApiDTO>>(`${this.base}/${id}`, request).pipe(
+      map((res) => this.normalizarTransaccion(res.datos))
     );
   }
 
