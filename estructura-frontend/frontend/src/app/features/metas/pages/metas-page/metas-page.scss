@@ -1,0 +1,290 @@
+.metas-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: calc(100vh - var(--header-height));
+
+  /* ── Cabecera ── */
+  &__header {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem 1.75rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  &__header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  &__header-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    h1 {
+      font-family: var(--font-heading);
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+  }
+
+  &__icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background: var(--bg-surface-soft);
+    color: var(--color-primary);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+  }
+
+  &__btn-nueva {
+    background: var(--color-primary);
+    color: #ffffff;
+    border: none;
+    padding: 0.65rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: var(--transition-bounce);
+
+    &:hover {
+      background: var(--color-primary-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(91, 106, 240, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  /* ── Mensajes de Estado ── */
+  &__alert {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 0.9rem;
+
+    &--success {
+      background: var(--color-success-soft);
+      color: var(--color-success);
+      border: 1.5px solid rgba(34, 197, 94, 0.2);
+    }
+
+    &--danger {
+      background: var(--color-danger-soft);
+      color: var(--color-danger);
+      border: 1.5px solid rgba(239, 68, 68, 0.2);
+    }
+  }
+
+  /* ── Spinner ── */
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem;
+    gap: 1rem;
+    color: var(--text-secondary);
+  }
+
+  &__spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  /* ── KPI Cards Dashboard ── */
+  &__resumen-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+  }
+
+  /* ── Layout Principal (Grid + Panel Lateral) ── */
+  &__layout-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    align-items: start;
+    transition: var(--transition);
+
+    @media (min-width: 1024px) {
+      grid-template-columns: 1fr auto;
+    }
+  }
+
+  &__content-area {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  &__section-title {
+    h2 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+  }
+
+  /* Grid de Tarjetas */
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 1.25rem;
+    justify-items: center;
+  }
+
+  /* Empty state */
+  &__empty-grid, &__empty-history {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 0.75rem;
+    color: var(--text-secondary);
+    width: 100%;
+    border: 1.5px dashed var(--border-color);
+
+    i {
+      font-size: 2.5rem;
+      color: var(--text-muted);
+    }
+
+    h3 {
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    p {
+      font-size: 0.85rem;
+      max-width: 320px;
+      text-align: center;
+    }
+  }
+
+  /* ── Paginación Premium ── */
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding: 0.5rem;
+    width: 100%;
+
+    .pagination-btn {
+      height: 38px;
+      padding: 0 1.25rem;
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition-bounce);
+
+      &:hover:not([disabled]) {
+        background: var(--bg-surface-soft);
+        color: var(--text-primary);
+        border-color: var(--color-primary);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(91, 106, 240, 0.1);
+      }
+
+      &[disabled] {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: var(--bg-surface-soft);
+      }
+    }
+
+    .pagination-pages {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pagination-page-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-color);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-bounce);
+
+      &:hover:not(.active) {
+        background: var(--bg-surface-soft);
+        color: var(--text-primary);
+        border-color: var(--color-primary);
+      }
+
+      &.active {
+        background: var(--color-primary);
+        border-color: var(--color-primary);
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(91, 106, 240, 0.25);
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

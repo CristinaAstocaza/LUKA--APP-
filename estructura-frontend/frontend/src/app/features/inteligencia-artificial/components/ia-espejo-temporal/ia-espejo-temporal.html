@@ -1,0 +1,128 @@
+<div class="espejo-container" [class.loading-active]="cargando" (mousemove)="onMouseMove($event)">
+  <!-- Loader -->
+  <div class="loading-overlay-scanner" *ngIf="cargando">
+    <div class="scan-glow-line"></div>
+    <h3 class="animate-pulse text-amber-500">ESCANEANDO LÍNEAS TEMPORALES...</h3>
+  </div>
+
+  <div class="espejo-prompt-content" *ngIf="!resultado && !cargando">
+    <div class="prompt-orb"><i class="fa-solid fa-clock-rotate-left"></i></div>
+    <h3>EL ESPEJO DEL TIEMPO</h3>
+    <p class="prompt-desc">Una mirada profunda al impacto a largo plazo de tus decisiones diarias.</p>
+  </div>
+
+  <div class="resultado-espejo-layout" *ngIf="resultado && !cargando">
+    
+    <!-- CONTADOR DINÁMICO CENTRAL -->
+    <div class="contador-dinamico-central">
+      <div class="contador-label">Diferencia Monetaria a {{hitoSeleccionado()}} meses</div>
+      <div class="contador-valor">S/ {{ animatedDiferenciaNeta | number:'1.2-2' }}</div>
+    </div>
+
+    <!-- DÍPTICO PARALLAX -->
+    <div class="diptico-parallax-container">
+      
+      <!-- Panel Izquierdo: Continuidad (Frío/Oscuro/Oxidado) -->
+      <div class="panel-diptico panel-continuidad" [style.transform]="parallaxTransformContinuidad">
+        <div class="panel-header">
+          <i class="fa-solid fa-hourglass-start"></i> EL PASADO / CONTINUIDAD
+        </div>
+        
+        <div class="carta-manuscrita carta-envejecida">
+          <div class="carta-content">
+            {{ espejoData().narrativasGemini.cartaContinuidad }}
+          </div>
+        </div>
+
+        <div class="metricas-panel">
+          <div class="metrica">
+            <span>Score:</span> {{ getHitoData('continuidad').scoreProyectado }}/100
+          </div>
+          <div class="metrica">
+            <span>Ahorro:</span> S/ {{ getHitoData('continuidad').ahorroAcumulado | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel Derecho: Transformación (Cálido/Dorado) -->
+      <div class="panel-diptico panel-transformacion" [style.transform]="parallaxTransformTransformacion">
+        <div class="panel-header">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> EL FUTURO / TRANSFORMACIÓN
+        </div>
+
+        <div class="carta-manuscrita carta-premium">
+          <div class="carta-content">
+            {{ espejoData().narrativasGemini.cartaTransformacion }}
+          </div>
+        </div>
+
+        <div class="metricas-panel">
+          <div class="metrica">
+            <span>Score:</span> {{ getHitoData('transformacion').scoreProyectado }}/100
+          </div>
+          <div class="metrica">
+            <span>Ahorro:</span> S/ {{ getHitoData('transformacion').ahorroAcumulado | number:'1.2-2' }}
+          </div>
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- LÍNEA DE TIEMPO RAMIFICADA -->
+    <div class="linea-tiempo-ramificada">
+      <div class="eje-central"></div>
+      
+      <div class="nodo-tiempo nodo-mes-3" [class.activo]="hitoSeleccionado() === 3" (click)="setHito(3)">
+        <div class="ramificacion rama-continuidad"></div>
+        <div class="ramificacion rama-transformacion"></div>
+        <div class="marcador-mes">Mes 3</div>
+      </div>
+      
+      <div class="nodo-tiempo nodo-mes-6" [class.activo]="hitoSeleccionado() === 6" (click)="setHito(6)">
+        <div class="ramificacion rama-continuidad"></div>
+        <div class="ramificacion rama-transformacion"></div>
+        <div class="marcador-mes">Mes 6</div>
+      </div>
+      
+      <div class="nodo-tiempo nodo-mes-12" [class.activo]="hitoSeleccionado() === 12" (click)="setHito(12)">
+        <div class="ramificacion rama-continuidad"></div>
+        <div class="ramificacion rama-transformacion"></div>
+        <div class="marcador-mes">Mes 12</div>
+      </div>
+    </div>
+
+    <!-- SLIDER ANTES / DESPUÉS (Metas) -->
+    <div class="slider-metas-container">
+      <h3>Comparación de Metas a {{hitoSeleccionado()}} meses</h3>
+      <div class="slider-wrapper" (mousemove)="onSliderMove($event)" #sliderWrapper>
+        <!-- Estado "Después" (Transformación) -->
+        <div class="slider-panel slider-despues">
+          <div class="metas-lista">
+            <h4 class="text-amber-400">Metas Cumplidas (Transformación)</h4>
+            <div *ngIf="getHitoData('transformacion').metasCumplidas.length === 0" class="text-slate-400">Ninguna meta cumplida aún.</div>
+            <div *ngFor="let meta of getHitoData('transformacion').metasCumplidas" class="meta-item exito">
+              <i class="fa-solid fa-check"></i> {{ meta }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Estado "Antes" (Continuidad) (Superpuesto y enmascarado por el slider) -->
+        <div class="slider-panel slider-antes" [style.clip-path]="'inset(0 0 0 ' + sliderPosition + '%)'">
+          <div class="metas-lista">
+            <h4 class="text-slate-400">Metas Fracasadas (Continuidad)</h4>
+            <div *ngIf="getHitoData('continuidad').metasFracasadas.length === 0" class="text-slate-400">Ninguna meta fracasada.</div>
+            <div *ngFor="let meta of getHitoData('continuidad').metasFracasadas" class="meta-item fracaso">
+              <i class="fa-solid fa-xmark"></i> {{ meta }}
+            </div>
+          </div>
+        </div>
+
+        <!-- El control del slider -->
+        <div class="slider-handle" [style.left.%]="sliderPosition">
+          <div class="slider-handle-icon"><i class="fa-solid fa-arrows-left-right"></i></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

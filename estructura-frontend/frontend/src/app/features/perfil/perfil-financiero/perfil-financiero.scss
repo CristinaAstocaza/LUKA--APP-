@@ -1,0 +1,405 @@
+.pf-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 0.5rem 0 1.5rem 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: calc(100vh - var(--header-height, 70px));
+  background: var(--bg-body);
+  color: var(--text-primary);
+
+  /* Theme color tokens */
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+  --color-health: #7e22ce;
+
+  /* ── Cabecera ── */
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    margin-bottom: 0.5rem;
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin: 0.25rem 0 0 0;
+    }
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  &__date-selects {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__date-select {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 8px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--color-primary-light);
+      background-color: var(--bg-surface-soft);
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      background: transparent;
+      border: none;
+      color: inherit;
+      font-family: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+      cursor: pointer;
+      outline: none;
+      width: 100%;
+      padding: 0.6rem 2.2rem 0.6rem 2.2rem;
+
+      option {
+        background-color: var(--bg-card);
+        color: var(--text-primary);
+        font-size: 0.85rem;
+      }
+    }
+
+    i {
+      color: var(--text-secondary);
+      position: absolute;
+      pointer-events: none;
+    }
+
+    .fa-calendar {
+      left: 1rem;
+    }
+
+    .fa-chevron-down {
+      right: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
+
+      select {
+        padding: 0.5rem 1.8rem 0.5rem 1.8rem;
+
+        option {
+          font-size: 0.78rem;
+        }
+      }
+
+      .fa-calendar {
+        left: 0.75rem;
+      }
+
+      .fa-chevron-down {
+        right: 0.75rem;
+      }
+    }
+  }
+
+  &__btn-export {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: var(--bg-surface-soft);
+      border-color: var(--color-primary-light);
+      transform: translateY(-1px);
+    }
+
+    @media (max-width: 768px) {
+      font-size: 0.8rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+
+  /* ── Loading Spinner ── */
+  &__loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 4rem;
+    gap: 1.25rem;
+    color: var(--text-secondary);
+  }
+
+  &__spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: wave-spin-pf 0.8s linear infinite;
+  }
+
+
+
+  /* ── Banner Luka Premium (Golden Premium Theme) ── */
+  &__premium-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    padding: 1.6rem 2.2rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #fffcf2 0%, #fef3c7 100%);
+    border: 1.5px solid #fcd34d;
+    box-shadow: 0 4px 20px rgba(251, 191, 36, 0.12);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(253, 230, 138, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    body.theme-dark & {
+      background: linear-gradient(135deg, #181524 0%, #2b1f10 100%);
+      border-color: rgba(245, 158, 11, 0.35);
+      box-shadow: 0 4px 25px rgba(0, 0, 0, 0.4);
+    }
+
+    .pf-premium__left {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+      z-index: 2;
+
+      h3 {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #78350f;
+        margin: 0 0 0.3rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        body.theme-dark & {
+          color: #fef3c7;
+        }
+      }
+
+      p {
+        font-size: 0.88rem;
+        color: #92400e;
+        margin: 0;
+        max-width: 600px;
+        line-height: 1.45;
+        font-weight: 500;
+
+        body.theme-dark & {
+          color: #f59e0b;
+          opacity: 0.9;
+        }
+      }
+    }
+
+    .pf-premium__icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+    }
+
+    .pf-premium__right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.4rem;
+      position: relative;
+      z-index: 2;
+
+      @media (max-width: 768px) {
+        align-items: flex-start;
+      }
+    }
+
+    .pf-premium__btn--secondary {
+      background: linear-gradient(135deg, #fcc233 0%, #f59e0b 100%);
+      color: #1e1b4b;
+      border: none;
+      padding: 0.6rem 1.4rem;
+      font-size: 0.88rem;
+      font-weight: 800;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+      &:hover {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(217, 119, 6, 0.45);
+        color: #ffffff;
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
+    .pf-premium__label {
+      font-size: 0.75rem;
+      color: #b45309;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+
+      body.theme-dark & {
+        color: #fcd34d;
+      }
+    }
+  }
+
+  /* ── Cuerpo Principal ── */
+  &__main-row {
+    display: grid;
+    grid-template-columns: 4.5fr 5.5fr;
+    gap: 1.5rem;
+    align-items: start;
+
+    @media (max-width: 1350px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Footer ── */
+  &__footer {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 8px;
+    background: #eff6ff;
+    border: 1px solid #dbeafe;
+    font-size: 0.8rem;
+    color: #1e3a8a;
+    line-height: 1.4;
+
+    body.theme-dark & {
+      background: #1e293b;
+      border-color: #334155;
+      color: #93c5fd;
+    }
+
+    i {
+      color: #3b82f6;
+      font-size: 0.95rem;
+
+      body.theme-dark & {
+        color: #60a5fa;
+      }
+    }
+  }
+}
+
+.pf-graphics-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@keyframes wave-spin-pf {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Botón de Configuración ── */
+.pf-page__btn-config {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  background: var(--color-primary, #7c3aed);
+  border: 1.5px solid transparent;
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: var(--color-primary-dark, #6d28d9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 33, 168, 0.25);
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Animación global */
+.anim-fade-up {
+  animation: fadeUpPf 0.4s ease forwards;
+}
+
+@keyframes fadeUpPf {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

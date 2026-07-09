@@ -1,0 +1,40 @@
+<div class="gym-container" [class.loading-active]="cargando">
+  
+  <!-- Cyberpunk background accents -->
+  <div class="gym-accent accent-top-right"></div>
+  <div class="gym-accent accent-bottom-left"></div>
+
+  <!-- Header -->
+  <div class="gym-header">
+    <div>
+      <h2 class="gym-title">
+        <i class="fa-solid fa-dumbbell"></i>
+        LUKA GYM
+      </h2>
+      <p class="gym-subtitle">Centro de Alto Rendimiento Financiero</p>
+    </div>
+  </div>
+
+  <!-- Contenido Principal -->
+  <div *ngIf="entrenamientoCargado()" class="gym-grid fade-in-up">
+    
+    <!-- Columna Izquierda: Atleta y Score -->
+    <div class="gym-col-left">
+      <app-ia-zona-avatar [estado]="estado()"></app-ia-zona-avatar>
+      <app-ia-zona-score-bar [score]="estado().scoreLuka"></app-ia-zona-score-bar>
+    </div>
+
+    <!-- Columna Derecha: Signos Vitales y Ejercicios -->
+    <div class="gym-col-right">
+      <app-ia-zona-vitales [metricas]="metricas()"></app-ia-zona-vitales>
+      <app-ia-zona-rutina [rutinas]="rutinas()"></app-ia-zona-rutina>
+    </div>
+
+  </div>
+
+  <!-- Empty State Pre-Carga -->
+  <div *ngIf="!entrenamientoCargado() && !cargando" class="gym-empty-state">
+    <i class="fa-solid fa-dna empty-icon"></i>
+    <p class="empty-text">Inicia la evaluación para prescribir la rutina.</p>
+  </div>
+</div>

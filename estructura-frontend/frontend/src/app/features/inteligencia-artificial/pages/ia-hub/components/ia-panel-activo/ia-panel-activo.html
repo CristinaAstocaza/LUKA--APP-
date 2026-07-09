@@ -1,0 +1,180 @@
+<div class="panel-activo-horizontal" *ngIf="modulo">
+  <div class="form-horizontal">
+    
+    <!-- 1. Caso: Simulación de metas -->
+    <ng-container *ngIf="modulo.id === 'simular-meta'">
+      <div class="input-group">
+        <label>Nombre de la Meta</label>
+        <input type="text" [(ngModel)]="nombreMeta" class="app-input" placeholder="Ej. Ahorro para auto" />
+      </div>
+
+      <div class="input-group">
+        <label>Monto Objetivo</label>
+        <input type="number" [(ngModel)]="montoObjetivo" class="app-input" />
+      </div>
+
+      <div class="input-group">
+        <label>Ahorro Actual</label>
+        <input type="number" [(ngModel)]="montoActualAhorrado" class="app-input" />
+      </div>
+
+      <div class="input-group">
+        <label>Aporte Deseado</label>
+        <input type="number" [(ngModel)]="aporteMensualDeseado" class="app-input" />
+      </div>
+
+      <div class="input-group" style="min-width: 90px; flex: 0.5;">
+        <label>Plazo Años</label>
+        <input type="number" [(ngModel)]="aniosObjetivo" class="app-input" min="0" />
+      </div>
+
+      <div class="input-group" style="min-width: 90px; flex: 0.5;">
+        <label>Plazo Meses</label>
+        <input type="number" [(ngModel)]="mesesAdicionalesObjetivo" class="app-input" min="0" max="11" />
+      </div>
+    </ng-container>
+      
+    <!-- Ayuda dinámica del módulo activo -->
+    <div class="ayudadita-box" *ngIf="!tieneResultado && !cargando">
+      <i class="fa-solid fa-lightbulb icon-ayuda"></i>
+      <div class="ayudadita-content" [ngSwitch]="modulo.id">
+        
+        <!-- Simular Meta -->
+        <ng-container *ngSwitchCase="'simular-meta'">
+          <h4>💡 ¿Cómo usar este simulador?</h4>
+          <p>Completa los datos para que el coach financiero Luka arme tu plan de ahorro estratégico:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Nombre y Monto:</strong> Definen qué quieres lograr y su costo real.</li>
+            <li><strong>Ahorro Actual:</strong> El capital base del que partes hoy.</li>
+            <li><strong>Aporte Deseado:</strong> La cantidad de soles que puedes comprometer cada mes.</li>
+            <li><strong>Plazo (Años y Meses):</strong> En cuánto tiempo aspiras a cumplir la meta.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Gasto Hormiga -->
+        <ng-container *ngSwitchCase="'gasto-hormiga'">
+          <h4>💡 ¿Cómo usar este analizador de Gasto Hormiga?</h4>
+          <p>Ingresa un rango de fechas para que Luka identifique fugas recurrentes de dinero (cafés, taxis, snacks):</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Rango de Fechas:</strong> Selecciona el periodo que quieres revisar (ej. el mes actual).</li>
+            <li><strong>Frecuencia:</strong> Define el nivel de agrupación del análisis de micro-consumos.</li>
+            <li><strong>Objetivo:</strong> Identificar gastos silenciosos para poder canalizarlos hacia tu meta de ahorro.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Predicción de Gastos -->
+        <ng-container *ngSwitchCase="'predecir-gastos'">
+          <h4>💡 ¿Cómo usar la Predicción de Gastos?</h4>
+          <p>Luka proyectará tus próximos egresos según tus patrones históricos para alertarte sobre posibles balances negativos:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Periodo de Análisis:</strong> Define las fechas base sobre las cuales Luka proyectará la tendencia.</li>
+            <li><strong>Riesgo de Insolvencia:</strong> El motor de IA calculará si tus ingresos futuros cubrirán estos egresos proyectados.</li>
+            <li><strong>Recomendación:</strong> Recibe consejos de fondos de reserva óptimos.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Hábitos Financieros -->
+        <ng-container *ngSwitchCase="'habitos-financieros'">
+          <h4>💡 ¿Cómo usar el análisis de Hábitos Financieros?</h4>
+          <p>Analiza la consistencia y calidad de tus consumos semanales y mensuales:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Rangos de Fecha:</strong> Elige el intervalo para evaluar tus hábitos diarios.</li>
+            <li><strong>Hábito Atómico:</strong> Luka te propondrá una micro-acción muy sencilla para romper círculos viciosos.</li>
+            <li><strong>Radar de Salud:</strong> Visualiza tu disciplina y control mediante un mapa de calor y puntuación.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Estilo de Vida -->
+        <ng-container *ngSwitchCase="'estilo-vida'">
+          <h4>💡 ¿Cómo usar el análisis de Estilo de Vida?</h4>
+          <p>Descubre tu arquetipo de consumidor y evalúa si tu gasto real se alinea con la regla del 50/30/20:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Rango de Fechas:</strong> Filtra el periodo para mapear tus prioridades de gasto.</li>
+            <li><strong>Arquetipo de Consumidor:</strong> Luka te clasificará en un perfil (ej. Foodie, Viajero, etc.).</li>
+            <li><strong>Distribución de Oro:</strong> Compara tus Necesidades, Deseos y Ahorros con los porcentajes ideales.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Comprobador de Evolución -->
+        <ng-container *ngSwitchCase="'comprobador-evolucion'">
+          <h4>💡 ¿Cómo usar el Comprobador de Evolución?</h4>
+          <p>Realiza un diagnóstico radiográfico comparando dos periodos para evaluar el impacto de tus cambios financieros:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Periodo Base (A):</strong> El periodo de referencia del pasado que quieres comparar.</li>
+            <li><strong>Periodo Actual (B):</strong> El periodo más reciente para ver tus progresos o desviaciones.</li>
+            <li><strong>Recetas Clínicas:</strong> Luka te recetará dosis exactas para corregir "fracturas" en tus finanzas.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Zona de Entrenamiento -->
+        <ng-container *ngSwitchCase="'zona-entrenamiento'">
+          <h4>💡 ¿Cómo usar la Zona de Entrenamiento?</h4>
+          <p>Luka Gym evaluará tus signos vitales financieros y te prescribirá una rutina mensual:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Signos Vitales:</strong> Mide tu frecuencia cardíaca financiera, temperatura de ahorro y saturación.</li>
+            <li><strong>Rutinas a Medida:</strong> Recibe exactamente 3 ejercicios con metas medibles (ej. Sprint de Ahorro).</li>
+            <li><strong>Estado de Forma:</strong> Descubre si estás Sedentario, En Forma o en UCI Financiera.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Reto de Ahorro -->
+        <ng-container *ngSwitchCase="'reto-ahorro'">
+          <h4>💡 ¿Cómo usar el Reto de Ahorro?</h4>
+          <p>Gamifica tus finanzas aceptando misiones semanales propuestas por tu coach Luka:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Periodo de Misión:</strong> Define el marco de tiempo para el reto propuesto.</li>
+            <li><strong>Enemigo de la Semana:</strong> La categoría donde debes reducir tus gastos a cero o a un límite específico.</li>
+            <li><strong>Recompensas:</strong> Completa los retos para acumular score y transferir ahorro a tus metas.</li>
+          </ul>
+        </ng-container>
+
+        <!-- El Espejo del Tiempo -->
+        <ng-container *ngSwitchCase="'espejo-temporal'">
+          <h4>💡 ¿Cómo usar El Espejo del Tiempo?</h4>
+          <p>Luka proyectará tu futuro a 3, 6 y 12 meses, mostrándote dos futuros paralelos:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Línea de Continuidad:</strong> Tu proyección financiera si mantienes tus hábitos de consumo actuales.</li>
+            <li><strong>Línea de Transformación:</strong> Tu potencial de crecimiento si realizas pequeños ajustes sugeridos.</li>
+            <li><strong>Cartas del Futuro:</strong> Lee dos cartas narradas por Luka que te describirán tu realidad en cada futuro.</li>
+          </ul>
+        </ng-container>
+
+        <!-- Reporte Ejecutivo -->
+        <ng-container *ngSwitchCase="'reporte-completo'">
+          <h4>💡 ¿Cómo usar el Reporte Ejecutivo?</h4>
+          <p>Obtén un informe panorámico 360° de la salud de tus finanzas anuales:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>Filtro Anual/Mensual:</strong> Define el intervalo de tu reporte ejecutivo.</li>
+            <li><strong>Score de Salud:</strong> Tu puntuación global calculada por LUKA.</li>
+            <li><strong>Veredicto:</strong> Un diagnóstico gerencial condensado para la toma de decisiones estratégicas.</li>
+          </ul>
+        </ng-container>
+        
+        <!-- Clasificación / Autoclasificar -->
+        <ng-container *ngSwitchCase="'clasificar-transaccion'">
+          <h4>💡 ¿Cómo usar el Autoclasificador de Transacciones?</h4>
+          <p>Simula cómo el motor inteligente sugiere y clasifica automáticamente una transacción:</p>
+          <ul class="ayudadita-lista">
+            <li><strong>ID Temporal y Tipo:</strong> Datos del movimiento financiero de prueba.</li>
+            <li><strong>Etiquetas y Notas:</strong> Información adicional que enriquece el contexto para la IA.</li>
+            <li><strong>Sugerencias:</strong> LUKA listará las categorías más coincidentes y sus niveles de confianza.</li>
+          </ul>
+        </ng-container>
+
+      </div>
+    </div>
+
+    <!-- Botón Ejecutar -->
+    <div class="btn-container">
+      <button class="btn-execute-horizontal" (click)="onEjecutar()" [disabled]="cargando" [style.background]="modulo.tagColor">
+        <span class="btn-content" *ngIf="!cargando">
+          <i class="fa-solid fa-bolt"></i> Consultar
+        </span>
+        <span class="btn-content font-bold animate-pulse" *ngIf="cargando">
+          <i class="fa-solid fa-circle-notch fa-spin"></i> Procesando...
+        </span>
+      </button>
+    </div>
+
+  </div>
+</div>

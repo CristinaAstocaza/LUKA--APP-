@@ -1,0 +1,55 @@
+<article class="suscripcion-card bento-card" [ngStyle]="estiloMarca">
+  
+  <div class="suscripcion-card__header">
+    <div class="suscripcion-card__logo-box">
+      @if (suscripcion.nombre.toLowerCase().includes('luka')) {
+        <img src="assets/avatares/figuras/panda.png" alt="LUKA" style="width: 24px; height: 24px; object-fit: contain;">
+      } @else {
+        <i [className]="'fa-solid ' + (obtenerCategoriaInfo()?.icon ?? 'fa-circle-question')"></i>
+      }
+    </div>
+    
+    <div class="suscripcion-card__title-wrap">
+      <h3 class="suscripcion-card__name">{{ suscripcion.nombre }}</h3>
+      <p class="suscripcion-card__description">{{ suscripcion.descripcion || obtenerCategoriaInfo()?.nombre }}</p>
+    </div>
+
+    <span class="suscripcion-card__badge" [ngClass]="obtenerClaseEstado(suscripcion.estado)">
+      {{ suscripcion.estado }}
+    </span>
+  </div>
+
+  <div class="suscripcion-card__bento-grid">
+    
+    <div class="bento-box bento-box--monto">
+      <span class="bento-label">Monto a pagar</span>
+      <strong class="bento-value text-brand">{{ formatearMoneda(suscripcion.monto) }}</strong>
+      <span class="bento-subtext">{{ suscripcion.frecuencia }}</span>
+    </div>
+
+    <div class="bento-box" [class.bento-box--alert]="suscripcion.vencePronto">
+      <span class="bento-label">Próximo Pago</span>
+      <strong class="bento-value">{{ suscripcion.proximoVencimiento | date:'d/MMM' }}</strong>
+      <span class="bento-subtext">Faltan {{ suscripcion.diasParaVencimiento }} días</span>
+    </div>
+  </div>
+
+  <div class="suscripcion-card__footer">
+    <div class="action-buttons">
+      <button class="btn-icon" (click)="onEditar()" title="Editar"><i class="fa-solid fa-pen"></i></button>
+      <!-- <button class="btn-icon" (click)="onVerDetalle()" title="Detalle"><i class="fa-solid fa-eye"></i></button> -->
+      <button class="btn-icon btn-icon--danger" (click)="onEliminar()" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+    </div>
+
+    @if (suscripcion.estado !== 'VENCIDA') {
+      <div class="status-toggle">
+        @if (suscripcion.estado !== 'ACTIVA') {
+          <button class="btn-toggle btn-toggle--success" (click)="onCambiarEstado('ACTIVA')">Activar</button>
+        }
+        @if (suscripcion.estado !== 'PAUSADA') {
+          <button class="btn-toggle btn-toggle--warning" (click)="onCambiarEstado('PAUSADA')">Pausar</button>
+        }
+      </div>
+    }
+  </div>
+</article>

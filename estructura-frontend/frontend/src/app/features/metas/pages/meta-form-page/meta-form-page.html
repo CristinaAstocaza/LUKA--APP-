@@ -1,0 +1,156 @@
+<section class="meta-form-page">
+  <!-- Cabecera de Página con Botón de Volver -->
+  <header class="meta-form-page__header anim-fade-up">
+    <div class="meta-form-page__header-content">
+      <div class="meta-form-page__header-title">
+        <a routerLink="/metas" class="meta-form-page__btn-back">
+          <i class="fa-solid fa-arrow-left"></i> Volver a Metas
+        </a>
+        <div class="meta-form-page__title-wrapper mt-3">
+          <h1>{{ modoEdicion ? 'Edita tu Meta Financiera' : 'Diseña tu próxima Meta' }}</h1>
+          <p>{{ modoEdicion ? 'Ajusta los detalles de tu meta para mantenerte en el camino correcto.' : '¿Qué gran logro financiero te propones alcanzar hoy?' }}</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mensajes de Estado Globales -->
+  @if (exitoMensaje()) {
+    <div class="meta-form-page__alert meta-form-page__alert--success anim-fade-up">
+      <i class="fa-solid fa-circle-check"></i>
+      <span>{{ exitoMensaje() }}</span>
+    </div>
+  }
+  @if (errorMensaje()) {
+    <div class="meta-form-page__alert meta-form-page__alert--danger anim-fade-up">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      <span>{{ errorMensaje() }}</span>
+    </div>
+  }
+
+  <!-- Spinner de Carga -->
+  @if (cargando() && !formulario) {
+    <div class="meta-form-page__loading">
+      <div class="meta-form-page__spinner"></div>
+      <p>Cargando información de la meta...</p>
+    </div>
+  } @else {
+    <!-- Panel del Formulario principal -->
+    <div class="meta-form-page__container card anim-fade-up">
+      <form [formGroup]="formulario" (ngSubmit)="guardarMeta()" class="meta-form-page__form-two-columns">
+        
+        <!-- Columna Izquierda: Entradas de Formulario -->
+        <div class="form-col-left">
+          <!-- Selector Visual de Propósito (Categorías) -->
+          <app-meta-purpose-selector
+            [categorias]="categorias"
+            [selectedCategory]="formulario.get('categoria')?.value || 'Otros'"
+            [disabled]="formulario.get('categoria')?.disabled ?? false"
+            (select)="seleccionarCategoriaForm($event)">
+          </app-meta-purpose-selector>
+
+          <!-- Campo Nombre -->
+          <div class="meta-form-page__form-group">
+            <label for="formNombre">NOMBRE DE TU META</label>
+            <input id="formNombre" type="text" formControlName="nombre" placeholder="Ej. Mi Viaje a Cancún, Nueva Laptop..." />
+            @if (formulario.get('nombre')?.touched && formulario.get('nombre')?.errors) {
+              @if (formulario.get('nombre')?.errors?.['required']) {
+                <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> El nombre es obligatorio.</small>
+              }
+              @if (formulario.get('nombre')?.errors?.['minlength']) {
+                <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> Debe tener al menos 3 caracteres.</small>
+              }
+            }
+          </div>
+
+          <div class="form-row">
+            <!-- Campo Monto Objetivo -->
+            <div class="meta-form-page__form-group">
+              <label for="formMontoObj">MONTO OBJETIVO (S/)</label>
+              <input id="formMontoObj" type="number" formControlName="montoObjetivo" placeholder="Ej. 5000" />
+              @if (formulario.get('montoObjetivo')?.touched && formulario.get('montoObjetivo')?.errors) {
+                @if (formulario.get('montoObjetivo')?.errors?.['required']) {
+                  <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> El monto es obligatorio.</small>
+                }
+                @if (formulario.get('montoObjetivo')?.errors?.['min']) {
+                  <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> Debe ser al menos S/ 1.00.</small>
+                }
+              }
+            </div>
+
+            <!-- Campo Ahorro Inicial -->
+            <div class="meta-form-page__form-group">
+              <label for="formMontoAct">MONTO DISPONIBLE (S/)</label>
+              <input id="formMontoAct" type="number" formControlName="montoActual" placeholder="Ej. 0" />
+              @if (formulario.get('montoActual')?.touched && formulario.get('montoActual')?.errors) {
+                @if (formulario.get('montoActual')?.errors?.['required']) {
+                  <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> Requerido (usa 0 si no tienes ahorro).</small>
+                }
+                @if (formulario.get('montoActual')?.errors?.['min']) {
+                  <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> No puede ser negativo.</small>
+                }
+              }
+            </div>
+          </div>
+
+          <!-- Campo Fecha Objetivo con Helpers Rápidos -->
+          <div class="meta-form-page__form-group">
+            <label for="formFecha">¿PARA CUÁNDO LO NECESITAS?</label>
+            <input id="formFecha" type="date" formControlName="fechaObjetivo" [min]="fechaMinima" />
+            @if (formulario.get('fechaObjetivo')?.touched && formulario.get('fechaObjetivo')?.errors) {
+              @if (formulario.get('fechaObjetivo')?.errors?.['required']) {
+                <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> La fecha es obligatoria.</small>
+              }
+              @if (formulario.get('fechaObjetivo')?.errors?.['fechaPasada']) {
+                <small class="error-msg"><i class="fa-solid fa-triangle-exclamation"></i> Elige una fecha posterior o igual a hoy.</small>
+              }
+            }
+
+            <!-- Botones Rápidos de Fecha -->
+            <div class="quick-dates-container">
+              <button type="button" class="btn-quick-date" (click)="setFechaRapida(3)">+3 Meses</button>
+              <button type="button" class="btn-quick-date" (click)="setFechaRapida(6)">+6 Meses</button>
+              <button type="button" class="btn-quick-date" (click)="setFechaRapida(12)">+1 Año</button>
+              <button type="button" class="btn-quick-date" (click)="setFechaRapida(24)">+2 Años</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Columna Derecha: Vista Previa e Indicador de Ahorro Recomendado -->
+        <div class="form-col-right">
+          <!-- Vista Previa de la Burbuja de Progreso -->
+          <app-meta-preview-card
+            [nombre]="formulario.get('nombre')?.value || ''"
+            [categoria]="formulario.get('categoria')?.value || ''"
+            [icono]="obtenerIconoCategoria(formulario.get('categoria')?.value || 'Otros')"
+            [montoObjetivo]="formulario.get('montoObjetivo')?.value || 0"
+            [montoActual]="formulario.get('montoActual')?.value || 0"
+            [fechaObjetivo]="formulario.get('fechaObjetivo')?.value">
+          </app-meta-preview-card>
+
+          <!-- Cuadro de Proyección: Ahorro Mensual Recomendado -->
+          @let sugerido = getAhorroSugeridoInfo();
+          @if (sugerido.cuota > 0) {
+            <app-meta-recommended-savings
+              [cuota]="sugerido.cuota"
+              [meses]="sugerido.meses">
+            </app-meta-recommended-savings>
+          }
+        </div>
+
+        <!-- Acciones del Formulario (Alineados al pie de ambas columnas) -->
+        <div class="meta-form-page__actions-container">
+          <button type="button" class="btn-cancel" routerLink="/metas">Cancelar</button>
+          <button type="submit" class="btn-save" [disabled]="formulario.invalid || cargando()">
+            @if (cargando()) {
+              <i class="fa-solid fa-spinner fa-spin"></i> Guardando...
+            } @else {
+              {{ modoEdicion ? 'Guardar Cambios' : 'Crear Meta' }} <i class="fa-solid fa-arrow-right"></i>
+            }
+          </button>
+        </div>
+
+      </form>
+    </div>
+  }
+</section>
