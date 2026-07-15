@@ -1,0 +1,34 @@
+<div class="oraculo-wisdom" *ngIf="consejoVisible()" [class.is-talking]="estaHablando()">
+  <div class="wisdom-header">
+    <span>CONSEJO DEL ORÁCULO LUKA</span>
+    <div class="avatar-container" [class.pulse-animation]="estaHablando()">
+      <i class="fa-solid fa-robot avatar-icon"></i>
+      <div class="sound-waves" *ngIf="estaHablando()">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+  </div>
+  
+    <div class="wisdom-structured" *ngIf="consejoObj()">
+    <div class="wisdom-card">
+      <i class="fa-solid fa-chart-line"></i>
+      <p>{{ consejoObj()!.analisis_tendencia }}</p>
+    </div>
+    
+    <div class="wisdom-card danger-card">
+      <i class="fa-solid fa-bullseye"></i>
+      <p><strong>Impacto:</strong> {{ consejoObj()!.impacto_meta }}</p>
+    </div>
+    
+    <div class="wisdom-card math-card">
+      <i class="fa-solid fa-calculator"></i>
+      <p><strong>Matemática:</strong> {{ consejoObj()!.recomendacion_matematica }}</p>
+    </div>
+    
+    <div class="wisdom-footer">
+      <em>{{ consejoObj()!.mensaje_motivacional }}</em>
+    </div>
+  </div>
+
+  <p class="wisdom-text" *ngIf="!consejoObj()" [innerHTML]="consejoTextoFallback()"></p>
+</div>

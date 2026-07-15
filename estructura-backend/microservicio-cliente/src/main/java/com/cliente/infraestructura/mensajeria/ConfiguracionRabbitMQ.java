@@ -1,0 +1,339 @@
+package com.cliente.infraestructura.mensajeria;
+
+import com.libreria.comun.mensajeria.NombresCola;
+import com.libreria.comun.mensajeria.NombresExchange;
+import com.libreria.comun.mensajeria.RoutingKeys;
+import org.springframework.amqp.core.*;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * Configuración de la topología de RabbitMQ para el Microservicio de Cliente.
+ * <p>
+ * Define la estructura de Exchanges, Colas y Bindings utilizando las constantes
+ * de la librería común.
+ * </p>
+ * 
+ * @version 1.4
+ * @since 2026-09
+ */
+@Configuration
+public class ConfiguracionRabbitMQ {
+
+    // =========================================================================
+    // EXCHANGES
+    // =========================================================================
+
+    /**
+     * Define el Exchange principal de tipo Topic para el enrutamiento de auditoría.
+     * 
+     * @return {@link TopicExchange} configurado como durable.
+     */
+    @Bean
+    public TopicExchange exchangeAuditoria() {
+        return ExchangeBuilder
+                .topicExchange(NombresExchange.AUDITORIA)
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * Define el Dead Letter Exchange (DLX) para gestionar mensajes fallidos.
+     * 
+     * @return {@link DirectExchange} configurado como durable.
+     */
+    @Bean
+    public DirectExchange exchangeAuditoriaDlq() {
+        return ExchangeBuilder
+                .directExchange(NombresExchange.AUDITORIA_DLX)
+                .durable(true)
+                .build();
+    }
+
+    // =========================================================================
+    // COLAS PRINCIPALES (Con soporte para DLQ)
+    // =========================================================================
+
+    /**
+     * Configura la cola para otros eventos con redirección a DLQ y TTL.
+     * 
+     * @return {@link Queue} con argumentos de Dead Lettering y tiempo de vida de 10
+     *         min.
+     */
+    @Bean
+    public Queue colaAuditoria() {
+        return QueueBuilder
+                .durable(NombresCola.AUDITORIA_EVENTOS)
+                .withArgument("x-dead-letter-exchange", NombresExchange.AUDITORIA_DLX)
+                .withArgument("x-dead-letter-routing-key", RoutingKeys.DLQ_AUDITORIA_EVENTO)
+                .build();
+    }
+
+    // =========================================================================
+    // DEAD LETTER QUEUES (DLQ)
+    // =========================================================================
+
+    /**
+     * Define la cola física donde se almacenarán los mensajes de eventos que
+     * fallen.
+     * 
+     * @return {@link Queue} durable para persistencia de fallos.
+     */
+    @Bean
+    public Queue colaEventosDlq() {
+        return QueueBuilder
+                .durable(NombresCola.AUDITORIA_EVENTOS_DLQ)
+                .build();
+    }
+
+    // =========================================================================
+    // BINDINGS (Vinculaciones)
+    // =========================================================================
+
+    /**
+     * Vincula la cola de eventos al exchange principal mediante su Routing Key.
+     * 
+     * @param colaEventos       Bean de la cola de eventos.
+     * @param exchangeAuditoria Bean del exchange de auditoría.
+     * @return {@link Binding} que establece la ruta de mensajes de acceso.
+     */
+    @Bean
+    public Binding bindingEventos(
+            @Qualifier("colaAuditoria") Queue colaEventos,
+            @Qualifier("exchangeAuditoria") TopicExchange exchangeAuditoria) {
+        return BindingBuilder
+                .bind(colaEventos)
+                .to(exchangeAuditoria)
+                .with(RoutingKeys.AUDITORIA_EVENTO_ALL);
+    }
+
+    /**
+     * Vincula la cola de error de auditoría (DLQ) al Dead Letter Exchange (DLX).
+     * 
+     * @param colaEventosDlq      Bean de la cola DLQ de auditoría.
+     * @param exchangeAuditoriaDlq Bean del exchange DLX de auditoría.
+     * @return {@link Binding} que establece la ruta de reintento.
+     */
+    @Bean
+    public Binding bindingAuditoriaDlq(
+            @Qualifier("colaEventosDlq") Queue colaEventosDlq,
+            @Qualifier("exchangeAuditoriaDlq") DirectExchange exchangeAuditoriaDlq) {
+        return BindingBuilder
+                .bind(colaEventosDlq)
+                .to(exchangeAuditoriaDlq)
+                .with(RoutingKeys.DLQ_AUDITORIA_EVENTO);
+    }
+
+    // =========================================================================
+    // SINCRONIZACIÓN CLIENTE → IA (Tiempo Real)
+    // =========================================================================
+
+    /**
+     * Exchange de tipo Topic para la sincronización de cambios del cliente.
+     *
+     * @return {@link TopicExchange} durable para sincronización.
+     */
+    @Bean
+    public TopicExchange exchangeClienteActualizaciones() {
+        return ExchangeBuilder
+                .topicExchange(NombresExchange.CLIENTE_ACTUALIZACIONES)
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * Dead Letter Exchange (DLX) para mensajes de sincronización fallidos.
+     *
+     * @return {@link DirectExchange} durable para mensajes de error.
+     */
+    @Bean
+    public DirectExchange exchangeClienteActualizacionesDlx() {
+        return ExchangeBuilder
+                .directExchange(NombresExchange.CLIENTE_ACTUALIZACIONES_DLX)
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * Cola donde el ms-ia recibe las actualizaciones del contexto financiero.
+     * <p>
+     * Configurada con Dead Letter Exchange y TTL. Si un mensaje falla tras
+     * 3 reintentos (controlados por el consumidor Python), se redirige a
+     * {@code cola.ia.sincronizacion.error} para análisis posterior.
+     * </p>
+     *
+     * @return {@link Queue} durable con soporte para DLQ.
+     */
+    @Bean
+    public Queue colaSincronizacionContexto() {
+        return QueueBuilder
+                .durable(NombresCola.IA_SINCRONIZACION_CONTEXTO)
+                .withArgument("x-dead-letter-exchange", NombresExchange.CLIENTE_ACTUALIZACIONES_DLX)
+                .withArgument("x-dead-letter-routing-key", NombresCola.IA_SINCRONIZACION_ERROR)
+                .withArgument("x-message-ttl", 600000) // 10 minutos
+                .build();
+    }
+
+    /**
+     * Cola de error donde se almacenan los mensajes de sincronización
+     * que no pudieron ser procesados exitosamente.
+     *
+     * @return {@link Queue} durable para persistencia de fallos.
+     */
+    @Bean
+    public Queue colaSincronizacionError() {
+        return QueueBuilder
+                .durable(NombresCola.IA_SINCRONIZACION_ERROR)
+                .build();
+    }
+
+    /**
+     * Vincula la cola de sincronización al exchange de actualizaciones de cliente.
+     *
+     * @param colaSincronizacionContexto     Bean de la cola de sincronización.
+     * @param exchangeClienteActualizaciones Bean del exchange de actualizaciones.
+     * @return {@link Binding} con routing key {@code cliente.perfil.actualizado}.
+     */
+    @Bean
+    public Binding bindingSincronizacionIA(
+            @Qualifier("colaSincronizacionContexto") Queue colaSincronizacionContexto,
+            @Qualifier("exchangeClienteActualizaciones") TopicExchange exchangeClienteActualizaciones) {
+        return BindingBuilder
+                .bind(colaSincronizacionContexto)
+                .to(exchangeClienteActualizaciones)
+                .with(RoutingKeys.CLIENTE_PERFIL_ACTUALIZADO);
+    }
+
+    @Bean
+    public Binding bindingSincronizacionDlq(
+            @Qualifier("colaSincronizacionError") Queue colaSincronizacionError,
+            @Qualifier("exchangeClienteActualizacionesDlx") DirectExchange exchangeClienteActualizacionesDlx) {
+        return BindingBuilder
+                .bind(colaSincronizacionError)
+                .to(exchangeClienteActualizacionesDlx)
+                .with(NombresCola.IA_SINCRONIZACION_ERROR);
+    }
+
+    // =========================================================================
+    // FINANCIERO -> CLIENTE (Transacciones)
+    // =========================================================================
+
+    @Bean
+    public TopicExchange exchangeFinanciero() {
+        return ExchangeBuilder
+                .topicExchange(NombresExchange.FINANCIERO)
+                .durable(true)
+                .build();
+    }
+
+    @Bean
+    public Queue colaTransaccionesRegistradas() {
+        return QueueBuilder
+                .durable(NombresCola.FINANCIERO_TRANSACCIONES_CLIENTE)
+                .build();
+    }
+
+    @Bean
+    public Binding bindingTransaccionesRegistradas(
+            @Qualifier("colaTransaccionesRegistradas") Queue colaTransaccionesRegistradas,
+            @Qualifier("exchangeFinanciero") TopicExchange exchangeFinanciero) {
+        return BindingBuilder
+                .bind(colaTransaccionesRegistradas)
+                .to(exchangeFinanciero)
+                .with(RoutingKeys.TRANSACCION_REGISTRADA);
+    }
+
+    // =========================================================================
+    // USUARIO → CLIENTE (Eventos de Dominio: Login)
+    // =========================================================================
+
+    /**
+     * Exchange de tipo Topic donde ms-usuario publica eventos de dominio.
+     * ms-cliente actúa como consumidor de estos eventos.
+     *
+     * @return {@link TopicExchange} durable para eventos de usuario.
+     */
+    @Bean
+    public TopicExchange exchangeUsuarioEventos() {
+        return ExchangeBuilder
+                .topicExchange(NombresExchange.USUARIO_EVENTOS)
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * Dead Letter Exchange para mensajes de eventos de usuario que no pudieron procesarse.
+     *
+     * @return {@link DirectExchange} durable para mensajes de error.
+     */
+    @Bean
+    public DirectExchange exchangeUsuarioEventosDlx() {
+        return ExchangeBuilder
+                .directExchange(NombresExchange.USUARIO_EVENTOS_DLX)
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * Cola donde ms-cliente recibe los eventos de login exitoso.
+     * Configurada con DLX y un TTL de 5 minutos para mensajes no procesados.
+     *
+     * @return {@link Queue} durable con DLX configurado.
+     */
+    @Bean
+    public Queue colaClienteLoginEventos() {
+        return QueueBuilder
+                .durable(NombresCola.CLIENTE_LOGIN_EVENTOS)
+                .withArgument("x-dead-letter-exchange", NombresExchange.USUARIO_EVENTOS_DLX)
+                .withArgument("x-dead-letter-routing-key", NombresCola.CLIENTE_LOGIN_EVENTOS_DLQ)
+                .withArgument("x-message-ttl", 300000) // 5 minutos TTL
+                .build();
+    }
+
+    /**
+     * Cola de error para eventos de login que no pudieron procesarse.
+     *
+     * @return {@link Queue} durable para persistencia de fallos.
+     */
+    @Bean
+    public Queue colaClienteLoginEventosDlq() {
+        return QueueBuilder
+                .durable(NombresCola.CLIENTE_LOGIN_EVENTOS_DLQ)
+                .build();
+    }
+
+    /**
+     * Vincula la cola de login al exchange de eventos de usuario.
+     *
+     * @param colaClienteLoginEventos Bean de la cola de login.
+     * @param exchangeUsuarioEventos  Bean del exchange de eventos de usuario.
+     * @return {@link Binding} con routing key {@code usuario.login.exitoso}.
+     */
+    @Bean
+    public Binding bindingLoginEventos(
+            @Qualifier("colaClienteLoginEventos") Queue colaClienteLoginEventos,
+            @Qualifier("exchangeUsuarioEventos") TopicExchange exchangeUsuarioEventos) {
+        return BindingBuilder
+                .bind(colaClienteLoginEventos)
+                .to(exchangeUsuarioEventos)
+                .with(RoutingKeys.USUARIO_LOGIN_EXITOSO);
+    }
+
+    /**
+     * Vincula la cola DLQ al Dead Letter Exchange de eventos de usuario.
+     *
+     * @param colaClienteLoginEventosDlq Bean de la cola DLQ de login.
+     * @param exchangeUsuarioEventosDlx  Bean del DLX de eventos de usuario.
+     * @return {@link Binding} de Dead Letter.
+     */
+    @Bean
+    public Binding bindingLoginEventosDlq(
+            @Qualifier("colaClienteLoginEventosDlq") Queue colaClienteLoginEventosDlq,
+            @Qualifier("exchangeUsuarioEventosDlx") DirectExchange exchangeUsuarioEventosDlx) {
+        return BindingBuilder
+                .bind(colaClienteLoginEventosDlq)
+                .to(exchangeUsuarioEventosDlx)
+                .with(NombresCola.CLIENTE_LOGIN_EVENTOS_DLQ);
+    }
+}

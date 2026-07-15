@@ -1,0 +1,377 @@
+networks:
+  backend-network:
+    driver: bridge
+    name: luka-backend
+    ipam:
+      config:
+      - subnet: 172.20.0.0/16
+  db-network:
+    driver: bridge
+    name: luka-db
+    internal: true
+x-spring-common:
+  restart: unless-stopped
+  env_file: &id001
+  - ../.env
+  networks: &id002
+  - backend-network
+  logging: &id003
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: '3'
+x-postgres-common:
+  image: postgres:16-alpine
+  restart: unless-stopped
+  env_file:
+  - ../.env
+  networks:
+  - db-network
+  - backend-network
+  environment:
+    POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-adminUTP}
+  healthcheck:
+    test:
+    - CMD-SHELL
+    - pg_isready -U ${POSTGRES_USER:-postgres}
+    interval: 30s
+    timeout: 10s
+    retries: 5
+    start_period: 120s
+  logging:
+    driver: json-file
+    options:
+      max-size: 5m
+      max-file: '2'
+services:
+  ms-usuario:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-ms-usuario
+    hostname: ms-usuario
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-usuario/Dockerfile
+      args:
+        APP_PORT: 8081
+    image: luka/ms-usuario:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8081
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_APPLICATION_NAME: microservicio-usuario
+      RABBITMQ_CONNECTION_NAME: LUKA-MS-USUARIO
+      URL_PROD_CLIENTE: http://ms-cliente:8083
+      URL_PROD_MENSAJERIA: http://ms-mensajeria:8084
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8081/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  ms-cliente:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-ms-cliente
+    hostname: ms-cliente
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-cliente/Dockerfile
+      args:
+        APP_PORT: 8083
+    image: luka/ms-cliente:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8083
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_APPLICATION_NAME: microservicio-cliente
+      RABBITMQ_CONNECTION_NAME: LUKA-MS-CLIENTE
+      URL_PROD_FINANCIERO: http://ms-nucleo-financiero:8085
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      LUKA_INTERNAL_TOKEN: ${LUKA_INTERNAL_TOKEN}
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8083/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  ms-auditoria:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-ms-auditoria
+    hostname: ms-auditoria
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-auditoria/Dockerfile
+      args:
+        APP_PORT: 8082
+    image: luka/ms-auditoria:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8082
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_APPLICATION_NAME: microservicio-auditoria
+      RABBITMQ_CONNECTION_NAME: LUKA-MS-AUDITORIA
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8082/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  ms-mensajeria:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-ms-mensajeria
+    hostname: ms-mensajeria
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-mensajeria/Dockerfile
+      args:
+        APP_PORT: 8084
+    image: luka/ms-mensajeria:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8084
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_APPLICATION_NAME: microservicio-mensajeria
+      RABBITMQ_CONNECTION_NAME: LUKA-MS-MENSAJERIA
+      URL_PROD_USUARIO: http://ms-usuario:8081
+      URL_PROD_CLIENTE: http://ms-cliente:8083
+      TWILIO_API_KEY_SECRET: ${TWILIO_API_KEY_SECRET}
+      TWILIO_USE_API_KEY: ${TWILIO_USE_API_KEY}
+      TWILIO_SMS_FROM: ${TWILIO_SMS_FROM}
+      TWILIO_WHATSAPP_FROM: ${TWILIO_WHATSAPP_FROM}
+      TWILIO_SANDBOX_WHATSAPP_FROM: ${TWILIO_SANDBOX_WHATSAPP_FROM}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8084/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  ms-nucleo-financiero:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-ms-nucleo-financiero
+    hostname: ms-nucleo-financiero
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-nucleo-financiero/Dockerfile
+      args:
+        APP_PORT: 8085
+    image: luka/ms-nucleo-financiero:latest
+    depends_on:
+      ms-cliente:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8085
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_APPLICATION_NAME: microservicio-nucleo-financiero
+      RABBITMQ_CONNECTION_NAME: LUKA-MS-NUCLEO-FINANCIERO
+      URL_MICROSERVICIO_CLIENTE: http://ms-cliente:8083
+      URL_PROD_CLIENTE: http://ms-cliente:8083
+      URL_PROD_IA: http://ms-ia:8086
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8085/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  ms-ia:
+    container_name: luka-ms-ia
+    hostname: ms-ia
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-ia/Dockerfile
+      args:
+        APP_PORT: 8086
+    image: luka/ms-ia:latest
+    restart: unless-stopped
+    env_file:
+    - ../.env
+    networks:
+    - backend-network
+    depends_on:
+      ms-nucleo-financiero:
+        condition: service_healthy
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GEMINI_MODELO: ${GEMINI_MODELO:-gemini-flash-latest}
+      GEMINI_MAX_TOKENS: ${GEMINI_MAX_TOKENS:-1024}
+      GEMINI_TEMPERATURA: ${GEMINI_TEMPERATURA:-0.7}
+      RABBITMQ_CONNECTION_NAME: luka-ms-ia
+      RABBITMQ_HEARTBEAT: 60
+      RABBITMQ_TIMEOUT: 300
+      URL_PROD_FINANCIERO: http://ms-nucleo-financiero:8085
+      URL_PROD_AUDITORIA: http://ms-auditoria:8082
+      URL_PROD_CLIENTE: http://ms-cliente:8083
+      JWT_CLAVE_SECRETA: ${JWT_SECRET_KEY}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITMO: HS256
+      LUKA_INTERNAL_TOKEN: ${LUKA_INTERNAL_TOKEN}
+      MESES_HISTORIAL: 6
+      UMBRAL_GASTO_HORMIGA: 30.0
+      UMBRAL_ANOMALIA: 2.0
+      PYTHONUNBUFFERED: '1'
+      TZ: America/Lima
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8086/actuator/health
+      interval: 30s
+      timeout: 15s
+      retries: 5
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+  ms-pagos:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-ms-pago
+    hostname: ms-pagos
+    build:
+      context: ../..
+      dockerfile: estructura-backend/microservicio-pago/Dockerfile
+      args:
+        APP_PORT: 8087
+    image: luka/ms-pago:latest
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8087
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_APPLICATION_NAME: ms-pagos
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      FRONTEND_URL: ${FRONTEND_URL}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8087/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+  api-gateway:
+    restart: unless-stopped
+    env_file: *id001
+    networks: *id002
+    logging: *id003
+    container_name: luka-api-gateway
+    hostname: api-gateway
+    build:
+      context: ../..
+      dockerfile: estructura-backend/api-gateway/Dockerfile
+      args:
+        APP_PORT: 8080
+    image: luka/api-gateway:latest
+    ports:
+    - ${GATEWAY_PORT:-8080}:8080
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8080
+      SPRING_APPLICATION_NAME: api-gateway
+      SPRING_MAIN_WEB_APPLICATION_TYPE: reactive
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDORIGINS: '*'
+      SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDMETHODS: GET,POST,PUT,DELETE,OPTIONS,PATCH
+      SPRING_CLOUD_GATEWAY_GLOBALCORS_CORSCONFIGURATIONS_[/**]_ALLOWEDHEADERS: '*'
+      JAVA_OPTS: -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -f
+      - http://localhost:8080/actuator/health
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 512M

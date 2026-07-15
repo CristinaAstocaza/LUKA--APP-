@@ -1,0 +1,451 @@
+"""
+main.py  ·  v4 — IA Centrada en Datos (LUKA)
+══════════════════════════════════════════════════════════════════════════════
+Punto de entrada del Microservicio IA Financiera de LUKA.
+ 
+Cambios respecto a v3:
+  - Router actualizado: 10 endpoints independientes + /analisis-completo.
+  - Se elimina el endpoint inline /api/v1/ia/analizar (reemplazado por los
+    10 módulos específicos del nuevo router).
+  - Se elimina la instancia directa de CoachIA en main.py; toda la lógica
+    vive ahora en ServicioAnalisis → motor_ia → CoachIA.
+  - El ConsumidorIA de RabbitMQ se mantiene en hilo daemon (sin cambios).
+  - Health check enriquecido con estado del consumidor y versión del motor.
+  - Manejador global de IA_BaseException adaptado a los nuevos códigos v4.
+══════════════════════════════════════════════════════════════════════════════
+"""
+
+import logging
+import threading
+import os
+import asyncio
+from contextlib import asynccontextmanager
+from datetime import datetime
+ 
+import uvicorn
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+ 
+from app.configuracion import obtener_configuracion
+from app.libreria_comun.excepciones.base import LukaException
+from app.libreria_comun.excepciones.handler import luka_exception_handler, http_exception_handler
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from app.libreria_comun.seguridad.middleware import TraceabilityMiddleware
+from app.mensajeria.consumidor_ia import ConsumidorIA
+from app.mensajeria.outbox_scheduler import OutboxScheduler
+from app.mensajeria.escuchador_sincronizacion_ia import EscuchadorSincronizacionIA
+from app.mensajeria.escuchador_cambio_datos_ia import EscuchadorCambioDatosIA
+from app.mensajeria.escuchador_eventos_usuario_ia import EscuchadorEventosUsuarioIA
+from app.routers import analisis, dashboard
+from app.persistencia.postgres.database import inicializar_db
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# LOGGING: Configuración básica para toda la app
+# ══════════════════════════════════════════════════════════════════════════ 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("ia_financiera")
+
+class HealthCheckFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.args and len(record.args) >= 3 and "/actuator/health" not in str(record.args[2])
+
+logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
+
+config = obtener_configuracion()
+
+# ══════════════════════════════════════════════════════════════════════════
+# Estado global del consumidor RabbitMQ (accesible desde el health check)
+# ══════════════════════════════════════════════════════════════════════════ 
+_consumidor: ConsumidorIA | None = None
+_consumidor_activo: bool = False
+_outbox_scheduler: OutboxScheduler | None = None
+_outbox_scheduler_activo: bool = False
+_escuchador_sync: EscuchadorSincronizacionIA | None = None
+_escuchador_sync_activo: bool = False
+_escuchador_cambio: EscuchadorCambioDatosIA | None = None
+_escuchador_cambio_activo: bool = False
+_escuchador_usuario: EscuchadorEventosUsuarioIA | None = None
+_escuchador_usuario_activo: bool = False
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CONSUMIDOR RABBITMQ — hilo daemon
+# ══════════════════════════════════════════════════════════════════════════════
+def _iniciar_consumidor_rabbitmq() -> None:
+    """
+    Arranca el ConsumidorIA en un hilo daemon.
+ 
+    Al ser daemon, muere automáticamente cuando el proceso principal termina.
+    Si RabbitMQ no está disponible al arrancar, solo se loguea el error;
+    el microservicio FastAPI sigue funcionando con los endpoints HTTP.
+    """
+    global _consumidor, _consumidor_activo
+    try:
+        _consumidor = ConsumidorIA()
+        hilo = threading.Thread(
+            target=_consumidor.iniciar,
+            name="hilo-consumidor-rabbitmq",
+            daemon=True,
+        )
+        hilo.start()
+        _consumidor_activo = True
+        logger.info(
+            "[MAIN] Consumidor RabbitMQ iniciado en hilo '%s'.", hilo.name
+        )
+    except Exception as exc:
+        _consumidor_activo = False
+        logger.error(
+            "[MAIN] No se pudo iniciar el ConsumidorIA: %s. "
+            "El microservicio HTTP funcionará sin procesamiento de eventos RabbitMQ.",
+            str(exc),
+        )
+
+
+def _iniciar_escuchadores_adicionales() -> None:
+    """
+    Arranca los escuchadores de sincronización, invalidación y eventos de usuario en hilos daemon.
+    """
+    global _escuchador_sync, _escuchador_sync_activo, _escuchador_cambio, _escuchador_cambio_activo, _escuchador_usuario, _escuchador_usuario_activo
+    
+    redis_client = None
+    # 1. Sincronización de Perfil (Redis)
+    try:
+        import redis
+        try:
+            redis_ssl = os.getenv("REDIS_SSL", "true").lower() == "true"
+            redis_client = redis.Redis(
+                host=config.redis_host,
+                port=config.redis_port,
+                db=config.redis_db,
+                password=config.redis_password or None,
+                decode_responses=True,
+                ssl=redis_ssl,
+                ssl_cert_reqs=None,
+            )
+            redis_client.ping()
+        except Exception as conn_err:
+            err_str = str(conn_err)
+            if "without any password configured" in err_str or "no password is set" in err_str:
+                logger.warning(f"[MAIN] Redis no requiere contraseña. Reintentando sin contraseña... ({conn_err})")
+                redis_client = redis.Redis(
+                    host=config.redis_host,
+                    port=config.redis_port,
+                    db=config.redis_db,
+                    password=None,
+                    decode_responses=True,
+                    ssl=redis_ssl,
+                    ssl_cert_reqs=None,
+                )
+                redis_client.ping()
+            else:
+                raise conn_err
+        _escuchador_sync = EscuchadorSincronizacionIA(redis_client)
+        threading.Thread(target=_escuchador_sync.iniciar, name="hilo-sync-perfil", daemon=True).start()
+        _escuchador_sync_activo = True
+        logger.info("[MAIN] Escuchador de sincronización de perfil iniciado.")
+    except Exception as exc:
+        _escuchador_sync_activo = False
+        logger.error(f"[MAIN] Error iniciando sync perfil: {exc}")
+
+    # 2. Invalidación de Caché (Datos Financieros)
+    try:
+        _escuchador_cambio = EscuchadorCambioDatosIA()
+        threading.Thread(target=_escuchador_cambio.iniciar, name="hilo-invalidacion-cache", daemon=True).start()
+        _escuchador_cambio_activo = True
+        logger.info("[MAIN] Escuchador de invalidación de caché iniciado.")
+    except Exception as exc:
+        _escuchador_cambio_activo = False
+        logger.error(f"[MAIN] Error iniciando sync caché: {exc}")
+
+    # 3. Inicialización y Sincronización de Transacciones (Redis HASH)
+    if redis_client:
+        try:
+            _escuchador_usuario = EscuchadorEventosUsuarioIA(redis_client)
+            threading.Thread(target=_escuchador_usuario.iniciar, name="hilo-sync-usuario-transacciones", daemon=True).start()
+            _escuchador_usuario_activo = True
+            logger.info("[MAIN] Escuchador de eventos de usuario e inicialización de caché transacciones iniciado.")
+        except Exception as exc:
+            _escuchador_usuario_activo = False
+            logger.error(f"[MAIN] Error iniciando hearder eventos usuario/transacciones: {exc}")
+    else:
+        logger.error("[MAIN] Redis no disponible. No se puede arrancar el escuchador de eventos de usuario.")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LIFECYCLE — startup / shutdown
+# ══════════════════════════════════════════════════════════════════════════════
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Gestiona lo que sucede cuando el microservicio arranca y se apaga.
+ 
+    Startup:
+      1. Imprime el banner de inicio con la configuración activa.
+      2. Arranca el ConsumidorIA en hilo daemon.
+ 
+    Shutdown:
+      1. Detiene el ConsumidorIA limpiamente.
+    """
+    # ── Banner de inicio ──────────────────────────────────────────────────────
+    logger.info("═" * 65)
+    logger.info("  LUKA — Microservicio IA Financiera  v%s", config.version_app)
+    logger.info("  Puerto         : %d", config.puerto)
+    logger.info("  Entorno        : %s", config.entorno)
+    logger.info("  Gemini         : %s (temp=%.1f, max_tokens=%d)",
+                config.gemini_modelo, config.gemini_temperatura, config.gemini_max_tokens)
+    logger.info("  Broker         : %s:%d", config.rabbitmq_host, config.rabbitmq_puerto)
+    logger.info("  Cola entrada   : %s", config.cola_ia_procesamiento)
+    logger.info("  Cola consejos  : %s", config.cola_dashboard_consejos)
+    logger.info("  Cola módulos   : %s", config.cola_dashboard_modulos)
+    logger.info("  Historial      : %d meses | Umbral hormiga: S/ %.2f",
+                config.meses_historial, config.umbral_monto_hormiga)
+    logger.info("  Regla 50/30/20 : %.0f%% / %.0f%% / %.0f%%",
+                config.porcentaje_necesidades,
+                config.porcentaje_deseos,
+                config.porcentaje_ahorro_objetivo)
+    logger.info("═" * 65)
+
+    inicializar_db()
+    _iniciar_consumidor_rabbitmq()
+    _iniciar_escuchadores_adicionales()
+
+    # --- OUTBOX SCHEDULER (Transactional Outbox — FASE 4) ---
+    global _outbox_scheduler, _outbox_scheduler_activo
+    try:
+        _outbox_scheduler = OutboxScheduler()
+        _outbox_scheduler.iniciar()
+        _outbox_scheduler_activo = True
+        logger.info("[MAIN] OutboxScheduler iniciado.")
+    except Exception as exc:
+        _outbox_scheduler_activo = False
+        logger.error("[MAIN] No se pudo iniciar el OutboxScheduler: %s", exc)
+
+    # --- JOB DE MONITOREO DE COSTOS ---
+    from app.servicios.ia.alerta_costos import job_monitoreo_costos
+    asyncio.create_task(job_monitoreo_costos())
+    logger.info("[MAIN] Job de monitoreo de costos iniciado.")
+    
+    yield # ── La app está corriendo ──────────────────────────────────────────
+
+    # ── Shutdown ──────────────────────────────────────────────────────────────
+    logger.info("[MAIN] Iniciando apagado del microservicio...")
+ 
+    if _consumidor:
+        try:
+            _consumidor.detener()
+            logger.info("[MAIN] ConsumidorIA detenido correctamente.")
+        except Exception as exc:
+            logger.warning("[MAIN] Error al detener el ConsumidorIA: %s", str(exc))
+
+    if _outbox_scheduler:
+        try:
+            _outbox_scheduler.detener()
+            logger.info("[MAIN] OutboxScheduler detenido correctamente.")
+        except Exception as exc:
+            logger.warning("[MAIN] Error al detener el OutboxScheduler: %s", str(exc))
+
+    if _escuchador_sync:
+        try:
+            _escuchador_sync.detener()
+            logger.info("[MAIN] EscuchadorSincronizacionIA detenido correctamente.")
+        except Exception as exc:
+            logger.warning("[MAIN] Error al detener el EscuchadorSincronizacionIA: %s", str(exc))
+
+    if _escuchador_cambio:
+        try:
+            _escuchador_cambio.detener()
+            logger.info("[MAIN] EscuchadorCambioDatosIA detenido correctamente.")
+        except Exception as exc:
+            logger.warning("[MAIN] Error al detener el EscuchadorCambioDatosIA: %s", str(exc))
+
+    if _escuchador_usuario:
+        try:
+            _escuchador_usuario.detener()
+            logger.info("[MAIN] EscuchadorEventosUsuarioIA detenido correctamente.")
+        except Exception as exc:
+            logger.warning("[MAIN] Error al detener el EscuchadorEventosUsuarioIA: %s", str(exc))
+
+    logger.info("[MAIN] Microservicio IA de LUKA detenido correctamente.")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# APLICACIÓN FASTAPI
+# ══════════════════════════════════════════════════════════════════════════════
+app = FastAPI(
+    title=config.nombre_app,
+    version="4.0.0",
+    description="""
+""",
+    lifespan=lifespan
+)
+
+# ── MIDDLEWARES ───────────────────────────────────────────────────────────────
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+app.add_middleware(TraceabilityMiddleware)
+
+app.description = """
+## Motor de Análisis Financiero para Universitarios
+ 
+Microservicio IA de la plataforma **LUKA**, diseñada para ayudar a
+universitarios peruanos a entender y mejorar sus finanzas personales.
+ 
+### Arquitectura: IA Centrada en Datos
+El sistema separa claramente dos responsabilidades:
+- **Motor Analítico** (Pandas / Scikit-Learn): realiza todos los cálculos matemáticos y estadísticos.
+- **Coach Financiero** (Gemini): recibe el resumen técnico y genera consejos en lenguaje natural.
+ 
+### 10 Módulos de Análisis Disponibles
+| # | Endpoint | Descripción |
+|---|----------|-------------|
+| 1 | `POST /clasificar` | Valida y sugiere la categoría correcta de una transacción |
+| 2 | `POST /predecir-gastos` | Proyección del gasto del próximo mes (regresión lineal) |
+| 3 | `POST /detectar-anomalias` | Gastos inusuales por Z-Score estadístico |
+| 4 | `POST /optimizar-suscripciones` | Gastos hormiga y suscripciones olvidadas |
+| 5 | `POST /capacidad-ahorro` | Tasa de ahorro real vs. regla 50/30/20 |
+| 6 | `POST /simular-meta` | Tiempo estimado para alcanzar una meta de ahorro |
+| 7 | `POST /estacionalidad` | Patrones cíclicos de gasto por mes |
+| 8 | `POST /presupuesto-dinamico` | Presupuesto semanal por categoría |
+| 9 | `POST /simular-escenario` | Impacto de un cambio hipotético en el presupuesto |
+| 10 | `POST /reporte-completo` | Reporte ejecutivo mensual con score de salud financiera |
+| — | `POST /analisis-completo` | Dashboard principal: reporte completo con todos los KPIs |
+"""
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CORS: Permitir orígenes configurados en desarrollo, restringir en producción
+# ══════════════════════════════════════════════════════════════════════════════
+allow_origins = [
+    "http://localhost:3000",
+    "http://localhost:4200",
+    "http://localhost:5173",
+]
+if config.es_produccion:
+    frontend_url = os.getenv("FRONTEND_URL", "")
+    cors_extra = os.getenv("CORS_ALLOWED_ORIGINS", "")
+    origins_list = [o.strip() for o in cors_extra.split(",") if o.strip()]
+    if frontend_url:
+        origins_list.append(frontend_url)
+    allow_origins = origins_list if origins_list else ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MANEJADORES GLOBALES DE EXCEPCIONES
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Registramos el manejador de la librería común para excepciones de negocio y generales
+app.add_exception_handler(LukaException, luka_exception_handler)
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(Exception, luka_exception_handler)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RUTAS
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Router principal con los 10 módulos + /analisis-completo ─────────────────
+app.include_router(analisis.router)
+app.include_router(dashboard.router)
+
+# ── Health Check ─────────────────────────────────────────────────────────────
+@app.get(
+    "/actuator/health",
+    tags=["Sistema"],
+    summary="Estado del microservicio",
+    description="Verifica que el microservicio, el motor analítico y el consumidor RabbitMQ estén operativos.",
+)
+
+async def health() -> dict:
+    """
+    Endpoint de health check compatible con el API Gateway.
+ 
+    Retorna el estado de cada componente del microservicio:
+      - motor_analitico : siempre UP (Pandas/Scikit-Learn son locales).
+      - coach_ia        : UP si la API Key de Gemini está configurada.
+      - consumidor_rmq  : UP si el hilo del ConsumidorIA arrancó correctamente.
+    """
+    gemini_configurado = bool(config.gemini_api_key)
+ 
+    componentes = {
+        "motor_analitico": {
+            "estado": "UP",
+            "descripcion": "Pandas + Scikit-Learn operativos",
+        },
+        "coach_ia": {
+            "estado": "UP" if gemini_configurado else "DOWN",
+            "modelo": config.gemini_modelo,
+            "descripcion": "Gemini configurado" if gemini_configurado else "API Key no configurada",
+        },
+        "consumidor_rabbitmq": {
+            "estado": "UP" if _consumidor_activo else "DEGRADADO",
+            "broker": f"{config.rabbitmq_host}:{config.rabbitmq_puerto}",
+            "cola": config.cola_ia_procesamiento,
+            "dlq": f"{config.cola_ia_procesamiento}.dlq",
+            "descripcion": "Procesando eventos" if _consumidor_activo else "Sin conexión al broker",
+        },
+        "outbox_scheduler": {
+            "estado": "UP" if _outbox_scheduler_activo else "DEGRADADO",
+            "descripcion": "Publicando eventos pendientes" if _outbox_scheduler_activo else "Inactivo",
+        },
+        "sync_contexto_ia": {
+            "estado": "UP" if _escuchador_sync_activo else "DEGRADADO",
+            "cola": config.cola_ia_sincronizacion_contexto,
+            "redis": f"{config.redis_host}:{config.redis_port}",
+            "descripcion": "Sincronización activa" if _escuchador_sync_activo else "Sin sincronización",
+        },
+        "sync_usuario_transacciones": {
+            "estado": "UP" if _escuchador_usuario_activo else "DEGRADADO",
+            "redis": f"{config.redis_host}:{config.redis_port}",
+            "descripcion": "Caché de transacciones e inicializador de login activos" if _escuchador_usuario_activo else "Inactivo",
+        },
+    }
+ 
+    # El servicio está UP si al menos el motor y el coach funcionan.
+    # RabbitMQ caído es degradado pero no crítico (los endpoints HTTP siguen funcionando).
+    estado_global = "UP" if gemini_configurado else "DOWN"
+    if not _consumidor_activo:
+        estado_global = "DEGRADADO"
+ 
+    return {
+        "status": estado_global,
+        "estado": estado_global,
+        "servicio": config.nombre_app,
+        "version": config.version_app,
+        "entorno": config.entorno,
+        "timestamp": datetime.now().isoformat(),
+        "componentes": componentes,
+        "endpoints_disponibles": 11,
+    }
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# PUNTO DE ENTRADA DIRECTO
+# ══════════════════════════════════════════════════════════════════════════════
+ 
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=config.puerto,
+        reload=config.entorno == "desarrollo",
+        log_level="info",
+    )

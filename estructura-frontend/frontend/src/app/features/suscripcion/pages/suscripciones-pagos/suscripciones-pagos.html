@@ -1,0 +1,191 @@
+<div class="suscripciones-pagos-page">
+  
+  <header class="suscripciones-pagos-page__header card glass-panel" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+      <h1 class="suscripciones-pagos-page__title">Todas las Suscripciones</h1>
+      <p class="suscripciones-pagos-page__subtitle">Visualiza y administra todas tus suscripciones en una sola vista</p>
+    </div>
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button type="button" id="btn-nueva-suscripcion" class="btn-primary" (click)="abrirModal()" style="padding: 10px 20px; border-radius: var(--radius-md); font-weight: 700; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+        <i class="fa-solid fa-plus"></i>
+        Nueva Suscripción
+      </button>
+    </div>
+  </header>
+
+  <section class="suscripciones-pagos-page__filters" id="tour-filtros">
+    <div class="filters-container">
+      
+      <div class="filter-group">
+        <label for="busqueda" class="filter-label">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          Buscar
+        </label>
+        <input 
+          type="text" 
+          id="busqueda" 
+          [ngModel]="busqueda()" 
+          (ngModelChange)="busqueda.set($event)"
+          placeholder="Netflix, Spotify, Gimnasio..."
+          class="filter-input"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="categoria" class="filter-label">Categoría</label>
+        <select 
+          id="categoria" 
+          [ngModel]="categoriaFiltro()" 
+          (ngModelChange)="categoriaFiltro.set($event)"
+          class="filter-input"
+        >
+          <option value="">Todas</option>
+          @for (cat of categorias(); track cat.id) {
+            <option [value]="cat.id">{{ cat.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="frecuencia" class="filter-label">Frecuencia</label>
+        <select 
+          id="frecuencia" 
+          [ngModel]="frecuenciaFiltro()" 
+          (ngModelChange)="frecuenciaFiltro.set($event)"
+          class="filter-input"
+        >
+          <option value="">Todas</option>
+          @for (frec of frecuencias; track frec.id) {
+            <option [value]="frec.id">{{ frec.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="estado" class="filter-label">Estado</label>
+        <select 
+          id="estado" 
+          [ngModel]="estadoFiltro()" 
+          (ngModelChange)="estadoFiltro.set($event)"
+          class="filter-input"
+        >
+          <option value="">Todos</option>
+          @for (est of estados; track est.id) {
+            <option [value]="est.id">{{ est.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="filter-group filter-group--range">
+        <label class="filter-label">Monto (S/)</label>
+        <div class="filter-range">
+          <input 
+            type="number" 
+            [ngModel]="montoMin()" 
+            (ngModelChange)="montoMin.set($event)"
+            placeholder="Mín"
+            class="filter-input"
+            min="0"
+          />
+          <span class="filter-separator">—</span>
+          <input 
+            type="number" 
+            [ngModel]="montoMax()" 
+            (ngModelChange)="montoMax.set($event)"
+            placeholder="Máx"
+            class="filter-input"
+            min="0"
+          />
+        </div>
+      </div>
+
+      <button type="button" class="filter-btn-clear" (click)="limpiarFiltros()">
+        <i class="fa-solid fa-rotate-right"></i>
+        Limpiar
+      </button>
+    </div>
+
+    <div class="filters-bottom">
+      <span class="filters-count">{{ totalResultados() }} resultados</span>
+      
+      <div class="filters-sort">
+        <span class="filters-sort-label">Ordenar por:</span>
+        <button 
+          type="button" 
+          class="sort-btn"
+          [class.active]="ordenarPor() === 'nombre'"
+          (click)="cambiarOrden('nombre')"
+        >
+          Nombre
+          @if (ordenarPor() === 'nombre') {
+            <i class="fa-solid" [ngClass]="ordenAscendente() ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+          }
+        </button>
+        <button 
+          type="button" 
+          class="sort-btn"
+          [class.active]="ordenarPor() === 'monto'"
+          (click)="cambiarOrden('monto')"
+        >
+          Monto
+          @if (ordenarPor() === 'monto') {
+            <i class="fa-solid" [ngClass]="ordenAscendente() ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+          }
+        </button>
+        <button 
+          type="button" 
+          class="sort-btn"
+          [class.active]="ordenarPor() === 'vencimiento'"
+          (click)="cambiarOrden('vencimiento')"
+        >
+          Vencimiento
+          @if (ordenarPor() === 'vencimiento') {
+            <i class="fa-solid" [ngClass]="ordenAscendente() ? 'fa-arrow-up' : 'fa-arrow-down'"></i>
+          }
+        </button>
+      </div>
+    </div>
+  </section>
+
+  @if (suscripciones().length === 0) {
+    <div class="suscripciones-pagos-page__empty" id="tour-suscripciones-grid">
+      <i class="fa-solid fa-inbox"></i>
+      <h2>No hay resultados</h2>
+      <p>Intenta ajustar tus filtros para encontrar lo que buscas</p>
+    </div>
+  } @else {
+    <section class="suscripciones-pagos-page__grid" id="tour-suscripciones-grid">
+      @for (suscripcion of suscripciones(); track suscripcion.id) {
+        <app-suscripcion-card 
+          [suscripcion]="suscripcion"
+          (editar)="onEditarSuscripcion($event)"
+          (eliminar)="onEliminarSuscripcion($event)"
+          (cambiarEstado)="onCambiarEstado($event)"
+          (verDetalle)="onVerDetalle($event)">
+        </app-suscripcion-card>
+      }
+    </section>
+  }
+
+  @if (modalAbierto()) {
+    <app-modal-nueva-suscripcion
+      [suscripcionEditar]="suscripcionAEditar()"
+      [categorias]="categorias()"
+      (cerrar)="cerrarModal()"
+      (crear)="onCrearSuscripcion($event)"
+      (editar)="onEditarSuscripcionGuardar($event)"
+      (pagar)="onPagarSuscripcionManual($event)">
+    </app-modal-nueva-suscripcion>
+  }
+
+  @if (mostrarTour()) {
+    <app-onboarding-tour
+      [steps]="stepsTour"
+      (cerrar)="completarTour()">
+    </app-onboarding-tour>
+  }
+
+  <button type="button" class="floating-help-btn" (click)="iniciarTourManualmente()" title="Ver guía de ayuda">
+    <i class="fa-solid fa-circle-question"></i>
+  </button>
+</div>
