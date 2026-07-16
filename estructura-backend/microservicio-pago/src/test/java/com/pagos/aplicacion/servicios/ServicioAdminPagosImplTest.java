@@ -163,8 +163,9 @@ class ServicioAdminPagosImplTest {
             when(repositorioPago.countByEstado(estado)).thenReturn(0L);
         }
         when(repositorioPago.contarSuscripcionesActivasPorPlan()).thenReturn(List.of());
+        when(repositorioPago.sumarIngresosPorMesYAnio(any(Integer.class))).thenReturn(List.of());
 
-        ResumenPagosDTO resumen = servicio.obtenerResumenGeneral();
+        ResumenPagosDTO resumen = servicio.obtenerResumenGeneral(null);
 
         assertThat(resumen).isNotNull();
         assertThat(resumen.totalTransacciones()).isEqualTo(50L);
