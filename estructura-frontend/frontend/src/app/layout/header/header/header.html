@@ -34,7 +34,7 @@
       <article class="metric-pill metric-pill--income">
         <span class="metric-icon"><i class="fa-solid fa-arrow-trend-up"></i></span>
         <div class="metric-copy">
-          <span class="metric-label">Ingresos</span>
+          <span class="metric-label" *ngIf="false">Ingresos</span>
           <strong class="metric-value">{{ formatSoles(totalIngresosMes) }}</strong>
         </div>
       </article>
@@ -42,7 +42,7 @@
       <article class="metric-pill metric-pill--expense">
         <span class="metric-icon"><i class="fa-solid fa-arrow-trend-down"></i></span>
         <div class="metric-copy">
-          <span class="metric-label">Gastos</span>
+          <span class="metric-label" *ngIf="false">Gastos</span>
           <strong class="metric-value">{{ formatSoles(totalGastosMes) }}</strong>
         </div>
       </article>
@@ -50,7 +50,7 @@
       <article class="metric-pill metric-pill--balance metric-pill--desktop-only">
         <span class="metric-icon"><i class="fa-solid fa-scale-balanced"></i></span>
         <div class="metric-copy">
-          <span class="metric-label">Balance</span>
+          <span class="metric-label" *ngIf="false">Balance</span>
           <strong class="metric-value">{{ formatSoles(balanceActual) }}</strong>
         </div>
       </article>
