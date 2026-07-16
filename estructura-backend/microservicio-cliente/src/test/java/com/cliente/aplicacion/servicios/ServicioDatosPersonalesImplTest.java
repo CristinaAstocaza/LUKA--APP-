@@ -10,6 +10,10 @@ import com.cliente.dominio.repositorios.DatosPersonalesRepositorio;
 import com.cliente.infraestructura.mensajeria.PublicadorAuditoria;
 import com.libreria.comun.dtos.EventoAuditoriaDTO;
 import com.libreria.comun.excepciones.ExcepcionAccesoDenegado;
+import com.libreria.comun.seguridad.DetallesUsuario;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -95,6 +99,11 @@ class ServicioDatosPersonalesImplTest {
         verify(repositorio, never()).save(any());
     }
 
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
     // =========================================================================
     // actualizar()
     // =========================================================================
@@ -107,9 +116,18 @@ class ServicioDatosPersonalesImplTest {
                 .usuarioId(usuarioId)
                 .build();
         SolicitudDatosPersonales solicitud = new SolicitudDatosPersonales(
-                "12345678", "Ana", "García", "FEMENINO", 25,
+                "12345678", "Ana", "García", "FEMENINO", java.time.LocalDate.now().minusYears(25),
                 "999888777", null, "Perú", "Lima"
         );
+
+        // Configurar Mock Security Context
+        DetallesUsuario detalles = mock(DetallesUsuario.class);
+        when(detalles.getUsuarioId()).thenReturn(usuarioId);
+        Authentication auth = mock(Authentication.class);
+        when(auth.getPrincipal()).thenReturn(detalles);
+        SecurityContext context = mock(SecurityContext.class);
+        when(context.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(context);
 
         when(repositorio.findByUsuarioId(usuarioId)).thenReturn(Optional.of(existente));
         when(repositorio.existsByDni("12345678")).thenReturn(false);

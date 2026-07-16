@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.BeforeEach;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -55,14 +57,22 @@ class SuscripcionServiceImplTest {
     @Mock
     private ClaveIdempotenciaRepository claveIdempotenciaRepository;
 
-    @Mock
-    private List<CalculadorFechasStrategy> estrategias;
+    @Spy
+    private List<CalculadorFechasStrategy> estrategias = new java.util.ArrayList<>();
 
     @Mock
     private ObjectMapper objectMapper;
 
     @InjectMocks
     private SuscripcionServiceImpl servicio;
+
+    @BeforeEach
+    void setUp() {
+        CalculadorFechasStrategy mockEstrategia = mock(CalculadorFechasStrategy.class);
+        lenient().when(mockEstrategia.soporta(any())).thenReturn(true);
+        lenient().when(mockEstrategia.calcularSiguienteFechaPago(any())).thenReturn(LocalDate.now().plusMonths(1));
+        estrategias.add(mockEstrategia);
+    }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
     private Suscripcion crearSuscripcionMock(UUID usuarioId) {
@@ -84,7 +94,7 @@ class SuscripcionServiceImplTest {
         return new SolicitudCrearSuscripcion(
                 usuarioId, "Netflix Premium",
                 new BigDecimal("45.90"), "TARJETA",
-                "CALENDARIO", LocalDate.now(),
+                UUID.randomUUID(), "CALENDARIO", LocalDate.now(),
                 LocalDate.now().plusMonths(1));
     }
 
@@ -115,7 +125,7 @@ class SuscripcionServiceImplTest {
         LocalDate fechaVencExplicita = LocalDate.now().plusMonths(3);
         SolicitudCrearSuscripcion solicitud = new SolicitudCrearSuscripcion(
                 usuarioId, "Spotify", new BigDecimal("15.00"),
-                "EFECTIVO", null, LocalDate.now(), fechaVencExplicita);
+                "EFECTIVO", UUID.randomUUID(), null, LocalDate.now(), fechaVencExplicita);
         Suscripcion guardada = crearSuscripcionMock(usuarioId);
 
         when(suscripcionRepository.save(any(Suscripcion.class))).thenReturn(guardada);

@@ -102,7 +102,7 @@ class TransaccionServiceImplTest {
                 RespuestaTransaccion respuestaMock = crearRespuestaMock(transacId, usuarioId);
 
                 when(categoriaRepository.findById(solicitud.categoriaId()))
-                                .thenReturn(Optional.of(new Categoria()));
+                                .thenReturn(Optional.of(Categoria.builder().tipo(TipoMovimiento.GASTO).build()));
                 when(transaccionRepository.save(any(Transaccion.class))).thenReturn(guardada);
                 when(transaccionMapper.aDto(guardada)).thenReturn(respuestaMock);
 
@@ -111,7 +111,7 @@ class TransaccionServiceImplTest {
                 assertThat(resultado).isNotNull();
                 verify(transaccionRepository).save(any(Transaccion.class));
                 verify(publicadorAuditoria).publicarRegistro(any(), any(), any(), any());
-                verify(publicadorFinanciero).publicarTransaccionRegistrada(any(), any(), any(), any(), any());
+                verify(publicadorFinanciero).publicarTransaccionRegistrada(any(), any(), any(), any(), any(), any(), any(), any(), any());
         }
 
         @Test

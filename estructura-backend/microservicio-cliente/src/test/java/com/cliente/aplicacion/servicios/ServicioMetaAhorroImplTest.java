@@ -56,7 +56,7 @@ class ServicioMetaAhorroImplTest {
         meta.setNombre("Fondo Emergencia");
         meta.setMontoObjetivo(new BigDecimal("5000.00"));
         meta.setMontoActual(BigDecimal.ZERO);
-        meta.setFechaLimite(LocalDate.now().plusMonths(6));
+        meta.setFechaObjetivo(LocalDate.now().plusMonths(6));
         meta.setCompletada(false);
         meta.setActiva(true);
         return meta;
@@ -72,7 +72,7 @@ class ServicioMetaAhorroImplTest {
         UUID usuarioId = UUID.randomUUID();
         SolicitudMetaAhorro solicitud = new SolicitudMetaAhorro(
                 "Fondo Emergencia", new BigDecimal("5000.00"), null,
-                LocalDate.now().plusMonths(6), "Para imprevistos"
+                LocalDate.now().plusMonths(6), null, null, "Para imprevistos"
         );
         MetaAhorro guardada = crearMetaMock(usuarioId);
 
@@ -97,7 +97,7 @@ class ServicioMetaAhorroImplTest {
         UUID usuarioId = UUID.randomUUID();
         SolicitudMetaAhorro solicitud = new SolicitudMetaAhorro(
                 "Nueva", new BigDecimal("1000.00"), null,
-                LocalDate.now().plusMonths(3), null
+                LocalDate.now().plusMonths(3), null, null, null
         );
 
         when(repositorio.findById(metaId)).thenReturn(Optional.empty());
@@ -118,7 +118,7 @@ class ServicioMetaAhorroImplTest {
 
         SolicitudMetaAhorro solicitud = new SolicitudMetaAhorro(
                 "Meta", new BigDecimal("500.00"), null,
-                LocalDate.now().plusMonths(1), null
+                LocalDate.now().plusMonths(1), null, null, null
         );
 
         assertThatThrownBy(() -> servicio.actualizarMeta(metaId, intruso, solicitud, "ip"))
